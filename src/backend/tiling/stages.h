@@ -8,6 +8,11 @@ namespace tiling {
 
 class Pipeline;
 
+class TilingException : public std::exception
+{
+  public: char const * what() const noexcept { return "Tiling Failed"; }
+};
+
 class Stage
 {
 public:
