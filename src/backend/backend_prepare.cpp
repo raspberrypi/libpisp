@@ -30,7 +30,7 @@ void check_stride(pisp_image_format_config const &config)
 	pisp_image_format_config check = config;
 	compute_stride_align(check, PISP_BACK_END_OUTPUT_MIN_ALIGN);
 	if (check.stride > config.stride || check.stride2 > config.stride2) {
-		throw std::runtime_error("Strides should be at least " << check.stride << " and " << check.stride2 << " but are " << config.stride << " and " << config.stride2);
+		PISP_LOG(fatal, "Strides should be at least " << check.stride << " and " << check.stride2 << " but are " << config.stride << " and " << config.stride2);
 	}
 }
 

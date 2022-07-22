@@ -74,7 +74,7 @@ BackEnd::BackEnd(Config const &config, PiSPVariant const &variant)
 	unsigned int max_tile_width = variant_.backEndMaxTileWidth(0);
 
         if (config_.max_tile_width > max_tile_width)
-		throw std::runtime_error("Configured max tile width " << config_.max_tile_width << " exceeds " << max_tile_width);
+		PISP_LOG(fatal, "Configured max tile width " << config_.max_tile_width << " exceeds " << max_tile_width);
 
 	InitialiseConfig();
 }
