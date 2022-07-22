@@ -6,7 +6,8 @@ project(pisp)
 
 add_compile_options(-DBOOST_LOG_DYN_LINK)
 
-add_library(pisp SHARED common/pisp_utils.cpp common/pisp_logging.cpp frontend/frontend.cpp variants/bcm2712.cpp)
+file(GLOB SOURCES common/*.cpp frontend/*.cpp variants/*.cpp backend/*.cpp backend/tiling/*.cpp)
+add_library(pisp SHARED ${SOURCES})
 
 set(MY_PUBLIC_HEADERS
     frontend/frontend.h
