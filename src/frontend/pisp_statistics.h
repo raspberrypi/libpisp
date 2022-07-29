@@ -8,6 +8,8 @@
 #ifndef _PISP_FE_STATISTICS_H_
 #define _PISP_FE_STATISTICS_H_
 
+#include <stdint.h>
+
 #define PISP_FLOATING_STATS_NUM_ZONES 4
 #define PISP_AGC_STATS_NUM_BINS 1024
 #define PISP_AGC_STATS_SIZE 16
