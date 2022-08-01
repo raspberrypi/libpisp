@@ -26,4 +26,9 @@ libpisp = shared_library('libpisp',
                            install : true,
                            dependencies : pisp_deps)
 
+pkg_mod = import('pkgconfig')
+pkg_mod.generate(libpisp,
+                 description : 'Pisp Library',
+                 subdirs : 'libpisp')
+
 meson.add_install_script('ldconfig')
