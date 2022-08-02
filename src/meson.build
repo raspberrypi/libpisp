@@ -12,6 +12,7 @@ pisp_sources += backend_sources
 
 add_project_arguments('-DBOOST_LOG_DYN_LINK', language : 'cpp')
 add_project_link_arguments('-DBOOST_LOG_DYN_LINK', language : 'cpp')
+add_project_link_arguments('-lboost_system', language : 'cpp')
 
 boost_dep = dependency('boost', modules : ['log', 'log_setup', 'thread'])
 
