@@ -21,7 +21,7 @@ struct pisp_image_format_config {
 	int32_t stride2;
 };
 
-static_assert(sizeof(struct pisp_image_format_config) == 16);
+static_assert(sizeof(struct pisp_image_format_config) == 16, "pisp_image_format_config not packed as expected");
 
 typedef enum {
 	PISP_FAIL    = -1,  // generic failure code

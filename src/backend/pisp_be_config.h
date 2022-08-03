@@ -521,7 +521,7 @@ struct pisp_tile {
 	// 160 bytes
 };
 
-static_assert(sizeof(struct pisp_tile) == 160);
+static_assert(sizeof(struct pisp_tile) == 160, "pisp_tile not packed as expected");
 
 struct pisp_be_tiles_config {
 	struct pisp_be_config config;
