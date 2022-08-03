@@ -23,7 +23,7 @@ void PiSP::logging_init(void)
     logging::add_common_attributes();
 
     logging::formatter format =
-        expr::format("[%1%] %2%")
+        expr::format("[%1%] LIBPISP %2%")
         % expr::attr<trivial::severity_level>("Severity")
         % expr::smessage;
 
