@@ -71,9 +71,10 @@ int OutputStage::PushEndDown(int input_end, Dir dir)
 		if (aligned_output_end > output_interval_.offset) {
 			output_end = aligned_output_end;
 			PISP_LOG(warning, "OutputStage: Unable to achieve optimal alignment");
-		} else if (input_interval_.offset < image_size) // test against size in case this branch already finished
+		} else if (input_interval_.offset < image_size) { // test against size in case this branch already finished
 			PISP_LOG(fatal, "OutputStage: Unable to achieve mandatory alignment");
 			throw TilingException();
+		}
 	}
 	input_interval_.SetEnd(input_end);
 	output_interval_.SetEnd(output_end);
