@@ -782,11 +782,13 @@ void BackEnd::Prepare(pisp_be_tiles_config *config)
 	// Integral images are only valid for a single tile output.
 	PISP_ASSERT((num_tiles_x_ * num_tiles_y_ == 1) || !integral_image_output);
 
-	// 4. Write the config and tiles to the provided buffer to send to the hardware.
-	config->num_tiles = num_tiles_x_ * num_tiles_y_;
-	memcpy(config->tiles, tiles_.data(), config->num_tiles * sizeof(pisp_tile));
-	config->config = be_config_;
+	if (config) {	// Allow passing of empty pointer, if only be_config_ should be filled
+		// 4. Write the config and tiles to the provided buffer to send to the hardware.
+		config->num_tiles = num_tiles_x_ * num_tiles_y_;
+		memcpy(config->tiles, tiles_.data(), config->num_tiles * sizeof(pisp_tile));
+		config->config = be_config_;
 
-	// 5. Clear any dirty flags for the next configuration update.
-	be_config_.dirty_flags_bayer = be_config_.dirty_flags_rgb = be_config_.dirty_flags_extra = 0;
+		// 5. Clear any dirty flags for the next configuration update.
+		be_config_.dirty_flags_bayer = be_config_.dirty_flags_rgb = be_config_.dirty_flags_extra = 0;
+	}
 }
