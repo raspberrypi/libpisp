@@ -20,7 +20,7 @@
 #define PISP_FE_ENABLE_OUTPUT(i) (PISP_FE_ENABLE_OUTPUT0<<(4*i))
 
 
-enum pisp_fe_enable {
+typedef enum {
 	PISP_FE_ENABLE_INPUT = 0x000001,
 	PISP_FE_ENABLE_DECOMPRESS = 0x000002,
 	PISP_FE_ENABLE_DECOMPAND = 0x000004,
@@ -42,34 +42,34 @@ enum pisp_fe_enable {
 	PISP_FE_ENABLE_DOWNSCALE1 = 0x200000,
 	PISP_FE_ENABLE_COMPRESS1 = 0x400000,
 	PISP_FE_ENABLE_OUTPUT1 = 0x800000
-};
+} pisp_fe_enable;
 
 /*
  * We use the enable flags to show when blocks are "dirty", but we need some
  * extra ones too.
  */
-enum pisp_fe_dirty {
+typedef enum {
 	PISP_FE_DIRTY_GLOBAL = 0x0001,
 	PISP_FE_DIRTY_FLOATING = 0x0002,
 	PISP_FE_DIRTY_OUTPUT_AXI = 0x0004
-};
+} pisp_fe_dirty;
 
-struct pisp_fe_global_config {
+typedef struct {
 	uint32_t enables;
 	uint8_t bayer_order;
 	uint8_t pad[3];
-};
+} pisp_fe_global_config;
 
-struct pisp_fe_input_axi_config {
+typedef struct {
 	/* burst length minus one, in the range 0..15; OR'd with flags */
 	uint8_t maxlen_flags;
 	/* { prot[2:0], cache[3:0] } fields */
 	uint8_t cache_prot;
 	/* QoS (only 4 LS bits are used) */
 	uint16_t qos;
-};
+} pisp_fe_input_axi_config;
 
-struct pisp_fe_output_axi_config {
+typedef struct {
 	/* burst length minus one, in the range 0..15; OR'd with flags */
 	uint8_t maxlen_flags;
 	/* { prot[2:0], cache[3:0] } fields */
@@ -80,67 +80,67 @@ struct pisp_fe_output_axi_config {
 	uint16_t thresh;
 	/*  For Panic mode: Output FIFO statistics throttle threshold */
 	uint16_t throttle;
-};
+} pisp_fe_output_axi_config;
 
-struct pisp_fe_input_config {
+typedef struct {
 	uint8_t streaming;
 	uint8_t pad[3];
-	struct pisp_image_format_config format;
-	struct pisp_fe_input_axi_config axi;
+	pisp_image_format_config format;
+	pisp_fe_input_axi_config axi;
 	/* Extra cycles delay before issuing each burst request */
 	uint8_t holdoff;
 	uint8_t pad2[3];
-};
+} pisp_fe_input_config;
 
-struct pisp_fe_output_config {
-	struct pisp_image_format_config format;
+typedef struct {
+	pisp_image_format_config format;
 	uint16_t ilines;
 	uint8_t pad[2];
-};
+} pisp_fe_output_config;
 
-struct pisp_fe_input_buffer_config {
+typedef struct {
 	uint32_t addr_lo;
 	uint32_t addr_hi;
 	uint16_t frame_id;
 	uint16_t pad;
-};
+} pisp_fe_input_buffer_config;
 
 #define PISP_FE_DECOMPAND_LUT_SIZE 65
 
-struct pisp_fe_decompand_config {
+typedef struct {
 	uint16_t lut[PISP_FE_DECOMPAND_LUT_SIZE];
 	uint16_t pad;
-};
+} pisp_fe_decompand_config;
 
-struct pisp_fe_dpc_config {
+typedef struct {
 	uint8_t coeff_level;
 	uint8_t coeff_range;
 	uint8_t coeff_range2;
 #define PISP_FE_DPC_FLAG_FOLDBACK 1
 #define PISP_FE_DPC_FLAG_VFLAG 2
 	uint8_t flags;
-};
+} pisp_fe_dpc_config;
 
 #define PISP_FE_LSC_LUT_SIZE 16
 
-struct pisp_fe_lsc_config {
+typedef struct {
 	uint8_t shift;
 	uint8_t pad0;
 	uint16_t scale;
 	uint16_t centre_x;
 	uint16_t centre_y;
 	uint16_t lut[PISP_FE_LSC_LUT_SIZE];
-};
+} pisp_fe_lsc_config;
 
-struct pisp_fe_rgby_config {
+typedef struct {
 	uint16_t gain_r;
 	uint16_t gain_g;
 	uint16_t gain_b;
 	uint8_t maxflag;
 	uint8_t pad;
-};
+} pisp_fe_rgby_config;
 
-struct pisp_fe_agc_stats_config {
+typedef struct {
 	uint16_t offset_x;
 	uint16_t offset_y;
 	uint16_t size_x;
@@ -154,9 +154,9 @@ struct pisp_fe_agc_stats_config {
 	uint8_t row_shift;
 	uint8_t float_shift;
 	uint8_t pad1[2];
-};
+} pisp_fe_agc_stats_config;
 
-struct pisp_fe_awb_stats_config {
+typedef struct {
 	uint16_t offset_x;
 	uint16_t offset_y;
 	uint16_t size_x;
@@ -169,22 +169,22 @@ struct pisp_fe_awb_stats_config {
 	uint16_t g_hi;
 	uint16_t b_lo;
 	uint16_t b_hi;
-};
+} pisp_fe_awb_stats_config;
 
-struct pisp_fe_floating_stats_region {
+typedef struct {
 	uint16_t offset_x;
 	uint16_t offset_y;
 	uint16_t size_x;
 	uint16_t size_y;
-};
+} pisp_fe_floating_stats_region;
 
-struct pisp_fe_floating_stats_config {
-	struct pisp_fe_floating_stats_region regions[PISP_FLOATING_STATS_NUM_ZONES];
-};
+typedef struct {
+	pisp_fe_floating_stats_region regions[PISP_FLOATING_STATS_NUM_ZONES];
+} pisp_fe_floating_stats_config;
 
 #define PISP_FE_CDAF_NUM_WEIGHTS 8
 
-struct pisp_fe_cdaf_stats_config {
+typedef struct {
 	uint16_t noise_constant;
 	uint16_t noise_slope;
 	uint16_t offset_x;
@@ -194,28 +194,28 @@ struct pisp_fe_cdaf_stats_config {
 	uint16_t skip_x;
 	uint16_t skip_y;
 	uint32_t mode;
-};
+} pisp_fe_cdaf_stats_config;
 
-struct pisp_fe_stats_buffer_config {
+typedef struct {
 	uint32_t addr_lo;
 	uint32_t addr_hi;
-};
+} pisp_fe_stats_buffer_config;
 
-struct pisp_fe_crop_config {
+typedef struct {
 	uint16_t offset_x;
 	uint16_t offset_y;
 	uint16_t width;
 	uint16_t height;
-};
+} pisp_fe_crop_config;
 
-enum pisp_fe_downscale_flags {
+typedef enum {
 	DOWNSCALE_BAYER =
 		1, /* downscale the four Bayer components independently... */
 	DOWNSCALE_BIN =
 		2 /* ...without trying to preserve their spatial relationship */
-};
+} pisp_fe_downscale_flags;
 
-struct pisp_fe_downscale_config {
+typedef struct {
 	uint8_t xin;
 	uint8_t xout;
 	uint8_t yin;
@@ -224,46 +224,46 @@ struct pisp_fe_downscale_config {
 	uint8_t pad[3];
 	uint16_t output_width;
 	uint16_t output_height;
-};
+} pisp_fe_downscale_config;
 
-struct pisp_fe_output_buffer_config {
+typedef struct {
 	uint32_t addr_lo;
 	uint32_t addr_hi;
-};
+} pisp_fe_output_buffer_config;
 
 /* Each of the two output channels/branches: */
-struct pisp_fe_output_branch_config {
-	struct pisp_fe_crop_config crop;
-	struct pisp_fe_downscale_config downscale;
-	struct pisp_compress_config compress;
-	struct pisp_fe_output_config output;
+typedef struct {
+	pisp_fe_crop_config crop;
+	pisp_fe_downscale_config downscale;
+	pisp_compress_config compress;
+	pisp_fe_output_config output;
 	uint32_t pad;
-};
+} pisp_fe_output_branch_config;
 
 /* And finally one to rule them all: */
 typedef struct {
 	/* I/O configuration: */
-	struct pisp_fe_stats_buffer_config stats_buffer;
-	struct pisp_fe_output_buffer_config output_buffer[PISP_FE_NUM_OUTPUTS];
-	struct pisp_fe_input_buffer_config input_buffer;
+	pisp_fe_stats_buffer_config stats_buffer;
+	pisp_fe_output_buffer_config output_buffer[PISP_FE_NUM_OUTPUTS];
+	pisp_fe_input_buffer_config input_buffer;
 	/* processing configuration: */
-	struct pisp_fe_global_config global;
-	struct pisp_fe_input_config input;
-	struct pisp_decompress_config decompress;
-	struct pisp_fe_decompand_config decompand;
-	struct pisp_bla_config bla;
-	struct pisp_fe_dpc_config dpc;
-	struct pisp_fe_crop_config stats_crop;
+	pisp_fe_global_config global;
+	pisp_fe_input_config input;
+	pisp_decompress_config decompress;
+	pisp_fe_decompand_config decompand;
+	pisp_bla_config bla;
+	pisp_fe_dpc_config dpc;
+	pisp_fe_crop_config stats_crop;
 	uint32_t spare1; /* placeholder for future decimate configuration */
-	struct pisp_bla_config blc;
-	struct pisp_fe_rgby_config rgby;
-	struct pisp_fe_lsc_config lsc;
-	struct pisp_fe_agc_stats_config agc_stats;
-	struct pisp_fe_awb_stats_config awb_stats;
-	struct pisp_fe_cdaf_stats_config cdaf_stats;
-	struct pisp_fe_floating_stats_config floating_stats;
-	struct pisp_fe_output_axi_config output_axi;
-	struct pisp_fe_output_branch_config ch[PISP_FE_NUM_OUTPUTS];
+	pisp_bla_config blc;
+	pisp_fe_rgby_config rgby;
+	pisp_fe_lsc_config lsc;
+	pisp_fe_agc_stats_config agc_stats;
+	pisp_fe_awb_stats_config awb_stats;
+	pisp_fe_cdaf_stats_config cdaf_stats;
+	pisp_fe_floating_stats_config floating_stats;
+	pisp_fe_output_axi_config output_axi;
+	pisp_fe_output_branch_config ch[PISP_FE_NUM_OUTPUTS];
 	/* non-register fields: */
 	uint32_t dirty_flags; /* these use pisp_fe_enable */
 	uint32_t dirty_flags_extra; /* these use pisp_fe_dirty */

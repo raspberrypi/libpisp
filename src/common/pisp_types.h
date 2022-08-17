@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 /* This definition must match the format description in the hardware exactly! */
-struct pisp_image_format_config {
+typedef struct {
 	/* size in pixels */
 	uint16_t width, height;
 	/* must match struct pisp_image_format below */
@@ -19,9 +19,9 @@ struct pisp_image_format_config {
 	int32_t stride;
 	/* some planar image formats will need a second stride */
 	int32_t stride2;
-};
+} pisp_image_format_config;
 
-static_assert(sizeof(struct pisp_image_format_config) == 16, "pisp_image_format_config not packed as expected");
+static_assert(sizeof(pisp_image_format_config) == 16, "pisp_image_format_config not packed as expected");
 
 typedef enum {
 	PISP_FAIL    = -1,  // generic failure code
@@ -29,7 +29,7 @@ typedef enum {
     // other more specific failure codes here...
 } pisp_status;
 
-enum pisp_bayer_order {
+typedef enum {
 	/*
 	 * Note how bayer_order&1 tells you if G is on the even pixels of the
 	 * checkerboard or not, and bayer_order&2 tells you if R is on the even
@@ -42,9 +42,9 @@ enum pisp_bayer_order {
 	PISP_BAYER_ORDER_BGGR = 2,
 	PISP_BAYER_ORDER_GRBG = 3,
 	PISP_BAYER_ORDER_GREYSCALE = 128
-};
+} pisp_bayer_order;
 
-enum pisp_image_format {
+typedef enum {
 	/*
 	 * Precise values are mostly tbd. Generally these will be portmanteau
 	 * values comprising bit fields and flags. This format must be shared
@@ -99,7 +99,7 @@ enum pisp_image_format {
 	PISP_IMAGE_FORMAT_SINGLE_16 = PISP_IMAGE_FORMAT_BPS_16,
 	PISP_IMAGE_FORMAT_THREE_16 =
 		PISP_IMAGE_FORMAT_BPS_16 | PISP_IMAGE_FORMAT_THREE_CHANNEL
-};
+} pisp_image_format;
 
 #define PISP_IMAGE_FORMAT_bps_8(fmt)                                           \
 	(((fmt)&PISP_IMAGE_FORMAT_BPS_MASK) == PISP_IMAGE_FORMAT_BPS_8)

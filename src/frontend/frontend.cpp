@@ -8,12 +8,12 @@ using namespace PiSP;
 
 namespace {
 
-struct config_param {
+typedef struct {
 	uint32_t dirty_flag;
 	uint32_t dirty_flag_extra;
 	std::size_t offset;
 	std::size_t size;
-};
+} config_param;
 
 const config_param config_map[] = {
 	/* *_dirty_flag_extra types */

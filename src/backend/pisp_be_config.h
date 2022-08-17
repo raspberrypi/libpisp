@@ -31,7 +31,7 @@
 
 #define PISP_BACK_END_NUM_TILES 64
 
-enum pisp_be_bayer_enable {
+typedef enum {
 	PISP_BE_BAYER_ENABLE_INPUT = 0x000001,
 	PISP_BE_BAYER_ENABLE_DECOMPRESS = 0x000002,
 	PISP_BE_BAYER_ENABLE_DPC = 0x000004,
@@ -55,9 +55,9 @@ enum pisp_be_bayer_enable {
 	PISP_BE_BAYER_ENABLE_CAC = 0x100000,
 	PISP_BE_BAYER_ENABLE_DEBIN = 0x200000,
 	PISP_BE_BAYER_ENABLE_DEMOSAIC = 0x400000,
-};
+} pisp_be_bayer_enable;
 
-enum pisp_be_rgb_enable {
+typedef enum {
 	PISP_BE_RGB_ENABLE_INPUT = 0x000001,
 	PISP_BE_RGB_ENABLE_CCM = 0x000002,
 	PISP_BE_RGB_ENABLE_SAT_CONTROL = 0x000004,
@@ -76,7 +76,7 @@ enum pisp_be_rgb_enable {
 	PISP_BE_RGB_ENABLE_OUTPUT0 = 0x040000,
 	PISP_BE_RGB_ENABLE_OUTPUT1 = 0x080000,
 	PISP_BE_RGB_ENABLE_HOG = 0x200000
-};
+} pisp_be_rgb_enable;
 
 #define PISP_BE_RGB_ENABLE_CSC(i) (PISP_BE_RGB_ENABLE_CSC0 << (i))
 #define PISP_BE_RGB_ENABLE_DOWNSCALE(i) (PISP_BE_RGB_ENABLE_DOWNSCALE0 << (i))
@@ -87,33 +87,33 @@ enum pisp_be_rgb_enable {
  * We use the enable flags to show when blocks are "dirty", but we need some
  * extra ones too.
  */
-enum pisp_be_dirty {
+typedef enum {
 	PISP_BE_DIRTY_GLOBAL = 0x0001,
 	PISP_BE_DIRTY_SH_FC_COMBINE = 0x0002,
 	PISP_BE_DIRTY_CROP = 0x0004
-};
+} pisp_be_dirty;
 
-struct pisp_be_global_config {
+typedef struct {
 	uint32_t bayer_enables;
 	uint32_t rgb_enables;
 	uint8_t bayer_order;
 	uint8_t pad[3];
-};
+} pisp_be_global_config;
 
-struct pisp_be_input_buffer_config {
+typedef struct {
 	/* low 32 bits followed by high 32 bits (for each of up to three planes) */
 	uint32_t addr[3][2];
-};
+} pisp_be_input_buffer_config;
 
-struct pisp_be_dpc_config {
+typedef struct {
 	uint8_t coeff_level;
 	uint8_t coeff_range;
 	uint8_t pad;
 #define PISP_BE_DPC_FLAG_FOLDBACK 1
 	uint8_t flags;
-};
+} pisp_be_dpc_config;
 
-struct pisp_be_geq_config {
+typedef struct {
 	uint16_t offset;
 #define PISP_BE_GEQ_SHARPER (1 << 15)
 #define PISP_BE_GEQ_SLOPE ((1 << 10) - 1)
@@ -121,14 +121,14 @@ struct pisp_be_geq_config {
 	uint16_t slope_sharper;
 	uint16_t min;
 	uint16_t max;
-};
+} pisp_be_geq_config;
 
-struct pisp_be_tdn_input_buffer_config {
+typedef struct {
 	/* low 32 bits followed by high 32 bits */
 	uint32_t addr[2];
-};
+} pisp_be_tdn_input_buffer_config;
 
-struct pisp_be_tdn_config {
+typedef struct {
 	uint16_t black_level;
 	uint16_t ratio;
 	uint16_t noise_constant;
@@ -136,14 +136,14 @@ struct pisp_be_tdn_config {
 	uint16_t threshold;
 	uint8_t reset;
 	uint8_t pad;
-};
+} pisp_be_tdn_config;
 
-struct pisp_be_tdn_output_buffer_config {
+typedef struct {
 	/* low 32 bits followed by high 32 bits */
 	uint32_t addr[2];
-};
+} pisp_be_tdn_output_buffer_config;
 
-struct pisp_be_sdn_config {
+typedef struct {
 	uint16_t black_level;
 	uint8_t leakage;
 	uint8_t pad;
@@ -151,17 +151,17 @@ struct pisp_be_sdn_config {
 	uint16_t noise_slope;
 	uint16_t noise_constant2;
 	uint16_t noise_slope2;
-};
+} pisp_be_sdn_config;
 
-struct pisp_be_stitch_input_buffer_config {
+typedef struct {
 	/* low 32 bits followed by high 32 bits */
 	uint32_t addr[2];
-};
+} pisp_be_stitch_input_buffer_config;
 
 #define PISP_BE_STITCH_STREAMING_LONG 0x8000
 #define PISP_BE_STITCH_EXPOSURE_RATIO_MASK 0x7fff
 
-struct pisp_be_stitch_config {
+typedef struct {
 	uint16_t threshold_lo;
 	uint8_t threshold_diff_power;
 	uint8_t pad;
@@ -171,24 +171,24 @@ struct pisp_be_stitch_config {
 
 	uint8_t motion_threshold_256;
 	uint8_t motion_threshold_recip;
-};
+} pisp_be_stitch_config;
 
-struct pisp_be_stitch_output_buffer_config {
+typedef struct {
 	/* low 32 bits followed by high 32 bits */
 	uint32_t addr[2];
-};
+} pisp_be_stitch_output_buffer_config;
 
-struct pisp_be_cdn_config {
+typedef struct {
 	uint16_t thresh;
 	uint8_t iir_strength;
 	uint8_t g_adjust;
-};
+} pisp_be_cdn_config;
 
 #define PISP_BE_LSC_LOG_GRID_SIZE 5
 #define PISP_BE_LSC_GRID_SIZE (1 << PISP_BE_LSC_LOG_GRID_SIZE)
 #define PISP_BE_LSC_STEP_PRECISION 18
 
-struct pisp_be_lsc_config {
+typedef struct {
 	/* (1<<18) / grid_cell_width */
 	uint16_t grid_step_x;
 	/* (1<<18) / grid_cell_height */
@@ -196,78 +196,78 @@ struct pisp_be_lsc_config {
 	/* RGB gains jointly encoded in 32 bits */
 	uint32_t lut_packed[PISP_BE_LSC_GRID_SIZE + 1]
 			   [PISP_BE_LSC_GRID_SIZE + 1];
-};
+} pisp_be_lsc_config;
 
-struct pisp_be_lsc_extra {
+typedef struct {
 	uint16_t offset_x;
 	uint16_t offset_y;
-};
+} pisp_be_lsc_extra;
 
 #define PISP_BE_CAC_LOG_GRID_SIZE 3
 #define PISP_BE_CAC_GRID_SIZE (1 << PISP_BE_CAC_LOG_GRID_SIZE)
 #define PISP_BE_CAC_STEP_PRECISION 20
 
-struct pisp_be_cac_config {
+typedef struct {
 	/* (1<<20) / grid_cell_width */
 	uint16_t grid_step_x;
 	/* (1<<20) / grid_cell_height */
 	uint16_t grid_step_y;
 	/* [gridy][gridx][rb][xy] */
 	int8_t lut[PISP_BE_CAC_GRID_SIZE + 1][PISP_BE_CAC_GRID_SIZE + 1][2][2];
-};
+} pisp_be_cac_config;
 
-struct pisp_be_cac_extra {
+typedef struct {
 	uint16_t offset_x;
 	uint16_t offset_y;
-};
+} pisp_be_cac_extra;
 
 #define PISP_BE_DEBIN_NUM_COEFFS 4
 
-struct pisp_be_debin_config {
+typedef struct {
 	int8_t coeffs[PISP_BE_DEBIN_NUM_COEFFS];
 	int8_t h_enable;
 	int8_t v_enable;
 	int8_t pad[2];
-};
+} pisp_be_debin_config;
 
 #define PISP_BE_TONEMAP_LUT_SIZE 64
 
-struct pisp_be_tonemap_config {
+typedef struct {
 	uint16_t detail_constant;
 	uint16_t detail_slope;
 	uint16_t iir_strength;
 	uint16_t strength;
 	uint32_t lut[PISP_BE_TONEMAP_LUT_SIZE];
-};
+} pisp_be_tonemap_config;
 
-struct pisp_be_demosaic_config {
+typedef struct {
 	uint8_t sharper;
 	uint8_t fc_mode;
 	uint8_t pad[2];
-};
+} pisp_be_demosaic_config;
 
-struct pisp_be_ccm_config {
+typedef struct {
 	int16_t coeffs[9];
 	uint8_t pad[2];
 	int32_t offsets[3];
-};
+} pisp_be_ccm_config;
 
-struct pisp_be_sat_control_config {
+typedef struct {
 	uint8_t shift_r;
 	uint8_t shift_g;
 	uint8_t shift_b;
 	uint8_t pad;
-};
+} pisp_be_sat_control_config;
 
-struct pisp_be_false_colour_config {
+typedef struct {
 	uint8_t distance;
 	uint8_t pad[3];
-};
+} pisp_be_false_colour_config;
 
 #define PISP_BE_SHARPEN_SIZE 5
 #define PISP_BE_SHARPEN_FUNC_NUM_POINTS 9
 
-struct pisp_be_sharpen_config {
+typedef struct {
 	int8_t kernel0[PISP_BE_SHARPEN_SIZE * PISP_BE_SHARPEN_SIZE];
 	int8_t pad0[3];
 	int8_t kernel1[PISP_BE_SHARPEN_SIZE * PISP_BE_SHARPEN_SIZE];
@@ -310,168 +310,168 @@ struct pisp_be_sharpen_config {
 	uint8_t white;
 	uint8_t black;
 	uint8_t grey;
-};
+} pisp_be_sharpen_config;
 
-struct pisp_be_sh_fc_combine_config {
+typedef struct {
 	uint8_t y_factor;
 	uint8_t c1_factor;
 	uint8_t c2_factor;
 	uint8_t pad;
-};
+} pisp_be_sh_fc_combine_config;
 
 #define PISP_BE_GAMMA_LUT_SIZE 64
 
-struct pisp_be_gamma_config {
+typedef struct {
 	uint32_t lut[PISP_BE_GAMMA_LUT_SIZE];
-};
+} pisp_be_gamma_config;
 
-struct pisp_be_crop_config {
+typedef struct {
 	uint16_t offset_x, offset_y;
 	uint16_t width, height;
-};
+} pisp_be_crop_config;
 
 #define PISP_BE_RESAMPLE_FILTER_SIZE 96
 
-struct pisp_be_resample_config {
+typedef struct {
 	uint16_t scale_factor_h, scale_factor_v;
 	int16_t coef[PISP_BE_RESAMPLE_FILTER_SIZE];
-};
+} pisp_be_resample_config;
 
-struct pisp_be_resample_extra {
+typedef struct {
 	uint16_t scaled_width;
 	uint16_t scaled_height;
 	int16_t initial_phase_h[3];
 	int16_t initial_phase_v[3];
-};
+} pisp_be_resample_extra;
 
-struct pisp_be_downscale_config {
+typedef struct {
 	uint16_t scale_factor_h;
 	uint16_t scale_factor_v;
 	uint16_t scale_recip_h;
 	uint16_t scale_recip_v;
-};
+} pisp_be_downscale_config;
 
-struct pisp_be_downscale_extra {
+typedef struct {
 	uint16_t scaled_width;
 	uint16_t scaled_height;
-};
+} pisp_be_downscale_extra;
 
-struct pisp_be_hog_config {
+typedef struct {
 	uint8_t compute_signed;
 	uint8_t channel_mix[3];
 	uint32_t stride;
-};
+} pisp_be_hog_config;
 
-struct pisp_be_axi_config {
+typedef struct {
 	uint8_t r_qos; /* Read QoS */
 	uint8_t r_cache_prot; /* Read { prot[2:0], cache[3:0] } */
 	uint8_t w_qos; /* Write QoS */
 	uint8_t w_cache_prot; /* Write { prot[2:0], cache[3:0] } */
-};
+} pisp_be_axi_config;
 
-enum pisp_be_transform {
+typedef enum {
 	PISP_BE_TRANSFORM_NONE = 0x0,
 	PISP_BE_TRANSFORM_HFLIP = 0x1,
 	PISP_BE_TRANSFORM_VFLIP = 0x2,
 	PISP_BE_TRANSFORM_ROT180 =
 		(PISP_BE_TRANSFORM_HFLIP | PISP_BE_TRANSFORM_VFLIP)
-};
+} pisp_be_transform;
 
-struct pisp_be_output_format_config {
-	struct pisp_image_format_config image;
+typedef struct {
+	pisp_image_format_config image;
 	uint8_t transform;
 	uint8_t pad[3];
 	uint16_t lo;
 	uint16_t hi;
 	uint16_t lo2;
 	uint16_t hi2;
-};
+} pisp_be_output_format_config;
 
-struct pisp_be_output_buffer_config {
+typedef struct {
 	/* low 32 bits followed by high 32 bits (for each of 3 planes) */
 	uint32_t addr[3][2];
-};
+} pisp_be_output_buffer_config;
 
-struct pisp_be_hog_buffer_config {
+typedef struct {
 	/* low 32 bits followed by high 32 bits */
 	uint32_t addr[2];
-};
+} pisp_be_hog_buffer_config;
 
-struct pisp_be_config {
+typedef struct {
 	/* I/O configuration: */
-	struct pisp_be_input_buffer_config input_buffer;
-	struct pisp_be_tdn_input_buffer_config tdn_input_buffer;
-	struct pisp_be_stitch_input_buffer_config stitch_input_buffer;
-	struct pisp_be_tdn_output_buffer_config tdn_output_buffer;
-	struct pisp_be_stitch_output_buffer_config stitch_output_buffer;
-	struct pisp_be_output_buffer_config output_buffer[PISP_BACK_END_NUM_OUTPUTS];
-	struct pisp_be_hog_buffer_config hog_buffer;
+	pisp_be_input_buffer_config input_buffer;
+	pisp_be_tdn_input_buffer_config tdn_input_buffer;
+	pisp_be_stitch_input_buffer_config stitch_input_buffer;
+	pisp_be_tdn_output_buffer_config tdn_output_buffer;
+	pisp_be_stitch_output_buffer_config stitch_output_buffer;
+	pisp_be_output_buffer_config output_buffer[PISP_BACK_END_NUM_OUTPUTS];
+	pisp_be_hog_buffer_config hog_buffer;
 	/* Processing configuration: */
-	struct pisp_be_global_config global;
-	struct pisp_image_format_config input_format;
-	struct pisp_decompress_config decompress;
-	struct pisp_be_dpc_config dpc;
-	struct pisp_be_geq_config geq;
-	struct pisp_image_format_config tdn_input_format;
-	struct pisp_decompress_config tdn_decompress;
-	struct pisp_be_tdn_config tdn;
-	struct pisp_compress_config tdn_compress;
-	struct pisp_image_format_config tdn_output_format;
-	struct pisp_be_sdn_config sdn;
-	struct pisp_bla_config blc;
-	struct pisp_compress_config stitch_compress;
-	struct pisp_image_format_config stitch_output_format;
-	struct pisp_image_format_config stitch_input_format;
-	struct pisp_decompress_config stitch_decompress;
-	struct pisp_be_stitch_config stitch;
-	struct pisp_be_lsc_config lsc;
-	struct pisp_wbg_config wbg;
-	struct pisp_be_cdn_config cdn;
-	struct pisp_be_cac_config cac;
-	struct pisp_be_debin_config debin;
-	struct pisp_be_tonemap_config tonemap;
-	struct pisp_be_demosaic_config demosaic;
-	struct pisp_be_ccm_config ccm;
-	struct pisp_be_sat_control_config sat_control;
-	struct pisp_be_ccm_config ycbcr;
-	struct pisp_be_sharpen_config sharpen;
-	struct pisp_be_false_colour_config false_colour;
-	struct pisp_be_sh_fc_combine_config sh_fc_combine;
-	struct pisp_be_ccm_config ycbcr_inverse;
-	struct pisp_be_gamma_config gamma;
-	struct pisp_be_ccm_config csc[PISP_BACK_END_NUM_OUTPUTS];
-	struct pisp_be_downscale_config downscale[PISP_BACK_END_NUM_OUTPUTS];
-	struct pisp_be_resample_config resample[PISP_BACK_END_NUM_OUTPUTS];
-	struct pisp_be_output_format_config
+	pisp_be_global_config global;
+	pisp_image_format_config input_format;
+	pisp_decompress_config decompress;
+	pisp_be_dpc_config dpc;
+	pisp_be_geq_config geq;
+	pisp_image_format_config tdn_input_format;
+	pisp_decompress_config tdn_decompress;
+	pisp_be_tdn_config tdn;
+	pisp_compress_config tdn_compress;
+	pisp_image_format_config tdn_output_format;
+	pisp_be_sdn_config sdn;
+	pisp_bla_config blc;
+	pisp_compress_config stitch_compress;
+	pisp_image_format_config stitch_output_format;
+	pisp_image_format_config stitch_input_format;
+	pisp_decompress_config stitch_decompress;
+	pisp_be_stitch_config stitch;
+	pisp_be_lsc_config lsc;
+	pisp_wbg_config wbg;
+	pisp_be_cdn_config cdn;
+	pisp_be_cac_config cac;
+	pisp_be_debin_config debin;
+	pisp_be_tonemap_config tonemap;
+	pisp_be_demosaic_config demosaic;
+	pisp_be_ccm_config ccm;
+	pisp_be_sat_control_config sat_control;
+	pisp_be_ccm_config ycbcr;
+	pisp_be_sharpen_config sharpen;
+	pisp_be_false_colour_config false_colour;
+	pisp_be_sh_fc_combine_config sh_fc_combine;
+	pisp_be_ccm_config ycbcr_inverse;
+	pisp_be_gamma_config gamma;
+	pisp_be_ccm_config csc[PISP_BACK_END_NUM_OUTPUTS];
+	pisp_be_downscale_config downscale[PISP_BACK_END_NUM_OUTPUTS];
+	pisp_be_resample_config resample[PISP_BACK_END_NUM_OUTPUTS];
+	pisp_be_output_format_config
 				output_format[PISP_BACK_END_NUM_OUTPUTS];
-	struct pisp_be_hog_config hog;
-	struct pisp_be_axi_config axi;
+	pisp_be_hog_config hog;
+	pisp_be_axi_config axi;
 	/* Non-register fields: */
-	struct pisp_be_lsc_extra lsc_extra;
-	struct pisp_be_cac_extra cac_extra;
-	struct pisp_be_downscale_extra
+	pisp_be_lsc_extra lsc_extra;
+	pisp_be_cac_extra cac_extra;
+	pisp_be_downscale_extra
 				downscale_extra[PISP_BACK_END_NUM_OUTPUTS];
-	struct pisp_be_resample_extra resample_extra[PISP_BACK_END_NUM_OUTPUTS];
-	struct pisp_be_crop_config crop;
-	struct pisp_image_format_config hog_format;
+	pisp_be_resample_extra resample_extra[PISP_BACK_END_NUM_OUTPUTS];
+	pisp_be_crop_config crop;
+	pisp_image_format_config hog_format;
 	uint32_t dirty_flags_bayer; /* these use pisp_be_bayer_enable */
 	uint32_t dirty_flags_rgb; /* use pisp_be_rgb_enable */
 	uint32_t dirty_flags_extra; /* these use pisp_be_dirty_t */
-};
+} pisp_be_config;
 
 /*
  * We also need a tile structure to describe the size of the tiles going
  * through the pipeline.
  */
 
-enum pisp_tile_edge {
+typedef enum {
 	PISP_LEFT_EDGE = (1 << 0),
 	PISP_RIGHT_EDGE = (1 << 1),
 	PISP_TOP_EDGE = (1 << 2),
 	PISP_BOTTOM_EDGE = (1 << 3)
-};
+} pisp_tile_edge;
 
-struct pisp_tile {
+typedef struct {
 	uint8_t edge; // enum pisp_tile_edge
 	uint8_t pad0[3];
 	// 4 bytes
@@ -519,14 +519,14 @@ struct pisp_tile {
 	// 156 bytes
 	uint32_t output_hog_addr_offset;
 	// 160 bytes
-};
+} pisp_tile;
 
-static_assert(sizeof(struct pisp_tile) == 160, "pisp_tile not packed as expected");
+static_assert(sizeof(pisp_tile) == 160, "pisp_tile not packed as expected");
 
-struct pisp_be_tiles_config {
-	struct pisp_be_config config;
-	struct pisp_tile tiles[PISP_BACK_END_NUM_TILES];
+typedef struct {
+	pisp_be_config config;
+	pisp_tile tiles[PISP_BACK_END_NUM_TILES];
 	int num_tiles;
-};
+} pisp_be_tiles_config;
 
 #endif /* _PISP_BE_CONFIG_H_ */
