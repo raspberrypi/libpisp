@@ -30,16 +30,12 @@ void initialise_ycbcr(pisp_be_ccm_config &ycbcr)
 
 	std::vector<int16_t> coeffs_v;
 	for (auto &x : params.get_child("coeffs"))
-	{
 		coeffs_v.push_back(x.second.get_value<int16_t>());
-	}
 	int16_t* coeffs = &coeffs_v[0];
 
 	std::vector<int32_t> offsets_v;
 	for (auto &x : params.get_child("offsets"))
-	{
 		offsets_v.push_back(x.second.get_value<int32_t>());
-	}
 	int32_t* offsets = &offsets_v[0];
 
 	memcpy(ycbcr.coeffs, coeffs, sizeof(ycbcr.coeffs));
@@ -54,37 +50,31 @@ void initialise_ycbcr_inverse(pisp_be_ccm_config &ycbcr_inverse)
 
 	std::vector<int16_t> coeffs_v;
 	for (auto &x : params.get_child("coeffs"))
-	{
 		coeffs_v.push_back(x.second.get_value<int16_t>());
-	}
 	int16_t* coeffs = &coeffs_v[0];
 
 	std::vector<int32_t> offsets_v;
 	for (auto &x : params.get_child("offsets"))
-	{
 		offsets_v.push_back(x.second.get_value<int32_t>());
-	}
 	int32_t* offsets = &offsets_v[0];
 
 	memcpy(ycbcr_inverse.coeffs, coeffs, sizeof(ycbcr_inverse.coeffs));
 	memcpy(ycbcr_inverse.offsets, offsets, sizeof(ycbcr_inverse.offsets));
 }
 
-const uint32_t gamma_lut[] = {
-	// Not so much "the obvious default", just a "sane set of values".
-	0x9b00000, 0xa0009b0, 0x97d13b0, 0x74d1d2d, 0x620247a, 0x5aa2a9a, 0x5913044, 0x5fb35d5,
-	0x54b3bd0, 0x568411b, 0x5914683, 0x5224c14, 0x49c5136, 0x4c755d2, 0x4fb5a99, 0x4fc5f94,
-	0x44b6490, 0x44b68db, 0x44c6d26, 0x3e17172, 0x3d97553, 0x3d9792c, 0x3d97d05, 0x3d980de,
-	0x3b384b7, 0x37d886a, 0x37c8be7, 0x37d8f63, 0x33f92e0, 0x2e1961f, 0x2e19900, 0x2e19be1,
-	0x5829ec2, 0x52fa444, 0x52fa973, 0x413aea2, 0x3fcb2b5, 0x3d8b6b1, 0x3a6ba89, 0x3a6be2f,
-	0x362c1d5, 0x2fec537, 0x2fec835, 0x2a7cb33, 0x225cdda, 0x225cfff, 0x222d224, 0x216d446,
-	0x42cd65c, 0x42cda88, 0x344deb4, 0x328e1f8, 0x289e520, 0x289e7a9, 0x279ea32, 0x254ecab,
-	0x253eeff, 0x241f152, 0x214f393, 0x214f5a7, 0x212f7bb, 0x20ff9cd, 0x20ffbdc, 0x214fdeb
-};
-
 void initialise_gamma(pisp_be_gamma_config &gamma)
 {
-	static_assert(sizeof(gamma_lut) == sizeof(gamma.lut), "Gamma table size mismatch");
+	boost::property_tree::ptree root;
+	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
+	auto params = root.get_child("gamma_lut");
+
+	std::vector<std::string> gamma_lut_v;
+	for (auto &x : params)
+		gamma_lut_v.push_back(x.second.data());
+	uint32_t gamma_lut[64];
+	for (int i=0; i < 64; i++)
+		gamma_lut[i] = std::stoul(gamma_lut_v[i], nullptr, 16);
+
 	memcpy(gamma.lut, gamma_lut, sizeof(gamma.lut));
 }
 
@@ -179,9 +169,61 @@ const pisp_be_sharpen_config sharpen_filter = {
 	50 // uint8_t grey;
 };
 
+#define FILTER(i) {																						\
+		auto filter = params.get_child("filter" #i);													\
+		std::vector<int8_t> kernel_v;																	\
+		for (auto &x : filter.get_child("kernel"))														\
+			kernel_v.push_back(x.second.get_value<int8_t>());											\
+		int8_t* kernel = &kernel_v[0];																	\
+		uint16_t offset = filter.get_child("offset").get_value<uint16_t>();								\
+		uint16_t threshold_slope = filter.get_child("threshold_slope").get_value<uint16_t>();			\
+		uint16_t scale = filter.get_child("scale").get_value<uint16_t>();								\
+		memcpy(sharpen.kernel##i, kernel, sizeof(sharpen.kernel##i));									\
+		memcpy(&sharpen.threshold_offset##i, &offset, sizeof(sharpen.threshold_offset##i));				\
+		memcpy(&sharpen.threshold_slope##i, &threshold_slope, sizeof(sharpen.threshold_slope##i));		\
+		memcpy(&sharpen.scale##i, &scale, sizeof(sharpen.scale##i));									\
+	}
+
+#define POS_NEG(i) {																					\
+		auto tive = params.get_child(#i "tive");														\
+		uint16_t strength = tive.get_child("strength").get_value<uint16_t>();							\
+		uint16_t pre_limit = tive.get_child("pre_limit").get_value<uint16_t>();							\
+		std::vector<uint16_t> function_v;																\
+		for (auto &x : tive.get_child("function"))														\
+			function_v.push_back(x.second.get_value<uint16_t>());										\
+		uint16_t* function = &function_v[0];															\
+		uint16_t limit = tive.get_child("limit").get_value<uint16_t>();									\
+		memcpy(&sharpen.i##tive_strength, &strength, sizeof(sharpen.i##tive_strength));					\
+		memcpy(&sharpen.i##tive_pre_limit, &pre_limit, sizeof(sharpen.i##tive_pre_limit));				\
+		memcpy(sharpen.i##tive_func, function, sizeof(sharpen.i##tive_func));							\
+		memcpy(&sharpen.i##tive_limit, &limit, sizeof(sharpen.i##tive_limit));				\
+	}
+
 void initialise_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc)
 {
-	memcpy(&sharpen, &sharpen_filter, sizeof(sharpen));
+	boost::property_tree::ptree root;
+	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
+	auto params = root.get_child("sharpen");
+
+	FILTER(0);
+	FILTER(1);
+	FILTER(2);
+	FILTER(3);
+	FILTER(4);
+
+	POS_NEG(posi);
+	POS_NEG(nega);
+
+	std::string enables_s = params.get_child("enables").data();
+	uint8_t enables = std::stoul(enables_s, nullptr, 16);
+	uint8_t white = params.get_child("white").get_value<uint8_t>();
+	uint8_t black = params.get_child("black").get_value<uint8_t>();
+	uint8_t grey = params.get_child("grey").get_value<uint8_t>();
+	memcpy(&sharpen.enables, &enables, sizeof(sharpen.enables));
+	memcpy(&sharpen.white, &white, sizeof(sharpen.white));
+	memcpy(&sharpen.black, &black, sizeof(sharpen.black));
+	memcpy(&sharpen.grey, &grey, sizeof(sharpen.grey));
+
 	memset(&shfc, 0, sizeof(shfc));
 	shfc.y_factor = 0.75 * (1 << 8);
 }
