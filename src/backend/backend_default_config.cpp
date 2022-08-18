@@ -26,7 +26,9 @@ void initialise_ycbcr(pisp_be_ccm_config &ycbcr)
 {
 	boost::property_tree::ptree root;
 	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
-	auto params = root.get_child("ycbcr");
+	auto encoding = root.get_child("colour_encoding");
+	auto selection = encoding.get_child("select").data();
+	auto params = encoding.get_child(selection).get_child("ycbcr");
 
 	std::vector<int16_t> coeffs_v;
 	for (auto &x : params.get_child("coeffs"))
@@ -46,7 +48,9 @@ void initialise_ycbcr_inverse(pisp_be_ccm_config &ycbcr_inverse)
 {
 	boost::property_tree::ptree root;
 	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
-	auto params = root.get_child("ycbcr_inverse");
+	auto encoding = root.get_child("colour_encoding");
+	auto selection = encoding.get_child("select").data();
+	auto params = encoding.get_child(selection).get_child("ycbcr_inverse");
 
 	std::vector<int16_t> coeffs_v;
 	for (auto &x : params.get_child("coeffs"))
