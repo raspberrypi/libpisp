@@ -15,4 +15,7 @@ backend_include_dir = pisp_include_dir / 'backend'
 
 install_headers(backend_headers, subdir: backend_include_dir)
 
+install_data('backend_default_config.json',
+             install_dir : '/usr/local/share/libpisp/')
+
 subdir('tiling')

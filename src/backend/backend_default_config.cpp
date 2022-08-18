@@ -1,8 +1,12 @@
 #include "backend.h"
 
 #include <string.h>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 #include "pisp_be_config.h"
+
+#define DEFAULT_CONFIG_FILE "/usr/local/share/libpisp/backend_default_config.json"
 
 // Where it might be helpful we initialise some blocks with the "obvious" default parameters. This saves users the trouble,
 // and they can just "enable" the blocks.
@@ -20,12 +24,23 @@ void initialise_debin(pisp_be_debin_config &debin)
 
 void initialise_ycbcr(pisp_be_ccm_config &ycbcr)
 {
-	int16_t coeffs[] = { 306, 601, 116, -173, -338, 512, 512, -429, -82 };
-	int32_t offsets[] = { 0, 33554432, 33554432 };
+	boost::property_tree::ptree root;
+	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
+	auto params = root.get_child("ycbcr");
 
-	static_assert(sizeof(ycbcr.coeffs) == sizeof(coeffs) &&
-			      sizeof(ycbcr.offsets) == sizeof(offsets),
-		      "ycbcr parameter size mismatch");
+	std::vector<int16_t> coeffs_v;
+	for (auto &x : params.get_child("coeffs"))
+	{
+		coeffs_v.push_back(x.second.get_value<int16_t>());
+	}
+	int16_t* coeffs = &coeffs_v[0];
+
+	std::vector<int32_t> offsets_v;
+	for (auto &x : params.get_child("offsets"))
+	{
+		offsets_v.push_back(x.second.get_value<int32_t>());
+	}
+	int32_t* offsets = &offsets_v[0];
 
 	memcpy(ycbcr.coeffs, coeffs, sizeof(ycbcr.coeffs));
 	memcpy(ycbcr.offsets, offsets, sizeof(ycbcr.offsets));
@@ -33,11 +48,23 @@ void initialise_ycbcr(pisp_be_ccm_config &ycbcr)
 
 void initialise_ycbcr_inverse(pisp_be_ccm_config &ycbcr_inverse)
 {
-	int16_t coeffs[] = { 1024, 0, 1435, 1024, -353, -731, 1024, 1813, 0 };
-	int32_t offsets[] = { -47054848, 35520512, -59441152 };
+	boost::property_tree::ptree root;
+	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
+	auto params = root.get_child("ycbcr_inverse");
 
-	static_assert(sizeof(ycbcr_inverse.coeffs) == sizeof(coeffs) &&
-		      sizeof(ycbcr_inverse.offsets) == sizeof(offsets), "ycbcr parameter size mismatch");
+	std::vector<int16_t> coeffs_v;
+	for (auto &x : params.get_child("coeffs"))
+	{
+		coeffs_v.push_back(x.second.get_value<int16_t>());
+	}
+	int16_t* coeffs = &coeffs_v[0];
+
+	std::vector<int32_t> offsets_v;
+	for (auto &x : params.get_child("offsets"))
+	{
+		offsets_v.push_back(x.second.get_value<int32_t>());
+	}
+	int32_t* offsets = &offsets_v[0];
 
 	memcpy(ycbcr_inverse.coeffs, coeffs, sizeof(ycbcr_inverse.coeffs));
 	memcpy(ycbcr_inverse.offsets, offsets, sizeof(ycbcr_inverse.offsets));
