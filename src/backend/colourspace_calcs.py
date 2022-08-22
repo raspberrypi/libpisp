@@ -1,4 +1,6 @@
 # Reference https://www.kernel.org/doc/html/v4.8/media/uapi/v4l/pixfmt-007.html
+# Also useful https://en.wikipedia.org/wiki/YCbCr#ITU-R_BT.601_conversion to verify smpte170m is correct
+# And refer to the PiSP specification, for the register details
 
 from curses.ascii import isdigit, isspace
 import numpy as np
@@ -56,13 +58,31 @@ def floats_to_ints(a):
     return a
 
 
-def floats_to_offsets(a):
+def floats_to_offsets(a, check_overflow=True):
     a = np.copy(a)
     a *= 2**(26 - 8)
     a = np.rint(a).astype(int)
+    if (a.min() < -2**26 or a.max() >= 2**26) and check_overflow:
+        raise ValueError("OFFSETS OVERFLOW", np.abs(a).max())
     a = a.flatten().tolist()
     return a
 
+
+def calc_offset_scaling(a):
+    # The offsets must be scaled so they remain in the range -2**26 to 2**26 - 1
+    # as register PISP_BE_YCBCR_INV_OFFSETS only has a 27 bit signed integer
+    b = floats_to_offsets(a, check_overflow=False)
+    max_val = np.abs(b).max()
+    if max_val > 2**26:
+        scaling = 2**26 / max_val
+    else:
+        scaling = 1.0
+    return scaling
+
+
+# Only the colourspaces with limited YCbCr but not RGB need this scaling to prevent overflow
+smpte170m_scaling = calc_offset_scaling(-(inv_601 @ inv_limited_scaling).dot(limited_offsets))
+rec709_scaling = calc_offset_scaling(-(inv_709 @ inv_limited_scaling).dot(limited_offsets))
 
 colour_encoding = {
     "select": "default",
@@ -92,11 +112,11 @@ colour_encoding = {
     "smpte170m": {
         "ycbcr": {
             "coeffs": floats_to_ints(limited_scaling @ enc_601),
-            "offsets": floats_to_offsets(limited_offsets)
+            "offsets": floats_to_offsets(limited_offsets * smpte170m_scaling)
         },
         "ycbcr_inverse": {
             "coeffs": floats_to_ints(inv_601 @ inv_limited_scaling),
-            "offsets": floats_to_offsets(-(inv_601 @ inv_limited_scaling).dot(limited_offsets))
+            "offsets": floats_to_offsets(-(inv_601 @ inv_limited_scaling).dot(limited_offsets * smpte170m_scaling))
         }
     },
 
@@ -104,11 +124,11 @@ colour_encoding = {
     "rec709": {
         "ycbcr": {
             "coeffs": floats_to_ints(limited_scaling @ enc_709),
-            "offsets": floats_to_offsets(limited_offsets)
+            "offsets": floats_to_offsets(limited_offsets * rec709_scaling)
         },
         "ycbcr_inverse": {
             "coeffs": floats_to_ints(inv_709 @ inv_limited_scaling),
-            "offsets": floats_to_offsets(-(inv_709 @ inv_limited_scaling).dot(limited_offsets))
+            "offsets": floats_to_offsets(-(inv_709 @ inv_limited_scaling).dot(limited_offsets * rec709_scaling))
         }
     },
 
