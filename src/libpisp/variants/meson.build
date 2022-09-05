@@ -8,6 +8,10 @@ variants_headers = files([
     'pisp_variant.h'
 ])
 
+pisp_headers += variants_headers
+
 variants_include_dir = pisp_include_dir / 'variants'
 
-install_headers(variants_headers, subdir: variants_include_dir)
+if install
+    install_headers(variants_headers, subdir: variants_include_dir)
+endif

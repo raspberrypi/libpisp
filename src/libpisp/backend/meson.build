@@ -11,9 +11,13 @@ backend_headers = files([
     'pisp_be_config.h'
 ])
 
+pisp_headers += backend_headers
+
 backend_include_dir = pisp_include_dir / 'backend'
 
-install_headers(backend_headers, subdir: backend_include_dir)
+if install
+    install_headers(backend_headers, subdir: backend_include_dir)
+endif
 
 install_data('backend_default_config.json',
              install_dir : '/usr/local/share/libpisp/')

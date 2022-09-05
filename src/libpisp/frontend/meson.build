@@ -10,6 +10,10 @@ frontend_headers = files([
     'pisp_statistics.h'
 ])
 
+pisp_headers += frontend_headers
+
 frontend_include_dir = pisp_include_dir / 'frontend'
 
-install_headers(frontend_headers, subdir: frontend_include_dir)
+if install
+    install_headers(frontend_headers, subdir: frontend_include_dir)
+endif

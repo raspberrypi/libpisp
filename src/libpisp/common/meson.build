@@ -12,6 +12,10 @@ common_headers = files([
     'pisp_utils.h'
 ])
 
+pisp_headers += common_headers
+
 common_include_dir = pisp_include_dir / 'common'
 
-install_headers(common_headers, subdir: common_include_dir)
+if install
+    install_headers(common_headers, subdir: common_include_dir)
+endif
