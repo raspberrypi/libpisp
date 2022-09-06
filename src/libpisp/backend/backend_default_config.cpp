@@ -75,38 +75,28 @@ void initialise_gamma(pisp_be_gamma_config &gamma)
 	std::vector<std::string> gamma_lut_v;
 	for (auto &x : params)
 		gamma_lut_v.push_back(x.second.data());
-	uint32_t gamma_lut[64];
-	for (int i=0; i < 64; i++)
+	uint32_t gamma_lut[PISP_BE_GAMMA_LUT_SIZE];
+	for (int i=0; i < PISP_BE_GAMMA_LUT_SIZE; i++)
 		gamma_lut[i] = std::stoul(gamma_lut_v[i], nullptr, 16);
 
 	memcpy(gamma.lut, gamma_lut, sizeof(gamma.lut));
 }
 
-const int16_t resample_filters[] = {
-	-15, 16, 979, 71, -31, 4,
-	-2, -30, 965, 132, -48, 7,
-	9, -69, 939, 200, -65, 10,
-	18, -99, 901, 273, -83, 14,
-	24, -121, 854, 350, -101, 18,
-	28, -135, 796, 429, -116, 22,
-	30, -143, 731, 509, -129, 26,
-	30, -143, 660, 587, -139, 29,
-	29, -139, 587, 660, -143, 30,
-	26, -129, 509, 731, -143, 30,
-	22, -116, 429, 796, -135, 28,
-	18, -101, 350, 854, -121, 24,
-	14, -83, 273, 901, -99, 18,
-	10, -65, 200, 939, -69, 9,
-	7, -48, 132, 965, -30, -2,
-	4, -31, 71, 979, 16, -15
-};
-
 void initialise_resample(pisp_be_resample_config &resample)
 {
-	static_assert(sizeof(resample_filters) == sizeof(resample.coef), "Resample filter size mismatch");
+	boost::property_tree::ptree root;
+	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
+	auto params = root.get_child("resample_filters");
+
+	std::vector<int16_t> resample_filters_v;
+	for (auto &x : params)
+		resample_filters_v.push_back(x.second.get_value<int16_t>());
+	int16_t* resample_filters = &resample_filters_v[0];
+
 	memcpy(resample.coef, resample_filters, sizeof(resample.coef));
 }
 
+// Macros for the sharpening filters, to avoid repeating the same code 5 times
 #define FILTER(i) {																						\
 		auto filter = params.get_child("filter" #i);													\
 		std::vector<int8_t> kernel_v;																	\
