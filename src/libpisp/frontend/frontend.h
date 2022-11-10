@@ -1,7 +1,8 @@
 #pragma once
 
-#include <mutex>
 #include <cstring>
+
+#include <boost/interprocess/sync/interprocess_mutex.hpp>
 
 #include "../common/pisp_types.h"
 #include "../variants/pisp_variant.h"
@@ -70,7 +71,7 @@ protected:	// TODO: Should be private
 	const PiSPVariant variant_;
 	pisp_fe_config fe_config_;
 	int align_;
-	mutable std::mutex mutex_;
+	mutable boost::interprocess::interprocess_mutex mutex_;
 };
 
 } // namespace PiSP

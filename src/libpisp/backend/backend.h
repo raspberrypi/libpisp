@@ -1,7 +1,8 @@
 #pragma once
 
-#include <mutex>
 #include <vector>
+
+#include <boost/interprocess/sync/interprocess_mutex.hpp>
 
 #include "tiling/pisp_tiling.h"
 #include "pisp_be_config.h"
@@ -127,7 +128,7 @@ protected:
 	bool finalise_tiling_;
 	std::vector<pisp_tile> tiles_;
 	int num_tiles_x_, num_tiles_y_;
-	mutable std::mutex mutex_;
+	mutable boost::interprocess::interprocess_mutex mutex_;
 };
 
 } // namespace PiSP
