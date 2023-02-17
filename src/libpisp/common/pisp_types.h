@@ -1,9 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Raspberry Pi PiSP common types.
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
  *
- * Copyright (C) 2021 - Raspberry Pi (Trading) Ltd.
- *
+ * pisp_types.h - Raspberry Pi PiSP common types
  */
 #pragma once
 

@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * pisp_logging.hpp - PiSP logging library
+ */
 #pragma once
 
 #include <boost/log/trivial.hpp>

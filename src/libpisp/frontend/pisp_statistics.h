@@ -2,7 +2,7 @@
 /*
  * PY PiSP Front End statistics definitions
  *
- * Copyright (C) 2021 - Raspberry Pi (Trading) Ltd.
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
  *
  */
 #ifndef _PISP_FE_STATISTICS_H_

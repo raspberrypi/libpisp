@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * pisp_tiling.cpp - Tiling library top level
+ */
 #include "pisp_tiling.hpp"
 
 #include <memory>

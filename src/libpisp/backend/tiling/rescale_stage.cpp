@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * rescale_stage.cpp - Tiling library component for rescaling stages
+ */
 #include "rescale_stage.hpp"
 
 #include "../../common/pisp_logging.hpp"

@@ -1,3 +1,10 @@
+
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * backend_prepare.cpp - PiSP Back End configuration generation
+ */
 #include "backend.hpp"
 
 #include <string>

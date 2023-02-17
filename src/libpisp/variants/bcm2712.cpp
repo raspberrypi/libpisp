@@ -1,18 +1,24 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * bcm2712.cpp - BCM2712 PiSP variant configuration
+ */
 #include "pisp_variant.hpp"
 
 namespace PiSP {
 
-const PiSPVariant BCM2712_HW (
-	2,					/* numFrontEnds */
-	1,					/* numBackEnds */
-	{ 2, 2 }, 				/* numFrontEndBranches */
-	{ 6144, 6144 },				/* frontEndMaxWidth */
-	{{ { true, true }, { true, true } }},	/* frontEndDownscaler */
-	{{ { 6144, 4096 }, { 6144, 4096 } }},	/* frontEndDownscalerMaxWidth */
-	640,					/* backEndMaxTileWidth */
-	{ 2 },					/* numBackEndBranches */
-	{ { false, false } },			/* backEndIntegralImage */
-	{ { false, true } }			/* backEndDownscalers */
-);
+const PiSPVariant BCM2712_HW = {
+	.numFrontEnds_ = 2,
+	.numBackEnds_ = 1,
+	.numFrontEndBranches_ = { 2, 2 },
+	.frontEndMaxWidth_ = { 6144, 6144 },
+	.frontEndDownscaler_ = {{ { true, true }, { true, true } }},
+	.frontEndDownscalerMaxWidth_ = {{ { 6144, 4096 }, { 6144, 4096 } }},
+	.backEndMaxTileWidth_ = 640,
+	.numBackEndBranches_ = { 2 },
+	.backEndIntegralImage_ = {{ { false, false } }},
+	.backEndDownscaler_ = {{ { false, true } }}
+};
 
 } // namespace PiSP

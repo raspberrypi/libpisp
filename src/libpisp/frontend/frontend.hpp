@@ -1,3 +1,10 @@
+
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * frontend.hpp - PiSP Front End implementation
+ */
 #pragma once
 
 #include <cstring>

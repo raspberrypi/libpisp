@@ -1,9 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Raspberry Pi PiSP common configuration definitions.
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
  *
- * Copyright (C) 2021 - Raspberry Pi (Trading) Ltd.
- *
+ * pisp_common.h - Raspberry Pi PiSP common configuration definitions
  */
 #ifndef _PISP_COMMON_H_
 #define _PISP_COMMON_H_

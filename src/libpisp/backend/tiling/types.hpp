@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * types.hpp - Tiling library type definitions
+ */
 #pragma once
 
 #include <iostream>

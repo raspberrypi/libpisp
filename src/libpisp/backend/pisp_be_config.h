@@ -1,9 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * PY PiSP Back End configuration definitions.
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
  *
- * Copyright (C) 2021 - Raspberry Pi (Trading) Ltd.
- *
+ * pisp_be_config.h - PiSP Back End HW configuration definitions
  */
 #ifndef _PISP_BE_CONFIG_H_
 #define _PISP_BE_CONFIG_H_

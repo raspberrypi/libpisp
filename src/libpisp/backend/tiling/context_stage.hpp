@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * context_stage.hpp - Tiling library component for context stages
+ */
 #pragma once
 
 #include "stages.hpp"

@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * split_stage.hpp - Tiling library component for splitter stages
+ */
 #pragma once
 
 #include <vector>

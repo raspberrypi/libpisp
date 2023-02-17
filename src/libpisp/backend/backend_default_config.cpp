@@ -1,11 +1,18 @@
+
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * backend_default_config.cpp - Default configuration setup for the PiSP Back End
+ */
 #include "backend.hpp"
-#include "pisp_be_config.h"
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
 #include <string>
 
+#include "pisp_be_config.h"
 
 #define DEFAULT_CONFIG_FILE "/usr/local/share/libpisp/backend_default_config.json"
 

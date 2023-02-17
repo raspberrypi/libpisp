@@ -1,4 +1,10 @@
-// Implementation of the PiSP Back End driver.
+
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * backend.cpp - PiSP Back End implementation
+ */
 #include "backend.hpp"
 
 #include "../common/pisp_logging.hpp"
@@ -18,12 +24,12 @@ struct config_param
 };
 
 const config_param config_map[] = {
-	/* *_dirty_flag_extra types */
+	// *_dirty_flag_extra types
 	{ 0, 0, PISP_BE_DIRTY_GLOBAL,        offsetof(pisp_be_config, global),        sizeof(pisp_be_global_config)        },
 	{ 0, 0, PISP_BE_DIRTY_SH_FC_COMBINE, offsetof(pisp_be_config, sh_fc_combine), sizeof(pisp_be_sh_fc_combine_config) },
 	{ 0, 0, PISP_BE_DIRTY_CROP,          offsetof(pisp_be_config, crop),          sizeof(pisp_be_crop_config)          },
 
-	/* *_dirty_flags_bayer types */
+	// *_dirty_flags_bayer types
 	{ PISP_BE_BAYER_ENABLE_DECOMPRESS,        0, 0, offsetof(pisp_be_config, decompress),           sizeof(pisp_decompress_config)   },
 	{ PISP_BE_BAYER_ENABLE_DPC,               0, 0, offsetof(pisp_be_config, dpc),                  sizeof(pisp_be_dpc_config)       },
 	{ PISP_BE_BAYER_ENABLE_GEQ,               0, 0, offsetof(pisp_be_config, geq),                  sizeof(pisp_be_geq_config)       },
@@ -47,7 +53,7 @@ const config_param config_map[] = {
 	{ PISP_BE_BAYER_ENABLE_TONEMAP,           0, 0, offsetof(pisp_be_config, tonemap),              sizeof(pisp_be_tonemap_config)   },
 	{ PISP_BE_BAYER_ENABLE_DEMOSAIC,          0, 0, offsetof(pisp_be_config, demosaic),             sizeof(pisp_be_demosaic_config)  },
 
-	/* *_dirty_flags_rgb types */
+	// *_dirty_flags_rgb types
 	{ PISP_BE_RGB_ENABLE_CCM,           0, 0, offsetof(pisp_be_config, ccm),           sizeof(pisp_be_ccm_config)           },
 	{ PISP_BE_RGB_ENABLE_SAT_CONTROL,   0, 0, offsetof(pisp_be_config, sat_control),   sizeof(pisp_be_sat_control_config)   },
 	{ PISP_BE_RGB_ENABLE_YCBCR,         0, 0, offsetof(pisp_be_config, ycbcr),         sizeof(pisp_be_ccm_config)           },
@@ -55,20 +61,20 @@ const config_param config_map[] = {
 	{ PISP_BE_RGB_ENABLE_FALSE_COLOUR,  0, 0, offsetof(pisp_be_config, false_colour),  sizeof(pisp_be_false_colour_config)  },
 	{ PISP_BE_RGB_ENABLE_YCBCR_INVERSE, 0, 0, offsetof(pisp_be_config, ycbcr_inverse), sizeof(pisp_be_ccm_config)           },
 	{ PISP_BE_RGB_ENABLE_GAMMA,         0, 0, offsetof(pisp_be_config, gamma),         sizeof(pisp_be_gamma_config)         },
-	/* Output 0 */
+	// Output 0
 	{ PISP_BE_RGB_ENABLE_CSC0,          0, 0, offsetof(pisp_be_config, csc),           sizeof(pisp_be_ccm_config)           },
 	{ PISP_BE_RGB_ENABLE_DOWNSCALE0,    0, 0, offsetof(pisp_be_config, downscale),     sizeof(pisp_be_downscale_config)     },
 	{ PISP_BE_RGB_ENABLE_RESAMPLE0,     0, 0, offsetof(pisp_be_config, resample),      sizeof(pisp_be_resample_config)      },
 	{ PISP_BE_RGB_ENABLE_OUTPUT0,       0, 0, offsetof(pisp_be_config, output_format), sizeof(pisp_be_output_format_config) },
 	{ PISP_BE_RGB_ENABLE_HOG,           0, 0, offsetof(pisp_be_config, hog),           sizeof(pisp_be_hog_config)           },
-	/* Output 1 */
+	// Output 1
 	{ PISP_BE_RGB_ENABLE_CSC1,       0, 0, offsetof(pisp_be_config, csc) + sizeof(pisp_be_ccm_config),                     sizeof(pisp_be_ccm_config)           },
 	{ PISP_BE_RGB_ENABLE_DOWNSCALE1, 0, 0, offsetof(pisp_be_config, downscale) + sizeof(pisp_be_downscale_config),         sizeof(pisp_be_downscale_config)     },
 	{ PISP_BE_RGB_ENABLE_RESAMPLE1,  0, 0, offsetof(pisp_be_config, resample) + sizeof(pisp_be_resample_config),           sizeof(pisp_be_resample_config)      },
     { PISP_BE_RGB_ENABLE_OUTPUT1,    0, 0, offsetof(pisp_be_config, output_format) + sizeof(pisp_be_output_format_config), sizeof(pisp_be_output_format_config) },
 };
 
-} /* namespace */
+} // namespace
 
 BackEnd::BackEnd(Config const &config, PiSPVariant const &variant)
 	: config_(config), variant_(variant), retile_(true), finalise_tiling_(true)
@@ -471,7 +477,7 @@ void BackEnd::MergeConfig(const pisp_be_config &config)
 			be_config_.dirty_flags_bayer |= param.dirty_flags_bayer;
 			be_config_.dirty_flags_rgb |= param.dirty_flags_rgb;
 			be_config_.dirty_flags_extra |= param.dirty_flags_extra;
-			/* Force a retile for now. This could become more granular. */
+			// Force a retile for now. This could become more granular.
 			retile_ = true;
 		}
 	}

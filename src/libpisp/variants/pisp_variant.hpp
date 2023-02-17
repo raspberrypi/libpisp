@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * pisp_variant.cpp - PiSP variant configuration definitions
+ */
 #pragma once
 
 #include <array>
@@ -9,9 +15,8 @@
 namespace PiSP
 {
 
-class PiSPVariant
+struct PiSPVariant
 {
-private:
 	static constexpr unsigned int MaxFrontEnds = 4;
 	static constexpr unsigned int MaxBackEnds = 4;
 	static constexpr unsigned int MaxFrontEndBranchs = 4;
@@ -27,26 +32,6 @@ private:
 	std::array<unsigned int, MaxBackEnds> numBackEndBranches_;
 	std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> backEndIntegralImage_;
 	std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> backEndDownscaler_;
-
-public:
-	PiSPVariant(unsigned int numFrontEnds, unsigned int numBackEnds,
-				/* FrontEnd */
-				const std::array<unsigned int, MaxFrontEnds> &numFrontEndBranches,
-				const std::array<unsigned int, MaxFrontEnds> &frontEndMaxWidth,
-				const std::array<std::array<bool, MaxFrontEndBranchs>, MaxFrontEnds> &frontEndDownscaler,
-				const std::array<std::array<unsigned int, MaxFrontEndBranchs>, MaxFrontEnds> &frontEndDownscalerMaxWidth,
-				/* BackEnd */
-				unsigned int backEndMaxTileWidth, const std::array<unsigned int, MaxBackEnds> &numBackEndBranches,
-				const std::array<std::array<bool, MaxFrontEndBranchs>, MaxFrontEnds> &backEndIntegralImage,
-				const std::array<std::array<bool, MaxFrontEndBranchs>, MaxFrontEnds> &backEndDownscaler)
-
-		: numFrontEnds_(numFrontEnds), numBackEnds_(numBackEnds), numFrontEndBranches_(numFrontEndBranches),
-		  frontEndMaxWidth_(frontEndMaxWidth), frontEndDownscaler_(frontEndDownscaler),
-		  frontEndDownscalerMaxWidth_(frontEndDownscalerMaxWidth), backEndMaxTileWidth_(backEndMaxTileWidth),
-		  numBackEndBranches_(numBackEndBranches), backEndIntegralImage_(backEndIntegralImage),
-		  backEndDownscaler_(backEndDownscaler)
-	{
-	}
 
 	unsigned int numFrontEnds() const
 	{

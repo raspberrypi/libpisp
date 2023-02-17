@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * stage.cpp - Tiling library stage definition
+ */
 #pragma once
 
 #include <string>

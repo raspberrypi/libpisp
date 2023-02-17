@@ -1,7 +1,13 @@
+
+# SPDX-License-Identifier: BSD-2-Clause
+#
+# Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+# 
+# colourspace_calcs.py - Colourspace matrix generation
+# 
 # Reference https://www.kernel.org/doc/html/v4.8/media/uapi/v4l/pixfmt-007.html
 # Also useful https://en.wikipedia.org/wiki/YCbCr#ITU-R_BT.601_conversion to verify smpte170m is correct
 # And refer to the PiSP specification, for the register details
-
 from curses.ascii import isdigit, isspace
 import numpy as np
 

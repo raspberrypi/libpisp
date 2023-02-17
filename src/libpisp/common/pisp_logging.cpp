@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * pisp_logging.cpp - PiSP logging library
+ */
 #include <boost/log/core.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/sources/logger.hpp>
@@ -27,12 +33,12 @@ void PiSP::logging_init(void)
 		% expr::attr<trivial::severity_level>("Severity")
 		% expr::smessage;
 
-	/* console sink */
+	// console sink
 	console = logging::add_console_log(std::clog);
 	console->set_formatter(format);
 	console->set_filter(trivial::severity >= trivial::info);
 
-	/* fs sink */
+	// fs sink
 	auto fs_sink = logging::add_file_log(
 			keywords::file_name = "log.txt",
 			keywords::rotation_size = 1 * 1024 * 1024,

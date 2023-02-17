@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * input_stage.hpp - Tiling library component for input stages
+ */
 #pragma once
 
 #include "stages.hpp"

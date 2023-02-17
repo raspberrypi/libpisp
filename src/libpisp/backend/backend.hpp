@@ -1,3 +1,10 @@
+
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * backend.hpp - PiSP backend implementation
+ */
 #pragma once
 
 #include <vector>
@@ -21,8 +28,8 @@ public:
 		enum Flags
 		{
 			NONE = 0,
-			LOW_LATENCY = 1, /* Attempt to process image with lowest possible latency (no longer implemented) */
-			HIGH_PRIORITY = 2 /* Not currently implemented */
+			LOW_LATENCY = 1,	// Attempt to process image with lowest possible latency (no longer implemented)
+			HIGH_PRIORITY = 2 	// Not currently implemented
 		};
 
 		Config(unsigned int _max_stripe_height = 0, unsigned int _max_tile_width = 0, unsigned int _flags = 0)
@@ -30,9 +37,9 @@ public:
 		{
 		}
 
-		unsigned int max_stripe_height; /* Use zero to get "default behaviour" */
-		unsigned int max_tile_width; /* Can only go larger than h/w defined limit in simulations */
-		unsigned int flags; /* An "or" of the Flags above */
+		unsigned int max_stripe_height; // Use zero to get "default behaviour"
+		unsigned int max_tile_width; // Can only go larger than h/w defined limit in simulations
+		unsigned int flags; // An "or" of the Flags above
 	};
 
 	BackEnd(Config const &user_config, PiSPVariant const &variant);

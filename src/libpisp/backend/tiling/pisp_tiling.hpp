@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * pisp_tiling.hpp - Tiling library top level
+ */
 #pragma once
 
 // Some data structures and an API function to make it easier to tile up and image for a PiSP-like pipeline.

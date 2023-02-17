@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
+ *
+ * pisp_utils.cpp - PiSP buffer helper utilities
+ */
 #include "../backend/pisp_be_config.h"
 
 #include "pisp_common.h"
@@ -12,20 +18,18 @@ uint32_t compute_x_offset(uint32_t /* pisp_image_format */ format, int x)
 	uint32_t x_offset = 0;
 	uint32_t bps = format & PISP_IMAGE_FORMAT_BPS_MASK;
 
-	/* HoG features are slightly different from the rest. */
+	// HoG features are slightly different from the rest.
 	if (PISP_IMAGE_FORMAT_HOG(format))
 	{
-		/*
-		 * x here is in units of cells.
-		 * Output 16-bit word samples per bin. This is then packed to:
-		 * 32-bytes for an unsigned histogram cell.
-		 * 48-bytes for a signed histogram cell.
-		 */
+		 // x here is in units of cells.
+		 // Output 16-bit word samples per bin. This is then packed to:
+		 // 32-bytes for an unsigned histogram cell.
+		 // 48-bytes for a signed histogram cell.
 		x_offset = x * ((format & PISP_IMAGE_FORMAT_HOG_UNSIGNED) ? 32 : 48);
 	}
 	else if (format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE)
 	{
-		/* 32-bit words per sample. */
+		// 32-bit words per sample.
 		x_offset = x * 4;
 	}
 	else

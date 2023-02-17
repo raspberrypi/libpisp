@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * PY PiSP Front End Driver Configuration structures
+ * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
  *
- * Copyright (C) 2021 - Raspberry Pi (Trading) Ltd.
- *
+ * pisp_fe_config.h - PiSP Front End Driver Configuration structures
  */
 #ifndef _PISP_FE_CONFIG_
 #define _PISP_FE_CONFIG_
