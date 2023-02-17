@@ -1,10 +1,10 @@
-#include "pipeline.h"
+#include "pipeline.hpp"
 
-#include "../../common/pisp_logging.h"
+#include "../../common/pisp_logging.hpp"
 
-#include "input_stage.h"
-#include "output_stage.h"
-#include "stages.h"
+#include "input_stage.hpp"
+#include "output_stage.hpp"
+#include "stages.hpp"
 
 using namespace tiling;
 

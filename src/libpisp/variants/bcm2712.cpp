@@ -1,4 +1,4 @@
-#include "pisp_variant.h"
+#include "pisp_variant.hpp"
 
 namespace PiSP {
 

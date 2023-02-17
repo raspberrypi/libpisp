@@ -1,7 +1,7 @@
 // Implementation of the PiSP Back End driver.
-#include "backend.h"
+#include "backend.hpp"
 
-#include "../common/pisp_logging.h"
+#include "../common/pisp_logging.hpp"
 
 using namespace PiSP;
 

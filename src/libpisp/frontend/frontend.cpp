@@ -1,8 +1,8 @@
 // Implementation of the PiSP Front End driver.
-#include "frontend.h"
+#include "frontend.hpp"
 
-#include "../common/pisp_logging.h"
-#include "../common/pisp_utils.h"
+#include "../common/pisp_logging.hpp"
+#include "../common/pisp_utils.hpp"
 
 using namespace PiSP;
 

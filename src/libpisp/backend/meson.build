@@ -7,7 +7,7 @@ backend_sources = files([
 ])
 
 backend_headers = files([
-    'backend.h',
+    'backend.hpp',
     'pisp_be_config.h'
 ])
 

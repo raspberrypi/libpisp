@@ -5,7 +5,7 @@ frontend_sources = files([
 ])
 
 frontend_headers = files([
-    'frontend.h',
+    'frontend.hpp',
     'pisp_fe_config.h',
     'pisp_statistics.h'
 ])

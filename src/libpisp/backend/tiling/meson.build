@@ -13,17 +13,17 @@ backend_sources += files([
 ])
 
 tiling_headers = files([
-    'context_stage.h',
-    'crop_stage.h',
-    'input_stage.h',
-    'output_stage.h',
-    'pipeline.h',
-    'pisp_tiling.h',
-    'rescale_stage.h',
-    'split_stage.h',
-    'stages.h',
-    'tiling.h',
-    'types.h'
+    'context_stage.hpp',
+    'crop_stage.hpp',
+    'input_stage.hpp',
+    'output_stage.hpp',
+    'pipeline.hpp',
+    'pisp_tiling.hpp',
+    'rescale_stage.hpp',
+    'split_stage.hpp',
+    'stages.hpp',
+    'tiling.hpp',
+    'types.hpp'
 ])
 
 tiling_include_dir = backend_include_dir / 'tiling'

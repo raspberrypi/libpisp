@@ -1,6 +1,6 @@
-#include "stages.h"
+#include "stages.hpp"
 
-#include "pipeline.h"
+#include "pipeline.hpp"
 
 using namespace tiling;
 

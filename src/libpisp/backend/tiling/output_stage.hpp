@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stages.h"
+#include "stages.hpp"
 
 namespace tiling
 {

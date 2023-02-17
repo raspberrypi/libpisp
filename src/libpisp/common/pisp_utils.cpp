@@ -1,7 +1,7 @@
 #include "../backend/pisp_be_config.h"
 
 #include "pisp_common.h"
-#include "pisp_logging.h"
+#include "pisp_logging.hpp"
 
 namespace PiSP
 {

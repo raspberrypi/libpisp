@@ -1,10 +1,10 @@
-#include "backend.h"
+#include "backend.hpp"
 
 #include <string>
 
-#include "../common/pisp_logging.h"
-#include "../common/pisp_utils.h"
-#include "tiling/types.h"
+#include "../common/pisp_logging.hpp"
+#include "../common/pisp_utils.hpp"
+#include "tiling/types.hpp"
 
 using namespace PiSP;
 

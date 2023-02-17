@@ -12,7 +12,7 @@ namespace expr = boost::log::expressions;
 namespace keywords = boost::log::keywords;
 namespace trivial = boost::log::trivial;
 
-#include "pisp_logging.h"
+#include "pisp_logging.hpp"
 
 using namespace PiSP;
 

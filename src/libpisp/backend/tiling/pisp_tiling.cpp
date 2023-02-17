@@ -1,16 +1,16 @@
-#include "pisp_tiling.h"
+#include "pisp_tiling.hpp"
 
 #include <memory>
 
-#include "../../common/pisp_logging.h"
+#include "../../common/pisp_logging.hpp"
 
-#include "context_stage.h"
-#include "crop_stage.h"
-#include "input_stage.h"
-#include "output_stage.h"
-#include "pipeline.h"
-#include "rescale_stage.h"
-#include "split_stage.h"
+#include "context_stage.hpp"
+#include "crop_stage.hpp"
+#include "input_stage.hpp"
+#include "output_stage.hpp"
+#include "pipeline.hpp"
+#include "rescale_stage.hpp"
+#include "split_stage.hpp"
 
 using namespace tiling;
 

@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "types.h"
+#include "types.hpp"
 
 namespace tiling
 {

@@ -1,8 +1,8 @@
-#include "rescale_stage.h"
+#include "rescale_stage.hpp"
 
-#include "../../common/pisp_logging.h"
+#include "../../common/pisp_logging.hpp"
 
-#include "pipeline.h"
+#include "pipeline.hpp"
 
 using namespace tiling;
 

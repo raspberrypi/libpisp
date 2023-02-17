@@ -1,8 +1,8 @@
-#include "output_stage.h"
+#include "output_stage.hpp"
 
-#include "../../common/pisp_logging.h"
+#include "../../common/pisp_logging.hpp"
 
-#include "pipeline.h"
+#include "pipeline.hpp"
 
 using namespace tiling;
 

@@ -5,7 +5,7 @@
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 
 #include "../common/pisp_types.h"
-#include "../variants/pisp_variant.h"
+#include "../variants/pisp_variant.hpp"
 
 #include "pisp_fe_config.h"
 #include "pisp_statistics.h"
