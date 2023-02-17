@@ -4,9 +4,7 @@
 
 #include "pipeline.h"
 
-
 using namespace tiling;
-
 
 // There's a rather crucial convention here that when the output image is flipped, we use
 // a coordinate system to describe it starting from the RH edge of the image travelling left.
@@ -40,12 +38,15 @@ void OutputStage::PushStartUp(int output_start, Dir dir)
 static int align_end(int input_end, int image_size, int align, bool mirrored)
 {
 	int output_end = input_end, aligned_output_end = output_end;
-	if (mirrored) {
+	if (mirrored)
+	{
 		// It's the end in the unflipped coordinate space that must align.
 		int unflipped_end = image_size - input_end;
 		unflipped_end = ((unflipped_end + align - 1) / align) * align;
 		aligned_output_end = image_size - unflipped_end;
-	} else {
+	}
+	else
+	{
 		if (input_end < image_size)
 			aligned_output_end = output_end - (input_end % align);
 	}
@@ -66,12 +67,16 @@ int OutputStage::PushEndDown(int input_end, Dir dir)
 	int aligned_output_end = align_end(output_end, image_size, config_.max_alignment[dir], mirrored);
 	if (aligned_output_end > output_interval_.offset)
 		output_end = aligned_output_end;
-	else {
+	else
+	{
 		aligned_output_end = align_end(output_end, image_size, config_.min_alignment[dir], mirrored);
-		if (aligned_output_end > output_interval_.offset) {
+		if (aligned_output_end > output_interval_.offset)
+		{
 			output_end = aligned_output_end;
 			PISP_LOG(warning, "OutputStage: Unable to achieve optimal alignment");
-		} else if (input_interval_.offset < image_size) { // test against size in case this branch already finished
+		}
+		else if (input_interval_.offset < image_size)
+		{ // test against size in case this branch already finished
 			PISP_LOG(fatal, "OutputStage: Unable to achieve mandatory alignment");
 			throw TilingException();
 		}
@@ -112,4 +117,3 @@ bool OutputStage::Done(Dir dir) const
 {
 	return output_interval_.End() >= GetOutputImageSize()[dir];
 }
-

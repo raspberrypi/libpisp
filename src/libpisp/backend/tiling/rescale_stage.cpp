@@ -4,9 +4,7 @@
 
 #include "pipeline.h"
 
-
 using namespace tiling;
-
 
 RescaleStage::RescaleStage(char const *name, Stage *upstream, Config const &config, int struct_offset)
 	: BasicStage(name, upstream->GetPipeline(), upstream, struct_offset), config_(config)
@@ -52,18 +50,22 @@ int RescaleStage::PushEndDown(int input_end, Dir dir)
 	input_interval_.SetEnd(input_end);
 	int output_end_exc;
 
-	if (config_.rescaler_type == RescalerType::Downscaler) {
+	if (config_.rescaler_type == RescalerType::Downscaler)
+	{
 		// Trapezoidal downscaler has a variable-sized kernel. Round down its end
 		// position to get the number of complete output samples that can be generated
 		// (provided scale was rounded down, there should be no shortage of input).
 		output_end_exc = (input_end << config_.precision) / config_.scale[dir];
-	} else {
+	}
+	else
+	{
 		// Resampler: find the last ("inclusive") sample that can be generated.
 		// Take off context plus an extra 2 pixels off to allow for an initial phase
 		// (except that at the bottom of the image, no more context is available).
 		int input_end_inc = input_end - 1;
 		int input_end_inc_no_context = input_end_inc;
-		if (input_end < input_image_size) {
+		if (input_end < input_image_size)
+		{
 			input_end_inc_no_context = input_end_inc - config_.end_context[dir] - 2;
 		}
 		int input_end_inc_no_context_P = input_end_inc_no_context << config_.precision;
@@ -86,7 +88,8 @@ int RescaleStage::PushEndDown(int input_end, Dir dir)
 	// If we didn't quite finish the output then we can't get too close to the end of the input because another tile will be
 	// needed, and we can't let that become infeasibly small. So pull our input_end back and simply try again.
 	if (output_interval_.End() < config_.output_image_size[dir] &&
-	    input_interval_.End() > input_image_size - GetPipeline()->GetConfig().min_tile_size[dir]) {
+		input_interval_.End() > input_image_size - GetPipeline()->GetConfig().min_tile_size[dir])
+	{
 		PISP_LOG(debug, "Too close to input image edge - try again");
 		PushEndDown(input_image_size - GetPipeline()->GetConfig().min_tile_size[dir], dir);
 	}
@@ -99,11 +102,14 @@ void RescaleStage::PushEndUp(int output_end, Dir dir)
 	PISP_LOG(debug, "Enter with output_end " << output_end);
 
 	int input_end_w_context_exc;
-	if (config_.rescaler_type == RescalerType::Downscaler) {
+	if (config_.rescaler_type == RescalerType::Downscaler)
+	{
 		// Trapezoidal downscaler has a variable-sized kernel. Round up its fractional end position.
 		int input_end_exc_P = output_end * config_.scale[dir];
 		input_end_w_context_exc = (input_end_exc_P + round_up) >> config_.precision;
-	} else {
+	}
+	else
+	{
 		// Resampler has a fixed-sized context, so calculations are based on the start position
 		// for its final output sample ("inclusive" dimensions). Need 2 more pixels to the end
 		// to allow for an initial phase that pushes us to use up to 2 extra samples on the right.

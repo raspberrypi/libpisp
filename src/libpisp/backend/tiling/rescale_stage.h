@@ -2,16 +2,23 @@
 
 #include "stages.h"
 
-namespace tiling {
+namespace tiling
+{
 
 class RescaleStage : public BasicStage
 {
 public:
-	enum class RescalerType { Downscaler, Resampler };
-	struct Config {
-		Config(Length2 const &_output_image_size, Length2 const &_scale, Length2 const &_start_context, Length2 const &_end_context, uint8_t _precision, RescalerType rescaler_type_)
-			: output_image_size(_output_image_size), scale(_scale), start_context(_start_context), end_context(_end_context), precision(_precision),
-			  rescaler_type(rescaler_type_)
+	enum class RescalerType
+	{
+		Downscaler,
+		Resampler
+	};
+	struct Config
+	{
+		Config(Length2 const &_output_image_size, Length2 const &_scale, Length2 const &_start_context,
+			   Length2 const &_end_context, uint8_t _precision, RescalerType rescaler_type_)
+			: output_image_size(_output_image_size), scale(_scale), start_context(_start_context),
+			  end_context(_end_context), precision(_precision), rescaler_type(rescaler_type_)
 		{
 		}
 		Length2 output_image_size;

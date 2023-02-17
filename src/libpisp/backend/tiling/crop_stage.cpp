@@ -4,9 +4,7 @@
 
 #include "pipeline.h"
 
-
 using namespace tiling;
-
 
 CropStage::CropStage(char const *name, Stage *upstream, Config const &config, int struct_offset)
 	: BasicStage(name, upstream->GetPipeline(), upstream, struct_offset), config_(config)

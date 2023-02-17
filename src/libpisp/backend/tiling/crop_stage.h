@@ -2,14 +2,15 @@
 
 #include "stages.h"
 
-namespace tiling {
+namespace tiling
+{
 
 class CropStage : public BasicStage
 {
 public:
-	struct Config {
-		Config(Interval2 const &_crop)
-			: crop(_crop) {}
+	struct Config
+	{
+		Config(Interval2 const &_crop) : crop(_crop) {}
 		Interval2 crop;
 	};
 	CropStage(char const *name, Stage *upstream, Config const &config, int struct_offset);

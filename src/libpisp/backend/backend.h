@@ -4,19 +4,22 @@
 
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 
-#include "tiling/pisp_tiling.h"
-#include "pisp_be_config.h"
 #include "../variants/pisp_variant.h"
+#include "pisp_be_config.h"
+#include "tiling/pisp_tiling.h"
 
 // Definition of the PiSP Back End class.
 
-namespace PiSP {
+namespace PiSP
+{
 
 class BackEnd
 {
 public:
-	struct Config {
-		enum Flags {
+	struct Config
+	{
+		enum Flags
+		{
 			NONE = 0,
 			LOW_LATENCY = 1, /* Attempt to process image with lowest possible latency (no longer implemented) */
 			HIGH_PRIORITY = 2 /* Not currently implemented */
@@ -34,7 +37,7 @@ public:
 
 	BackEnd(Config const &user_config, PiSPVariant const &variant);
 	~BackEnd();
-	
+
 	void SetGlobal(pisp_be_global_config const &global);
 	void GetGlobal(pisp_be_global_config &global) const;
 	void SetInputFormat(pisp_image_format_config const &input_format);
@@ -83,9 +86,11 @@ public:
 	void GetCsc(unsigned int i, pisp_be_ccm_config &csc);
 	void SetOutputFormat(unsigned int i, pisp_be_output_format_config const &output_format);
 	void GetOutputFormat(unsigned int i, pisp_be_output_format_config &output_format) const;
-	void SetResample(unsigned int i, pisp_be_resample_config const &resample, pisp_be_resample_extra const &resample_extra);
+	void SetResample(unsigned int i, pisp_be_resample_config const &resample,
+					 pisp_be_resample_extra const &resample_extra);
 	void SetResample(unsigned int i, pisp_be_resample_extra const &resample_extra);
-	void SetDownscale(unsigned int i, pisp_be_downscale_config const &downscale, pisp_be_downscale_extra const &downscale_extra);
+	void SetDownscale(unsigned int i, pisp_be_downscale_config const &downscale,
+					  pisp_be_downscale_extra const &downscale_extra);
 	void SetDownscale(unsigned int i, pisp_be_downscale_extra const &downscale_extra);
 	void SetHog(pisp_be_hog_config const &hog);
 
@@ -93,8 +98,10 @@ public:
 	void Prepare(pisp_be_tiles_config *config);
 	void MergeConfig(const pisp_be_config &config);
 
-	bool ComputeOutputImageFormat(unsigned int i, pisp_image_format_config &output_format, pisp_image_format_config const &input_format) const;
-	bool ComputeHogOutputImageFormat(pisp_image_format_config &output_format, pisp_image_format_config const &input_format) const;
+	bool ComputeOutputImageFormat(unsigned int i, pisp_image_format_config &output_format,
+								  pisp_image_format_config const &input_format) const;
+	bool ComputeHogOutputImageFormat(pisp_image_format_config &output_format,
+									 pisp_image_format_config const &input_format) const;
 
 	void lock()
 	{

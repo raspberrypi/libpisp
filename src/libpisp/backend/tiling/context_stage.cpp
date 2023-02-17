@@ -4,9 +4,7 @@
 
 #include "pipeline.h"
 
-
 using namespace tiling;
-
 
 ContextStage::ContextStage(char const *name, Stage *upstream, Config const &config, int struct_offset)
 	: BasicStage(name, upstream->GetPipeline(), upstream, struct_offset), config_(config)
@@ -38,7 +36,8 @@ int ContextStage::PushEndDown(int input_end, Dir dir)
 	PISP_LOG(debug, "Enter with input_end " << input_end);
 
 	int output_end = input_end;
-	if (input_end < GetInputImageSize()[dir]) {
+	if (input_end < GetInputImageSize()[dir])
+	{
 		output_end -= output_end % config_.alignment[dir];
 		output_end -= config_.context[dir].end;
 	}
@@ -74,15 +73,16 @@ void ContextStage::PushCropDown(Interval interval, Dir dir)
 	PISP_ASSERT(input_interval_ < interval);
 
 	int align = config_.alignment[dir];
-	if (interval.offset % align ||
-	    (interval.End() % align && interval.End() != GetInputImageSize()[dir])) {
+	if (interval.offset % align || (interval.End() % align && interval.End() != GetInputImageSize()[dir]))
+	{
 		// Interval doesn't align properly. Some cropping will be required. Rather than calculating
 		// the necessary crop it's safe just to send out former input tile downstream. This could
 		// genuinely happen if people put weird alignments throughout their pipeline, but in practice
 		// Bayer stages should all be 2-pixel aligned so there's no reason this should pop out.
 		PISP_LOG(warning, "Stage receiving misaligned input - cropping will be required");
 		output_interval_ = input_interval_;
-	} else
+	}
+	else
 		output_interval_ = interval;
 
 	input_interval_ = interval;

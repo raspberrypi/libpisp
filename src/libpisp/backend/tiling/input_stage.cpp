@@ -4,18 +4,17 @@
 
 #include "pipeline.h"
 
-
 using namespace tiling;
-
 
 InputStage::InputStage(char const *name, Pipeline *pipeline, Config const &config, int struct_offset)
 	: BasicStage(name, pipeline, nullptr, struct_offset), config_(config)
 {
 	pipeline->AddInputStage(this);
 	// If the compression requires more alignment than the basic X alignment, just bump the X alignment up.
-	PISP_ASSERT(config_.compression_alignment == 0 || // (assume one alignment is a multiple of the other to make life easy!)
-	       config_.alignment.dx % config_.compression_alignment == 0 ||
-	       config_.compression_alignment % config_.alignment.dx == 0);
+	PISP_ASSERT(config_.compression_alignment ==
+					0 || // (assume one alignment is a multiple of the other to make life easy!)
+				config_.alignment.dx % config_.compression_alignment == 0 ||
+				config_.compression_alignment % config_.alignment.dx == 0);
 	config_.alignment.dx = std::max(config_.alignment.dx, config_.compression_alignment);
 }
 
@@ -46,7 +45,8 @@ int InputStage::PushEndDown(int input_end, Dir dir)
 
 	if (input_end >= GetInputImageSize()[dir])
 		input_end = GetInputImageSize()[dir];
-	else {
+	else
+	{
 		// We don't get given pixels which we crop off as we go through the block, there's no
 		// sense in our input containing any unnecessary pixels so we adjust our input_interval
 		// directly. Watch out for the end-of-image case when we must write whatever we have.
@@ -67,12 +67,13 @@ void InputStage::PushEndUp(int output_end, Dir dir)
 
 	int align = config_.alignment[dir];
 	int input_end = ((output_end + align - 1) / align) * align;
-	if (input_end > GetInputImageSize()[dir]) {
+	if (input_end > GetInputImageSize()[dir])
+	{
 		input_end = GetInputImageSize()[dir];
 		// When compressed, we must always read a full compressed block, even if this extends beyond the nominal image width.
 		if (dir == Dir::X && config_.compression_alignment)
-			input_end = ((input_end + config_.compression_alignment - 1) /
-					config_.compression_alignment) * config_.compression_alignment;
+			input_end = ((input_end + config_.compression_alignment - 1) / config_.compression_alignment) *
+						config_.compression_alignment;
 	}
 	output_interval_.SetEnd(output_end);
 	input_interval_.SetEnd(input_end);

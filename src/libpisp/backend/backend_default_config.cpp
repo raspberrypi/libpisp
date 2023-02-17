@@ -1,17 +1,19 @@
 #include "backend.h"
+#include "pisp_be_config.h"
 
-#include <string.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
-#include "pisp_be_config.h"
+#include <string>
+
 
 #define DEFAULT_CONFIG_FILE "/usr/local/share/libpisp/backend_default_config.json"
 
 // Where it might be helpful we initialise some blocks with the "obvious" default parameters. This saves users the trouble,
 // and they can just "enable" the blocks.
 
-namespace {
+namespace
+{
 
 void initialise_debin(pisp_be_debin_config &debin)
 {
@@ -33,12 +35,12 @@ void initialise_ycbcr(pisp_be_ccm_config &ycbcr)
 	std::vector<int16_t> coeffs_v;
 	for (auto &x : params.get_child("coeffs"))
 		coeffs_v.push_back(x.second.get_value<int16_t>());
-	int16_t* coeffs = &coeffs_v[0];
+	int16_t *coeffs = &coeffs_v[0];
 
 	std::vector<int32_t> offsets_v;
 	for (auto &x : params.get_child("offsets"))
 		offsets_v.push_back(x.second.get_value<int32_t>());
-	int32_t* offsets = &offsets_v[0];
+	int32_t *offsets = &offsets_v[0];
 
 	memcpy(ycbcr.coeffs, coeffs, sizeof(ycbcr.coeffs));
 	memcpy(ycbcr.offsets, offsets, sizeof(ycbcr.offsets));
@@ -55,12 +57,12 @@ void initialise_ycbcr_inverse(pisp_be_ccm_config &ycbcr_inverse)
 	std::vector<int16_t> coeffs_v;
 	for (auto &x : params.get_child("coeffs"))
 		coeffs_v.push_back(x.second.get_value<int16_t>());
-	int16_t* coeffs = &coeffs_v[0];
+	int16_t *coeffs = &coeffs_v[0];
 
 	std::vector<int32_t> offsets_v;
 	for (auto &x : params.get_child("offsets"))
 		offsets_v.push_back(x.second.get_value<int32_t>());
-	int32_t* offsets = &offsets_v[0];
+	int32_t *offsets = &offsets_v[0];
 
 	memcpy(ycbcr_inverse.coeffs, coeffs, sizeof(ycbcr_inverse.coeffs));
 	memcpy(ycbcr_inverse.offsets, offsets, sizeof(ycbcr_inverse.offsets));
@@ -76,7 +78,7 @@ void initialise_gamma(pisp_be_gamma_config &gamma)
 	for (auto &x : params)
 		gamma_lut_v.push_back(x.second.data());
 	uint32_t gamma_lut[PISP_BE_GAMMA_LUT_SIZE];
-	for (int i=0; i < PISP_BE_GAMMA_LUT_SIZE; i++)
+	for (int i = 0; i < PISP_BE_GAMMA_LUT_SIZE; i++)
 		gamma_lut[i] = std::stoul(gamma_lut_v[i], nullptr, 16);
 
 	memcpy(gamma.lut, gamma_lut, sizeof(gamma.lut));
@@ -91,7 +93,7 @@ void initialise_resample(pisp_be_resample_config &resample)
 	std::vector<int16_t> resample_filters_v;
 	for (auto &x : params)
 		resample_filters_v.push_back(x.second.get_value<int16_t>());
-	int16_t* resample_filters = &resample_filters_v[0];
+	int16_t *resample_filters = &resample_filters_v[0];
 
 	memcpy(resample.coef, resample_filters, sizeof(resample.coef));
 }
@@ -158,7 +160,8 @@ void initialise_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_c
 
 } // namespace
 
-namespace PiSP {
+namespace PiSP
+{
 
 void BackEnd::InitialiseConfig()
 {
@@ -171,9 +174,10 @@ void BackEnd::InitialiseConfig()
 	initialise_gamma(be_config_.gamma);
 	initialise_sharpen(be_config_.sharpen, be_config_.sh_fc_combine);
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_YCBCR_INVERSE +
-				      PISP_BE_RGB_ENABLE_GAMMA + PISP_BE_RGB_ENABLE_SHARPEN;
+								  PISP_BE_RGB_ENABLE_GAMMA + PISP_BE_RGB_ENABLE_SHARPEN;
 
-	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++) {
+	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
+	{
 		initialise_resample(be_config_.resample[i]);
 		be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_RESAMPLE(i);
 	}

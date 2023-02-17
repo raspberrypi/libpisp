@@ -6,12 +6,9 @@
 #include "output_stage.h"
 #include "stages.h"
 
-
 using namespace tiling;
 
-
-Pipeline::Pipeline(char const *name, Config const &config)
-	: name_(name), config_(config)
+Pipeline::Pipeline(char const *name, Config const &config) : name_(name), config_(config)
 {
 }
 
@@ -43,9 +40,11 @@ void Pipeline::Tile(void *mem, size_t num_items, size_t item_size, Length2 *grid
 	grid->dx = tileDirection(Dir::X, mem, num_items, item_size);
 	grid->dy = tileDirection(Dir::Y, mem, num_items / grid->dx, item_size * grid->dx);
 	int i, j;
-	for (j = 0; j < grid->dy; j++) {
+	for (j = 0; j < grid->dy; j++)
+	{
 		void *y_src = (uint8_t *)mem + item_size * grid->dx * j;
-		for (i = 0; i < grid->dx; i++) {
+		for (i = 0; i < grid->dx; i++)
+		{
 			void *x_src = (uint8_t *)mem + item_size * i;
 			void *dest = (uint8_t *)y_src + item_size * i;
 			for (auto s : stages_)
@@ -67,7 +66,8 @@ int Pipeline::tileDirection(Dir dir, void *mem, size_t num_items, size_t item_si
 	reset();
 	bool done = false;
 	unsigned int num_tiles = 0;
-	for (; !done; num_tiles++) {
+	for (; !done; num_tiles++)
+	{
 		PISP_LOG(debug, "----------------------------------------------------------------");
 		if (num_tiles == num_items)
 			throw std::runtime_error("Too many tiles!");
@@ -88,4 +88,3 @@ int Pipeline::tileDirection(Dir dir, void *mem, size_t num_items, size_t item_si
 	PISP_LOG(debug, "Made " << num_tiles << " tiles in direction " << dir);
 	return num_tiles;
 }
-

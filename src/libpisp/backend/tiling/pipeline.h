@@ -5,7 +5,8 @@
 
 #include "types.h"
 
-namespace tiling {
+namespace tiling
+{
 
 class Stage;
 class InputStage;
@@ -14,9 +15,12 @@ class OutputStage;
 class Pipeline
 {
 public:
-	struct Config {
+	struct Config
+	{
 		Config(Length2 const &_max_tile_size, Length2 const &_min_tile_size)
-			: max_tile_size(_max_tile_size), min_tile_size(_min_tile_size) {}
+			: max_tile_size(_max_tile_size), min_tile_size(_min_tile_size)
+		{
+		}
 		Length2 max_tile_size;
 		Length2 min_tile_size;
 	};

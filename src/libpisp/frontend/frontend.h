@@ -10,7 +10,8 @@
 #include "pisp_fe_config.h"
 #include "pisp_statistics.h"
 
-namespace PiSP {
+namespace PiSP
+{
 
 class FrontEnd
 {
@@ -65,7 +66,7 @@ public:
 		return mutex_.try_lock();
 	}
 
-protected:	// TODO: Should be private
+protected: // TODO: Should be private
 	void getOutputSize(unsigned int output_num, uint16_t &width, uint16_t &height) const;
 
 	const PiSPVariant variant_;

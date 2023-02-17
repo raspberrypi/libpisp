@@ -5,15 +5,17 @@
 
 using namespace PiSP;
 
-namespace {
+namespace
+{
 
-typedef struct {
+struct config_param
+{
 	uint32_t dirty_flags_bayer;
 	uint32_t dirty_flags_rgb;
 	uint32_t dirty_flags_extra;
 	std::size_t offset;
 	std::size_t size;
-} config_param;
+};
 
 const config_param config_map[] = {
 	/* *_dirty_flag_extra types */
@@ -63,7 +65,7 @@ const config_param config_map[] = {
 	{ PISP_BE_RGB_ENABLE_CSC1,       0, 0, offsetof(pisp_be_config, csc) + sizeof(pisp_be_ccm_config),                     sizeof(pisp_be_ccm_config)           },
 	{ PISP_BE_RGB_ENABLE_DOWNSCALE1, 0, 0, offsetof(pisp_be_config, downscale) + sizeof(pisp_be_downscale_config),         sizeof(pisp_be_downscale_config)     },
 	{ PISP_BE_RGB_ENABLE_RESAMPLE1,  0, 0, offsetof(pisp_be_config, resample) + sizeof(pisp_be_resample_config),           sizeof(pisp_be_resample_config)      },
-    	{ PISP_BE_RGB_ENABLE_OUTPUT1,    0, 0, offsetof(pisp_be_config, output_format) + sizeof(pisp_be_output_format_config), sizeof(pisp_be_output_format_config) },
+    { PISP_BE_RGB_ENABLE_OUTPUT1,    0, 0, offsetof(pisp_be_config, output_format) + sizeof(pisp_be_output_format_config), sizeof(pisp_be_output_format_config) },
 };
 
 } /* namespace */
@@ -73,7 +75,7 @@ BackEnd::BackEnd(Config const &config, PiSPVariant const &variant)
 {
 	unsigned int max_tile_width = variant_.backEndMaxTileWidth(0);
 
-        if (config_.max_tile_width > max_tile_width)
+	if (config_.max_tile_width > max_tile_width)
 		PISP_LOG(fatal, "Configured max tile width " << config_.max_tile_width << " exceeds " << max_tile_width);
 
 	InitialiseConfig();
@@ -87,12 +89,14 @@ void BackEnd::SetGlobal(pisp_be_global_config const &global)
 {
 	uint32_t changed_rgb_enables = (global.rgb_enables ^ be_config_.global.rgb_enables);
 
-	if (changed_rgb_enables &
-	    (PISP_BE_RGB_ENABLE_DOWNSCALE0 | PISP_BE_RGB_ENABLE_DOWNSCALE1 | PISP_BE_RGB_ENABLE_RESAMPLE0 | PISP_BE_RGB_ENABLE_RESAMPLE1 | PISP_BE_RGB_ENABLE_HOG))
+	if (changed_rgb_enables & (PISP_BE_RGB_ENABLE_DOWNSCALE0 | PISP_BE_RGB_ENABLE_DOWNSCALE1 |
+							   PISP_BE_RGB_ENABLE_RESAMPLE0 | PISP_BE_RGB_ENABLE_RESAMPLE1 | PISP_BE_RGB_ENABLE_HOG))
 		retile_ = true; // must retile when rescaling OR HoG blocks change
 
-	be_config_.dirty_flags_bayer |= (global.bayer_enables & ~be_config_.global.bayer_enables); // label anything newly enabled as dirty
-	be_config_.dirty_flags_rgb |= (global.rgb_enables & ~be_config_.global.rgb_enables); // label anything newly enabled as dirty
+	be_config_.dirty_flags_bayer |=
+		(global.bayer_enables & ~be_config_.global.bayer_enables); // label anything newly enabled as dirty
+	be_config_.dirty_flags_rgb |=
+		(global.rgb_enables & ~be_config_.global.rgb_enables); // label anything newly enabled as dirty
 	be_config_.global = global;
 	be_config_.global.pad[0] = be_config_.global.pad[1] = be_config_.global.pad[2] = 0;
 	be_config_.dirty_flags_extra |= PISP_BE_DIRTY_GLOBAL;
@@ -336,7 +340,8 @@ void BackEnd::SetSharpen(pisp_be_sharpen_config const &sharpen)
 	be_config_.sharpen.pad2[0] = be_config_.sharpen.pad2[1] = be_config_.sharpen.pad2[2] = 0;
 	be_config_.sharpen.pad3[0] = be_config_.sharpen.pad3[1] = be_config_.sharpen.pad3[2] = 0;
 	be_config_.sharpen.pad4[0] = be_config_.sharpen.pad4[1] = be_config_.sharpen.pad4[2] = 0;
-	be_config_.sharpen.pad5 = be_config_.sharpen.pad6 = be_config_.sharpen.pad7 = be_config_.sharpen.pad8 = be_config_.sharpen.pad9 = 0;
+	be_config_.sharpen.pad5 = be_config_.sharpen.pad6 = be_config_.sharpen.pad7 = be_config_.sharpen.pad8 =
+		be_config_.sharpen.pad9 = 0;
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_SHARPEN;
 }
 
@@ -388,7 +393,8 @@ void BackEnd::GetCsc(unsigned int i, pisp_be_ccm_config &csc)
 	csc = be_config_.csc[i];
 }
 
-void BackEnd::SetDownscale(unsigned int i, pisp_be_downscale_config const &downscale, pisp_be_downscale_extra const &downscale_extra)
+void BackEnd::SetDownscale(unsigned int i, pisp_be_downscale_config const &downscale,
+						   pisp_be_downscale_extra const &downscale_extra)
 {
 	be_config_.downscale[i] = downscale;
 	be_config_.downscale_extra[i] = downscale_extra;
@@ -403,7 +409,8 @@ void BackEnd::SetDownscale(unsigned int i, pisp_be_downscale_extra const &downsc
 	retile_ = true;
 }
 
-void BackEnd::SetResample(unsigned int i, pisp_be_resample_config const &resample, pisp_be_resample_extra const &resample_extra)
+void BackEnd::SetResample(unsigned int i, pisp_be_resample_config const &resample,
+						  pisp_be_resample_extra const &resample_extra)
 {
 	be_config_.resample[i] = resample;
 	be_config_.resample_extra[i] = resample_extra;
@@ -423,13 +430,13 @@ void BackEnd::SetOutputFormat(unsigned int i, pisp_be_output_format_config const
 	PISP_ASSERT(i < variant_.backEndNumBranches(0));
 	be_config_.output_format[i] = output_format;
 
-	if (output_format.image.format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE) {
+	if (output_format.image.format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE)
+	{
 		// If this is an integral image request, we must constrain the format parameters!
 		be_config_.output_format[i].image.format = PISP_IMAGE_FORMAT_INTEGRAL_IMAGE +
-							   PISP_IMAGE_FORMAT_PLANARITY_PLANAR +
-							   PISP_IMAGE_FORMAT_SAMPLING_444 +
-							   (output_format.image.format & PISP_IMAGE_FORMAT_SHIFT_MASK) +
-							   (output_format.image.format & PISP_IMAGE_FORMAT_THREE_CHANNEL);
+												   PISP_IMAGE_FORMAT_PLANARITY_PLANAR + PISP_IMAGE_FORMAT_SAMPLING_444 +
+												   (output_format.image.format & PISP_IMAGE_FORMAT_SHIFT_MASK) +
+												   (output_format.image.format & PISP_IMAGE_FORMAT_THREE_CHANNEL);
 	}
 	be_config_.output_format[i].pad[0] = be_config_.output_format[i].pad[1] = be_config_.output_format[i].pad[2] = 0;
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_OUTPUT(i);
@@ -452,10 +459,11 @@ void BackEnd::GetOutputFormat(unsigned int i, pisp_be_output_format_config &outp
 
 void BackEnd::MergeConfig(const pisp_be_config &config)
 {
-	for (auto const &param : config_map) {
-		if ((param.dirty_flags_bayer & config.dirty_flags_bayer) ||
-		    (param.dirty_flags_rgb & config.dirty_flags_rgb) ||
-		    (param.dirty_flags_extra & config.dirty_flags_extra)) {
+	for (auto const &param : config_map)
+	{
+		if ((param.dirty_flags_bayer & config.dirty_flags_bayer) || (param.dirty_flags_rgb & config.dirty_flags_rgb) ||
+			(param.dirty_flags_extra & config.dirty_flags_extra))
+		{
 			const uint8_t *src = reinterpret_cast<const uint8_t *>(&config) + param.offset;
 			uint8_t *dest = reinterpret_cast<uint8_t *>(&be_config_) + param.offset;
 

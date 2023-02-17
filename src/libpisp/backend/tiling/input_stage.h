@@ -2,14 +2,18 @@
 
 #include "stages.h"
 
-namespace tiling {
+namespace tiling
+{
 
 class InputStage : public BasicStage
 {
 public:
-	struct Config {
+	struct Config
+	{
 		Config(Length2 const &_input_image_size, Length2 const &_alignment, int _compression_alignment = 0)
-			: input_image_size(_input_image_size), alignment(_alignment), compression_alignment(_compression_alignment) {}
+			: input_image_size(_input_image_size), alignment(_alignment), compression_alignment(_compression_alignment)
+		{
+		}
 		Length2 input_image_size;
 		Length2 alignment;
 		int compression_alignment;

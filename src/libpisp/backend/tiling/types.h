@@ -2,9 +2,11 @@
 
 #include <iostream>
 
-namespace tiling {
+namespace tiling
+{
 
-enum class Dir {
+enum class Dir
+{
 	X = 0,
 	Y = 1
 };
@@ -14,13 +16,11 @@ inline std::ostream &operator<<(std::ostream &os, Dir dir)
 	return os << (dir == Dir::X ? "X" : "Y");
 }
 
-struct Length2 {
-	Length2()
-		: Length2(0, 0) {}
-	Length2(int _dx, int _dy)
-		: dx(_dx), dy(_dy) {}
-	explicit Length2(int len)
-		: Length2(len, len) {}
+struct Length2
+{
+	Length2() : Length2(0, 0) {}
+	Length2(int _dx, int _dy) : dx(_dx), dy(_dy) {}
+	explicit Length2(int len) : Length2(len, len) {}
 	int dx, dy;
 	int operator[](Dir dir) const { return dir == Dir::Y ? dy : dx; }
 	Length2 operator-(Length2 const &other) { return Length2(dx - other.dx, dy - other.dy); }
@@ -32,13 +32,11 @@ inline std::ostream &operator<<(std::ostream &os, Length2 const &l)
 	return os << "(" << l.dx << ", " << l.dy << ")";
 }
 
-struct Crop {
-	Crop()
-		: Crop(0, 0) {}
-	Crop(int _start, int _end)
-		: start(_start), end(_end) {}
-	explicit Crop(int crop)
-		: Crop(crop, crop) {}
+struct Crop
+{
+	Crop() : Crop(0, 0) {}
+	Crop(int _start, int _end) : start(_start), end(_end) {}
+	explicit Crop(int crop) : Crop(crop, crop) {}
 	int start, end;
 	Crop operator+(Crop const &other) { return Crop(start + other.start, end + other.end); }
 };
@@ -48,13 +46,11 @@ inline std::ostream &operator<<(std::ostream &os, Crop const &c)
 	return os << "<s " << c.start << " e " << c.end << ">";
 }
 
-struct Interval {
-	Interval()
-		: Interval(0, 0) {}
-	Interval(int _offset, int _length)
-		: offset(_offset), length(_length) {}
-	explicit Interval(int _offset)
-		: offset(_offset), length(0) {}
+struct Interval
+{
+	Interval() : Interval(0, 0) {}
+	Interval(int _offset, int _length) : offset(_offset), length(_length) {}
+	explicit Interval(int _offset) : offset(_offset), length(0) {}
 	int offset, length;
 	int End() const { return offset + length; }
 	void SetStart(int start) { length += (offset - start), offset = start; } // leave End unchanged
@@ -79,10 +75,10 @@ inline std::ostream &operator<<(std::ostream &os, Interval const &i)
 	return os << "[off " << i.offset << " len " << i.length << "]";
 }
 
-struct Crop2 {
+struct Crop2
+{
 	Crop2() {}
-	Crop2(Crop const &_x, Crop const &_y)
-		: x(_x), y(_y) {}
+	Crop2(Crop const &_x, Crop const &_y) : x(_x), y(_y) {}
 	Crop x, y;
 	Crop operator[](Dir dir) const { return dir == Dir::Y ? y : x; }
 	Crop &operator[](Dir dir) { return dir == Dir::Y ? y : x; }
@@ -94,12 +90,11 @@ inline std::ostream &operator<<(std::ostream &os, Crop2 const &c)
 	return os << "< X " << c.x << " Y " << c.y << " >";
 }
 
-struct Interval2 {
+struct Interval2
+{
 	Interval2() {}
-	Interval2(Interval const &_x, Interval const &_y)
-		: x(_x), y(_y) {}
-	Interval2(Length2 const &offset, Length2 const &size)
-		: x(offset.dx, size.dx), y(offset.dy, size.dy) {}
+	Interval2(Interval const &_x, Interval const &_y) : x(_x), y(_y) {}
+	Interval2(Length2 const &offset, Length2 const &size) : x(offset.dx, size.dx), y(offset.dy, size.dy) {}
 	Interval x, y;
 	Interval operator[](Dir dir) const { return dir == Dir::Y ? y : x; }
 	Interval &operator[](Dir dir) { return dir == Dir::Y ? y : x; }
@@ -112,7 +107,8 @@ inline std::ostream &operator<<(std::ostream &os, Interval2 const &i)
 	return os << "[ X " << i.x << " Y " << i.y << " ]";
 }
 
-struct Region {
+struct Region
+{
 	Interval2 input;
 	Crop2 crop;
 	Interval2 output;

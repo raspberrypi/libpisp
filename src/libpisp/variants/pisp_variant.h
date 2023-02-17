@@ -6,7 +6,8 @@
 // implementation of the PiSP that is being used. Whatever the build system being used is, it needs
 // to select the correct C file in this directory that implements these functions.
 
-namespace PiSP {
+namespace PiSP
+{
 
 class PiSPVariant
 {
@@ -29,15 +30,15 @@ private:
 
 public:
 	PiSPVariant(unsigned int numFrontEnds, unsigned int numBackEnds,
-		    /* FrontEnd */
-		    const std::array<unsigned int, MaxFrontEnds> &numFrontEndBranches,
-		    const std::array<unsigned int, MaxFrontEnds> &frontEndMaxWidth,
-		    const std::array<std::array<bool, MaxFrontEndBranchs>, MaxFrontEnds> &frontEndDownscaler,
-		    const std::array<std::array<unsigned int, MaxFrontEndBranchs>, MaxFrontEnds> &frontEndDownscalerMaxWidth,
-		    /* BackEnd */
-		    unsigned int backEndMaxTileWidth, const std::array<unsigned int, MaxBackEnds> &numBackEndBranches,
-		    const std::array<std::array<bool, MaxFrontEndBranchs>, MaxFrontEnds> &backEndIntegralImage,
-		    const std::array<std::array<bool, MaxFrontEndBranchs>, MaxFrontEnds> &backEndDownscaler)
+				/* FrontEnd */
+				const std::array<unsigned int, MaxFrontEnds> &numFrontEndBranches,
+				const std::array<unsigned int, MaxFrontEnds> &frontEndMaxWidth,
+				const std::array<std::array<bool, MaxFrontEndBranchs>, MaxFrontEnds> &frontEndDownscaler,
+				const std::array<std::array<unsigned int, MaxFrontEndBranchs>, MaxFrontEnds> &frontEndDownscalerMaxWidth,
+				/* BackEnd */
+				unsigned int backEndMaxTileWidth, const std::array<unsigned int, MaxBackEnds> &numBackEndBranches,
+				const std::array<std::array<bool, MaxFrontEndBranchs>, MaxFrontEnds> &backEndIntegralImage,
+				const std::array<std::array<bool, MaxFrontEndBranchs>, MaxFrontEnds> &backEndDownscaler)
 
 		: numFrontEnds_(numFrontEnds), numBackEnds_(numBackEnds), numFrontEndBranches_(numFrontEndBranches),
 		  frontEndMaxWidth_(frontEndMaxWidth), frontEndDownscaler_(frontEndDownscaler),
@@ -51,7 +52,7 @@ public:
 	{
 		return numFrontEnds_;
 	}
-	
+
 	unsigned int numBackEnds() const
 	{
 		return numBackEnds_;

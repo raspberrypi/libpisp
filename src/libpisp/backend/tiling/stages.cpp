@@ -63,7 +63,8 @@ void BasicStage::Reset()
 
 void BasicStage::CopyOut(void *dest, Dir dir)
 {
-	if (struct_offset_ >= 0) {
+	if (struct_offset_ >= 0)
+	{
 		Region *region = (Region *)((uint8_t *)dest + struct_offset_);
 		region->input[dir] = input_interval_;
 		region->crop[dir] = crop_;

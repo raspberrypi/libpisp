@@ -4,9 +4,7 @@
 
 #include "pipeline.h"
 
-
 using namespace tiling;
-
 
 SplitStage::SplitStage(char const *name, Stage *upstream)
 	: Stage(name, upstream->GetPipeline(), -1), upstream_(upstream)
@@ -45,7 +43,8 @@ void SplitStage::PushStartUp(int output_start, Dir dir)
 		input_interval_ = Interval(output_start);
 	else
 		input_interval_ |= output_start;
-	if (count_ == downstream_.size()) {
+	if (count_ == downstream_.size())
+	{
 		count_ = 0;
 		PISP_LOG(debug, "Exit - call PushStartUp with " << input_interval_.offset);
 		upstream_->PushStartUp(input_interval_.offset, dir);
@@ -60,7 +59,8 @@ int SplitStage::PushEndDown(int input_end, Dir dir)
 	// out what they can do with it. Then remember the least far-on end position that they need. This avoid
 	// potential over-read if one branch can only accept way fewer pixels than another.
 	input_interval_.SetEnd(input_end);
-	for (auto d : downstream_) {
+	for (auto d : downstream_)
+	{
 		PISP_LOG(debug, "Exit with output_end " << input_end);
 		int branch_end = d->PushEndDown(input_end, dir);
 		if (branch_end < input_interval_.End())
@@ -90,7 +90,8 @@ void SplitStage::PushCropDown(Interval interval, Dir dir)
 	// start by cropping off what they can't handle.
 	PISP_ASSERT(interval > input_interval_);
 	input_interval_ = interval;
-	for (auto d : downstream_) {
+	for (auto d : downstream_)
+	{
 		PISP_LOG(debug, "Exit with interval " << interval);
 		d->PushCropDown(interval, dir);
 	}

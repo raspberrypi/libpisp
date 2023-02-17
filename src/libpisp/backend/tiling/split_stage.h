@@ -4,7 +4,8 @@
 
 #include "stages.h"
 
-namespace tiling {
+namespace tiling
+{
 
 class SplitStage : public Stage
 {
