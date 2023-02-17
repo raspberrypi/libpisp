@@ -4,7 +4,7 @@
  *
  * pisp_utils.cpp - PiSP buffer helper utilities
  */
-#include "../backend/pisp_be_config.h"
+#include "backend/pisp_be_config.h"
 
 #include "pisp_common.h"
 #include "pisp_logging.hpp"

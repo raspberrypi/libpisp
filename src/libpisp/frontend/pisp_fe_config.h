@@ -7,7 +7,7 @@
 #ifndef _PISP_FE_CONFIG_
 #define _PISP_FE_CONFIG_
 
-#include "../common/pisp_common.h"
+#include "common/pisp_common.h"
 
 #include "pisp_statistics.h"
 

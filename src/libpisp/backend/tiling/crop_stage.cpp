@@ -6,7 +6,7 @@
  */
 #include "crop_stage.hpp"
 
-#include "../../common/pisp_logging.hpp"
+#include "common/pisp_logging.hpp"
 
 #include "pipeline.hpp"
 

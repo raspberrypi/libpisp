@@ -9,8 +9,8 @@
 
 #include <string>
 
-#include "../common/pisp_logging.hpp"
-#include "../common/pisp_utils.hpp"
+#include "common/pisp_logging.hpp"
+#include "common/pisp_utils.hpp"
 #include "tiling/types.hpp"
 
 using namespace PiSP;

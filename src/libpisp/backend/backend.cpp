@@ -7,7 +7,7 @@
  */
 #include "backend.hpp"
 
-#include "../common/pisp_logging.hpp"
+#include "common/pisp_logging.hpp"
 
 using namespace PiSP;
 

@@ -11,7 +11,7 @@
 
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 
-#include "../variants/pisp_variant.hpp"
+#include "variants/pisp_variant.hpp"
 #include "pisp_be_config.h"
 #include "tiling/pisp_tiling.hpp"
 

@@ -1,5 +1,6 @@
 pisp_sources = []
 pisp_headers = []
+inc_dirs = ['.', 'libpisp']
 
 pisp_include_dir = 'libpisp'
 
@@ -20,16 +21,18 @@ pisp_deps = [
     boost_dep
 ]
 
-
-libpisp = shared_library('libpisp',
-                           pisp_sources,
-                           name_prefix : '',
-                           install : install,
-                           dependencies : pisp_deps)
+libpisp = shared_library(
+    meson.project_name(),
+    pisp_sources,
+    include_directories : include_directories(inc_dirs),
+    name_prefix : '',
+    install : install,
+    dependencies : pisp_deps
+)
 
 libpisp_dep = declare_dependency(
     sources : pisp_sources,
-    include_directories : '.',
+    include_directories : include_directories(inc_dirs),
     link_with : libpisp,
     dependencies : pisp_deps,
     link_args : boost_link_args
@@ -38,8 +41,8 @@ libpisp_dep = declare_dependency(
 if install
     pkg_mod = import('pkgconfig')
     pkg_mod.generate(libpisp,
-                    description : 'Pisp Library',
-                    subdirs : 'libpisp')
+                     description : 'PiSP Library',
+                     subdirs : 'libpisp')
 
     meson.add_install_script('ldconfig')
 endif
