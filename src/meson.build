@@ -21,6 +21,14 @@ pisp_deps = [
     boost_dep
 ]
 
+# Generate a version string:
+version_cpp = vcs_tag(command : [meson.project_source_root() + '/utils/version.py', meson.project_version()],
+                      input : meson.project_source_root() + '/utils/version.cpp.in',
+                      output : 'version.cpp',
+                      fallback : meson.project_version())
+
+pisp_sources += version_cpp
+
 libpisp = shared_library(
     meson.project_name(),
     pisp_sources,
