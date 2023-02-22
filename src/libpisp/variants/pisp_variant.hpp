@@ -85,5 +85,6 @@ struct PiSPVariant
 };
 
 extern const PiSPVariant BCM2712_HW;
+extern const PiSPVariant BCM2712_HW2;
 
 } // namespace PiSP
