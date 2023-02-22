@@ -14,9 +14,5 @@ jobs:
         fetch-depth: 0
         clean: true
 
-    - name: Fix clang-tidy
-      run:
-        sudo ln -s `which clang-format-12` /usr/bin/clang-format
-
     - name: Check style
       run: ${{github.workspace}}/utils/checkstyle.py $(git log --format=%P -1 | awk '{print $1 ".." $2}')
