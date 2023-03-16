@@ -12,6 +12,7 @@ pisp_sources += frontend_sources
 pisp_sources += backend_sources
 
 boost_dep = dependency('boost', modules : ['log', 'log_setup', 'thread'])
+add_global_arguments('-DBOOST_BIND_GLOBAL_PLACEHOLDERS', language : 'cpp')
 
 pisp_deps = [
     boost_dep
