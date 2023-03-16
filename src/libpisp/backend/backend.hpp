@@ -145,4 +145,11 @@ protected:
 	mutable boost::interprocess::interprocess_mutex mutex_;
 };
 
+
+// Fill in the matrix from a string naming the colour space ("jpeg", "smpte170m, "rec709", "bt2020").
+
+void initialise_ycbcr(pisp_be_ccm_config &ycbcr, const std::string &colour_space);
+
+void initialise_ycbcr_inverse(pisp_be_ccm_config &ycbcr_inverse, const std::string &colour_space);
+
 } // namespace PiSP

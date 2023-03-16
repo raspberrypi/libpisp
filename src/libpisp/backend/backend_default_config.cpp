@@ -31,50 +31,6 @@ void initialise_debin(pisp_be_debin_config &debin)
 	memcpy(debin.coeffs, default_coeffs, sizeof(debin.coeffs));
 }
 
-void initialise_ycbcr(pisp_be_ccm_config &ycbcr)
-{
-	boost::property_tree::ptree root;
-	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
-	auto encoding = root.get_child("colour_encoding");
-	auto selection = encoding.get_child("select").data();
-	auto params = encoding.get_child(selection).get_child("ycbcr");
-
-	std::vector<int16_t> coeffs_v;
-	for (auto &x : params.get_child("coeffs"))
-		coeffs_v.push_back(x.second.get_value<int16_t>());
-	int16_t *coeffs = &coeffs_v[0];
-
-	std::vector<int32_t> offsets_v;
-	for (auto &x : params.get_child("offsets"))
-		offsets_v.push_back(x.second.get_value<int32_t>());
-	int32_t *offsets = &offsets_v[0];
-
-	memcpy(ycbcr.coeffs, coeffs, sizeof(ycbcr.coeffs));
-	memcpy(ycbcr.offsets, offsets, sizeof(ycbcr.offsets));
-}
-
-void initialise_ycbcr_inverse(pisp_be_ccm_config &ycbcr_inverse)
-{
-	boost::property_tree::ptree root;
-	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
-	auto encoding = root.get_child("colour_encoding");
-	auto selection = encoding.get_child("select").data();
-	auto params = encoding.get_child(selection).get_child("ycbcr_inverse");
-
-	std::vector<int16_t> coeffs_v;
-	for (auto &x : params.get_child("coeffs"))
-		coeffs_v.push_back(x.second.get_value<int16_t>());
-	int16_t *coeffs = &coeffs_v[0];
-
-	std::vector<int32_t> offsets_v;
-	for (auto &x : params.get_child("offsets"))
-		offsets_v.push_back(x.second.get_value<int32_t>());
-	int32_t *offsets = &offsets_v[0];
-
-	memcpy(ycbcr_inverse.coeffs, coeffs, sizeof(ycbcr_inverse.coeffs));
-	memcpy(ycbcr_inverse.offsets, offsets, sizeof(ycbcr_inverse.offsets));
-}
-
 void initialise_gamma(pisp_be_gamma_config &gamma)
 {
 	boost::property_tree::ptree root;
@@ -170,14 +126,57 @@ void initialise_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_c
 namespace PiSP
 {
 
+void initialise_ycbcr(pisp_be_ccm_config &ycbcr, const std::string &colour_space)
+{
+	boost::property_tree::ptree root;
+	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
+	auto encoding = root.get_child("colour_encoding");
+	auto params = encoding.get_child(colour_space).get_child("ycbcr");
+
+	std::vector<int16_t> coeffs_v;
+	for (auto &x : params.get_child("coeffs"))
+		coeffs_v.push_back(x.second.get_value<int16_t>());
+	int16_t *coeffs = &coeffs_v[0];
+
+	std::vector<int32_t> offsets_v;
+	for (auto &x : params.get_child("offsets"))
+		offsets_v.push_back(x.second.get_value<int32_t>());
+	int32_t *offsets = &offsets_v[0];
+
+	memcpy(ycbcr.coeffs, coeffs, sizeof(ycbcr.coeffs));
+	memcpy(ycbcr.offsets, offsets, sizeof(ycbcr.offsets));
+}
+
+void initialise_ycbcr_inverse(pisp_be_ccm_config &ycbcr_inverse, const std::string &colour_space)
+{
+	boost::property_tree::ptree root;
+	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
+	auto encoding = root.get_child("colour_encoding");
+	auto selection = encoding.get_child("select").data();
+	auto params = encoding.get_child(colour_space).get_child("ycbcr_inverse");
+
+	std::vector<int16_t> coeffs_v;
+	for (auto &x : params.get_child("coeffs"))
+		coeffs_v.push_back(x.second.get_value<int16_t>());
+	int16_t *coeffs = &coeffs_v[0];
+
+	std::vector<int32_t> offsets_v;
+	for (auto &x : params.get_child("offsets"))
+		offsets_v.push_back(x.second.get_value<int32_t>());
+	int32_t *offsets = &offsets_v[0];
+
+	memcpy(ycbcr_inverse.coeffs, coeffs, sizeof(ycbcr_inverse.coeffs));
+	memcpy(ycbcr_inverse.offsets, offsets, sizeof(ycbcr_inverse.offsets));
+}
+
 void BackEnd::InitialiseConfig()
 {
 	memset(&be_config_, 0, sizeof(be_config_));
 	initialise_debin(be_config_.debin);
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEBIN;
 
-	initialise_ycbcr(be_config_.ycbcr);
-	initialise_ycbcr_inverse(be_config_.ycbcr_inverse);
+	initialise_ycbcr(be_config_.ycbcr, "jpeg");
+	initialise_ycbcr_inverse(be_config_.ycbcr_inverse, "jpeg");
 	initialise_gamma(be_config_.gamma);
 	initialise_sharpen(be_config_.sharpen, be_config_.sh_fc_combine);
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_YCBCR_INVERSE +
