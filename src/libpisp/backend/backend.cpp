@@ -331,6 +331,11 @@ void BackEnd::SetYcbcr(pisp_be_ccm_config const &ycbcr)
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR;
 }
 
+void BackEnd::GetYcbcr(pisp_be_ccm_config &ycbcr)
+{
+	ycbcr = be_config_.ycbcr;
+}
+
 void BackEnd::SetFalseColour(pisp_be_false_colour_config const &false_colour)
 {
 	be_config_.false_colour = false_colour;

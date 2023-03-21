@@ -81,6 +81,7 @@ public:
 	void SetCcm(pisp_be_ccm_config const &ccm);
 	void SetSatControl(pisp_be_sat_control_config const &sat_control);
 	void SetYcbcr(pisp_be_ccm_config const &ycbcr);
+	void GetYcbcr(pisp_be_ccm_config &ccm);
 	void SetFalseColour(pisp_be_false_colour_config const &false_colour);
 	void SetSharpen(pisp_be_sharpen_config const &sharpen);
 	void GetSharpen(pisp_be_sharpen_config &sharpen);
@@ -143,6 +144,7 @@ protected:
 	std::vector<pisp_tile> tiles_;
 	int num_tiles_x_, num_tiles_y_;
 	mutable boost::interprocess::interprocess_mutex mutex_;
+
 };
 
 
