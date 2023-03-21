@@ -137,8 +137,6 @@ protected:
 	const PiSPVariant variant_;
 	pisp_be_config be_config_;
 	pisp_image_format_config max_input_;
-	int tdn_input_index_, tdn_output_index_;
-	int stitch_input_index_, stitch_output_index_;
 	bool retile_;
 	bool finalise_tiling_;
 	std::vector<pisp_tile> tiles_;
