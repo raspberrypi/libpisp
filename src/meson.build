@@ -40,6 +40,7 @@ libpisp_dep = declare_dependency(
     include_directories : include_directories(inc_dirs),
     link_with : libpisp,
     dependencies : pisp_deps,
+    compile_args : '-DBOOST_BIND_GLOBAL_PLACEHOLDERS'
 )
 
 if install
