@@ -152,13 +152,23 @@ FrontEnd::FrontEnd(bool streaming, PiSPVariant const &variant, int align) : vari
 
 	input.streaming = !!streaming;
 
+	// Configure some plausible default AXI reader settings.
 	if (!input.streaming)
 	{
-		// Configure some plausible default AXI reader settings.
 		input.axi.maxlen_flags = PISP_AXI_FLAG_ALIGN | 7;
 		input.axi.cache_prot = 0x33;
 		input.axi.qos = 0;
 		input.holdoff = 0;
+	}
+	else
+	{
+		pisp_fe_output_axi_config output_axi;
+		output_axi.maxlen_flags = 0xaf;
+		output_axi.cache_prot = 0x32;
+		output_axi.qos = 0x8410;
+		output_axi.thresh = 0x0140;
+		output_axi.throttle = 0x4100;
+		SetOutputAXI(output_axi);
 	}
 
 	pisp_fe_global_config global;
