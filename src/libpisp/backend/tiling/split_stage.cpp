@@ -64,16 +64,16 @@ int SplitStage::PushEndDown(int input_end, Dir dir)
 	// First tell all the branches what the maximum number of pixels is that they can have so that we find
 	// out what they can do with it. Then remember the least far-on end position that they need. This avoid
 	// potential over-read if one branch can only accept way fewer pixels than another.
-	input_interval_.SetEnd(input_end);
+	input_interval_.SetEnd(0);
 	for (auto d : downstream_)
 	{
-		PISP_LOG(debug, "Exit with output_end " << input_end);
 		int branch_end = d->PushEndDown(input_end, dir);
-		if (branch_end < input_interval_.End())
+		if (branch_end > input_interval_.End())
 			input_interval_.SetEnd(branch_end);
 	}
 
 	// Finally tell all the branches now what they will really get, which is that minimum end point.
+	PISP_LOG(debug, "Split using input_end " << input_interval_.End());
 	for (auto d : downstream_)
 		d->PushEndDown(input_interval_.End(), dir);
 
