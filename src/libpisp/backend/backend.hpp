@@ -42,6 +42,12 @@ public:
 		unsigned int flags; // An "or" of the Flags above
 	};
 
+	struct SmartResize
+	{
+		uint16_t width;
+		uint16_t height;
+	};
+
 	BackEnd(Config const &user_config, PiSPVariant const &variant);
 	~BackEnd();
 
@@ -111,6 +117,8 @@ public:
 	bool ComputeHogOutputImageFormat(pisp_image_format_config &output_format,
 									 pisp_image_format_config const &input_format) const;
 
+	void SetSmartResize(unsigned int i, SmartResize const &smart_resize);
+
 	void lock()
 	{
 		mutex_.lock();
@@ -128,6 +136,7 @@ public:
 
 protected:
 	void finaliseConfig();
+	void updateSmartResize();
 	void updateTiles();
 	std::vector<pisp_tile> retilePipeline(TilingConfig const &tiling_config);
 	void finaliseTiling();
@@ -142,7 +151,8 @@ protected:
 	std::vector<pisp_tile> tiles_;
 	int num_tiles_x_, num_tiles_y_;
 	mutable boost::interprocess::interprocess_mutex mutex_;
-
+	std::vector<SmartResize> smart_resize_;
+	uint32_t smart_resize_dirty_;
 };
 
 

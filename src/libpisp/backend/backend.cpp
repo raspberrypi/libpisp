@@ -84,6 +84,9 @@ BackEnd::BackEnd(Config const &config, PiSPVariant const &variant)
 	if (config_.max_tile_width > max_tile_width)
 		PISP_LOG(fatal, "Configured max tile width " << config_.max_tile_width << " exceeds " << max_tile_width);
 
+	smart_resize_.resize(2, { 0, 0 });
+	smart_resize_dirty_ = 0;
+
 	InitialiseConfig();
 }
 
@@ -486,4 +489,12 @@ void BackEnd::MergeConfig(const pisp_be_config &config)
 			retile_ = true;
 		}
 	}
+}
+
+void BackEnd::SetSmartResize(unsigned int i, BackEnd::SmartResize const &smart_resize)
+{
+	PISP_ASSERT(i < variant_.backEndNumBranches(0));
+	// Non-zero width and height will be interpreted as "enabled".
+	smart_resize_[i] = smart_resize;
+	smart_resize_dirty_ |= (1 << i);
 }

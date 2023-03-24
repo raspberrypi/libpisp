@@ -496,6 +496,84 @@ void BackEnd::finaliseConfig()
 		throw std::runtime_error("BackEnd::finalise: PiSP not configured to do anything");
 }
 
+void BackEnd::updateSmartResize()
+{
+	// First get the size of the input to the rescalers. The crops are zero when not in use.
+	uint16_t input_width = be_config_.crop.width;
+	if (!input_width)
+		input_width = be_config_.input_format.width;
+	uint16_t input_height = be_config_.crop.height;
+	if (!input_height)
+		input_height = be_config_.input_format.height;
+
+	// Look through the output branches adjusting the scaling blocks where "smart resizing"
+	// has been requested.
+	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
+	{
+		if ((smart_resize_dirty_ & (1 << i)) || (be_config_.dirty_flags_extra & PISP_BE_DIRTY_CROP))
+		{
+			if (smart_resize_[i].width && smart_resize_[i].height)
+			{
+				uint16_t resampler_output_width = smart_resize_[i].width;
+				uint16_t resampler_output_height = smart_resize_[i].height;
+
+				PISP_LOG(debug, "Smart resize branch " << i
+						 << " input size " << input_width << " x " << input_height
+						 << " output size " << smart_resize_[i].width << " x " <<  smart_resize_[i].height);
+
+				// We're doing to use the downscaler if it's available and we're downscaling
+				// by more than 2x.
+				// \todo - increase this "2x" threshold by using different resampler kernels.
+				if (variant_.backEndDownscalerAvailable(0, i) &&
+					(resampler_output_width * 2 < input_width || resampler_output_height * 2 < input_height))
+				{
+					uint16_t downscaler_output_width = input_width;
+					uint16_t downscaler_output_height = input_height;
+
+					// We treat the width and height the same. Look at the width first.
+					if (resampler_output_width * 2 < input_width)
+					{
+						// Try to put 2x downscale into the resampler, everything else into
+						// the downscaler. But remember that it must do *at least* 2x.
+						downscaler_output_width = std::min(resampler_output_width * 2, input_width / 2);
+					}
+					// Now the same for the height.
+					if (resampler_output_height * 2 < input_height)
+					{
+						// Try to put 2x downscale into the resampler, everything else into
+						// the downscaler. But remember that it must do *at least* 2x.
+						downscaler_output_height = std::min(resampler_output_height * 2, input_height / 2);
+					}
+
+					PISP_LOG(debug, "Using downscaler, output size "
+							 << downscaler_output_width << " x " <<  downscaler_output_height);
+
+					// Now program up the downscaler.
+					pisp_be_downscale_extra downscale = {};
+					downscale.scaled_width = downscaler_output_width;
+					downscale.scaled_height = downscaler_output_height;
+					SetDownscale(i, downscale);
+					be_config_.global.rgb_enables |= PISP_BE_RGB_ENABLE_DOWNSCALE(i);
+				}
+				else
+				{
+					be_config_.global.rgb_enables &= ~PISP_BE_RGB_ENABLE_DOWNSCALE(i);
+					PISP_LOG(debug, "Not using downscaler");
+				}
+
+				// Finally program up the resampler.
+				pisp_be_resample_extra resample = {};
+				resample.scaled_width = resampler_output_width;
+				resample.scaled_height = resampler_output_height;
+				SetResample(i, resample);
+				be_config_.global.rgb_enables |= PISP_BE_RGB_ENABLE_RESAMPLE(i);
+			}
+		}
+	}
+
+	smart_resize_dirty_ = 0;
+}
+
 void BackEnd::updateTiles()
 {
 	if (retile_)
@@ -795,7 +873,9 @@ void BackEnd::finaliseTiling()
 void BackEnd::getOutputSize(int i, uint16_t *width, uint16_t *height, pisp_image_format_config const &ifmt) const
 {
 	// This internal version doesn't check if the output is enabled
-	if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_RESAMPLE(i))
+	if (smart_resize_[i].width && smart_resize_[i].height)
+		*width = smart_resize_[i].width, *height = smart_resize_[i].height;
+	else if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_RESAMPLE(i))
 		*width = be_config_.resample_extra[i].scaled_width, *height = be_config_.resample_extra[i].scaled_height;
 	else if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_DOWNSCALE(i))
 		*width = be_config_.downscale_extra[i].scaled_width, *height = be_config_.downscale_extra[i].scaled_height;
@@ -894,6 +974,7 @@ void BackEnd::Prepare(pisp_be_tiles_config *config)
 	}
 
 	// 3. Fill in any other missing bits of config, and update the tiling if necessary.
+	updateSmartResize();
 	finaliseConfig();
 	updateTiles();
 
