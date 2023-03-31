@@ -108,6 +108,7 @@ public:
 					  pisp_be_downscale_extra const &downscale_extra);
 	void SetDownscale(unsigned int i, pisp_be_downscale_extra const &downscale_extra);
 	void SetHog(pisp_be_hog_config const &hog);
+	void SetAxiConfig(pisp_be_axi_config const &axi);
 
 	void InitialiseConfig();
 	void Prepare(pisp_be_tiles_config *config);

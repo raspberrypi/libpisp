@@ -28,6 +28,7 @@ const config_param config_map[] = {
 	{ 0, 0, PISP_BE_DIRTY_GLOBAL,        offsetof(pisp_be_config, global),        sizeof(pisp_be_global_config)        },
 	{ 0, 0, PISP_BE_DIRTY_SH_FC_COMBINE, offsetof(pisp_be_config, sh_fc_combine), sizeof(pisp_be_sh_fc_combine_config) },
 	{ 0, 0, PISP_BE_DIRTY_CROP,          offsetof(pisp_be_config, crop),          sizeof(pisp_be_crop_config)          },
+	{ 0, 0, PISP_BE_DIRTY_AXI,           offsetof(pisp_be_config, axi),           sizeof(pisp_be_axi_config)           },
 
 	// *_dirty_flags_bayer types
 	{ PISP_BE_BAYER_ENABLE_DECOMPRESS,        0, 0, offsetof(pisp_be_config, decompress),           sizeof(pisp_decompress_config)   },
@@ -88,6 +89,14 @@ BackEnd::BackEnd(Config const &config, PiSPVariant const &variant, unsigned int 
 
 	smart_resize_.resize(2, { 0, 0 });
 	smart_resize_dirty_ = 0;
+
+	// Some sensible axi config by default
+	pisp_be_axi_config axi;
+	axi.r_qos = 0x00;
+	axi.r_cache_prot = 0x32;
+	axi.w_qos = 0x10; //BURST_TRIM == 1;
+	axi.w_cache_prot = 0x32;
+	SetAxiConfig(axi);
 
 	InitialiseConfig();
 }
@@ -465,6 +474,12 @@ void BackEnd::SetHog(pisp_be_hog_config const &hog)
 	be_config_.hog = hog;
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_HOG;
 	finalise_tiling_ = true;
+}
+
+void BackEnd::SetAxiConfig(pisp_be_axi_config const &axi)
+{
+	be_config_.axi = axi;
+	be_config_.dirty_flags_extra |= PISP_BE_DIRTY_AXI;
 }
 
 void BackEnd::GetOutputFormat(unsigned int i, pisp_be_output_format_config &output_format) const

@@ -89,7 +89,8 @@ typedef enum {
 typedef enum {
 	PISP_BE_DIRTY_GLOBAL = 0x0001,
 	PISP_BE_DIRTY_SH_FC_COMBINE = 0x0002,
-	PISP_BE_DIRTY_CROP = 0x0004
+	PISP_BE_DIRTY_CROP = 0x0004,
+	PISP_BE_DIRTY_AXI = 0x0008,
 } pisp_be_dirty;
 
 typedef struct {
