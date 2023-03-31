@@ -76,13 +76,15 @@ const config_param config_map[] = {
 
 } // namespace
 
-BackEnd::BackEnd(Config const &config, PiSPVariant const &variant)
-	: config_(config), variant_(variant), retile_(true), finalise_tiling_(true)
+BackEnd::BackEnd(Config const &config, PiSPVariant const &variant, unsigned int align)
+	: config_(config), variant_(variant), align_(align), retile_(true), finalise_tiling_(true)
 {
 	unsigned int max_tile_width = variant_.backEndMaxTileWidth(0);
 
 	if (config_.max_tile_width > max_tile_width)
 		PISP_LOG(fatal, "Configured max tile width " << config_.max_tile_width << " exceeds " << max_tile_width);
+
+	align_ = (align_ + PISP_BACK_END_OUTPUT_MIN_ALIGN - 1) & ~(PISP_BACK_END_OUTPUT_MIN_ALIGN - 1);
 
 	smart_resize_.resize(2, { 0, 0 });
 	smart_resize_dirty_ = 0;

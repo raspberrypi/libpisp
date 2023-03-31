@@ -93,12 +93,6 @@ void compute_stride_align(pisp_image_format_config &config, int align)
 	}
 }
 
-void compute_stride(pisp_image_format_config &config)
-{
-	// Our preferred alignment is really 64 bytes, though 16 should work too. Use 16 for now, as it gives better test coverage.
-	compute_stride_align(config, PISP_BACK_END_OUTPUT_MIN_ALIGN);
-}
-
 void compute_addr_offset(const pisp_image_format_config &config, int x, int y, uint32_t *addr_offset,
 						 uint32_t *addr_offset2)
 {

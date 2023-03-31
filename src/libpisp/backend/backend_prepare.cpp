@@ -26,16 +26,16 @@ constexpr unsigned int UnityScale = 1 << 12;
 // HoG feature constants
 constexpr unsigned int HogCellSize = 8;
 
-void check_stride(pisp_image_format_config const &config)
+void check_stride(pisp_image_format_config const &config, unsigned int align)
 {
-	if (config.stride % PISP_BACK_END_OUTPUT_MIN_ALIGN || config.stride2 % PISP_BACK_END_OUTPUT_MIN_ALIGN)
+	if (config.stride % align || config.stride2 % align)
 		throw std::runtime_error("Output stride values not sufficiently aligned");
 
 	if (PISP_IMAGE_FORMAT_wallpaper(config.format) && (config.stride % 128 || config.stride2 % 128))
 		throw std::runtime_error("Wallpaper format should have 128-byte aligned rolls");
 
 	pisp_image_format_config check = config;
-	compute_stride_align(check, PISP_BACK_END_OUTPUT_MIN_ALIGN);
+	compute_stride_align(check, align);
 	if (check.stride > config.stride || check.stride2 > config.stride2)
 	{
 		PISP_LOG(fatal, "Strides should be at least " << check.stride << " and " << check.stride2 << " but are "
@@ -155,7 +155,7 @@ void finalise_decompression(pisp_be_config const &be_config)
 		throw std::runtime_error("BackEnd::finalise: compressed input is not 8bpp");
 }
 
-void finalise_tdn(pisp_be_config &config)
+void finalise_tdn(pisp_be_config &config, unsigned int align)
 {
 	int tdn_enabled = config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN;
 	int tdn_input_enabled = config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_INPUT;
@@ -180,9 +180,9 @@ void finalise_tdn(pisp_be_config &config)
 	config.tdn_output_format.width = config.input_format.width;
 	config.tdn_output_format.height = config.input_format.height;
 	if (!config.tdn_output_format.stride)
-		compute_stride(config.tdn_output_format);
+		compute_stride_align(config.tdn_output_format, align);
 	else
-		check_stride(config.tdn_output_format);
+		check_stride(config.tdn_output_format, align);
 
 	if (!tdn_enabled)
 	{
@@ -211,7 +211,7 @@ void finalise_tdn(pisp_be_config &config)
 	}
 }
 
-void finalise_stitch(pisp_be_config &config)
+void finalise_stitch(pisp_be_config &config, unsigned int align)
 {
 	bool stitch_enabled = config.global.bayer_enables & PISP_BE_BAYER_ENABLE_STITCH;
 	bool stitch_input_enabled = config.global.bayer_enables & PISP_BE_BAYER_ENABLE_STITCH_INPUT;
@@ -240,14 +240,14 @@ void finalise_stitch(pisp_be_config &config)
 	{
 		config.stitch_output_format.width = config.input_format.width;
 		config.stitch_output_format.height = config.input_format.height;
-		compute_stride(config.stitch_output_format);
+		compute_stride_align(config.stitch_output_format, align);
 	}
 
 	if (config.stitch_input_format.width == 0 && config.stitch_input_format.height == 0)
 	{
 		config.stitch_input_format.width = config.input_format.width;
 		config.stitch_input_format.height = config.input_format.height;
-		compute_stride(config.stitch_input_format);
+		compute_stride_align(config.stitch_input_format, align);
 	}
 
 	// Compute the motion_threshold reciprocal if it hasn't been done.
@@ -424,14 +424,14 @@ void BackEnd::finaliseConfig()
 		 (PISP_BE_BAYER_ENABLE_TDN | PISP_BE_BAYER_ENABLE_TDN_INPUT | PISP_BE_BAYER_ENABLE_TDN_DECOMPRESS |
 		  PISP_BE_BAYER_ENABLE_TDN_COMPRESS | PISP_BE_BAYER_ENABLE_TDN_OUTPUT)))
 	{
-		finalise_tdn(be_config_);
+		finalise_tdn(be_config_, align_);
 	}
 
 	if (be_config_.dirty_flags_bayer &
 		(PISP_BE_BAYER_ENABLE_STITCH | PISP_BE_BAYER_ENABLE_STITCH_INPUT | PISP_BE_BAYER_ENABLE_STITCH_DECOMPRESS |
 		 PISP_BE_BAYER_ENABLE_STITCH_COMPRESS | PISP_BE_BAYER_ENABLE_STITCH_OUTPUT))
 	{
-		finalise_stitch(be_config_);
+		finalise_stitch(be_config_, align_);
 	}
 
 	if (dirty_flags_bayer & PISP_BE_BAYER_ENABLE_LSC)
@@ -897,9 +897,9 @@ bool BackEnd::ComputeOutputImageFormat(unsigned int i, pisp_image_format_config 
 	{
 		getOutputSize(i, &fmt.width, &fmt.height, ifmt);
 		if (!fmt.stride)
-			compute_stride(fmt);
+			compute_stride_align(fmt, align_);
 		else
-			check_stride(fmt);
+			check_stride(fmt, align_);
 		return true;
 	}
 	else
@@ -925,7 +925,7 @@ bool BackEnd::ComputeHogOutputImageFormat(pisp_image_format_config &fmt, pisp_im
 		// Configure HoG dimensions. The hardware only generates output for each complete cell.
 		fmt.width = w / HogCellSize;
 		fmt.height = h / HogCellSize;
-		compute_stride(fmt);
+		compute_stride_align(fmt, align_);
 		return true;
 	}
 	else

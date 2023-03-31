@@ -48,7 +48,8 @@ public:
 		uint16_t height;
 	};
 
-	BackEnd(Config const &user_config, PiSPVariant const &variant);
+	BackEnd(Config const &user_config, PiSPVariant const &variant,
+			unsigned int align = PISP_BACK_END_OUTPUT_MAX_ALIGN);
 	~BackEnd();
 
 	void SetGlobal(pisp_be_global_config const &global);
@@ -145,6 +146,7 @@ protected:
 	Config config_;
 	const PiSPVariant variant_;
 	pisp_be_config be_config_;
+	unsigned int align_;
 	pisp_image_format_config max_input_;
 	bool retile_;
 	bool finalise_tiling_;
