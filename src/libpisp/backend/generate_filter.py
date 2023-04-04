@@ -74,13 +74,13 @@ def main():
 
     # Generate the filter.
     if (filt[0].lower() == 'mitchell'):
-        filter = f'"Michell - Netravali (B = {params["b"]:.3f}, C = {params["c"]:.3f}):" [\n'
+        filter = f'"Michell - Netravali (B = {params["b"]:.3f}, C = {params["c"]:.3f})": [\n'
         h = mitchell(params['b'], params['c'], phases * taps)
     elif (filt[0].lower() == 'lanczos'):
         filter = f'"Lanczos order {params["order"]}": [\n'
         h = lanczos(params['order'], phases * taps)
     elif (filt[0].lower() == 'bicubic_spline'):
-        filter = f'"Bicubic-spline (a = {params["a"]:%.3f]})": [\n'
+        filter = f'"Bicubic-spline (a = {params["a"]:.3f})": [\n'
         h = bicubic_spline(params['a'], phases * taps)
     else:
         print(f'Invalid filter ({filt[0]}) selected!')

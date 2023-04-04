@@ -26,6 +26,7 @@ namespace
 
 std::map<std::string, pisp_be_ccm_config> ycbcr_map;
 std::map<std::string, pisp_be_ccm_config> inverse_ycbcr_map;
+std::map<std::string, pisp_be_resample_config> resample_map;
 
 void initialise_debin(pisp_be_debin_config &debin)
 {
@@ -52,18 +53,27 @@ void initialise_gamma(pisp_be_gamma_config &gamma)
 	memcpy(gamma.lut, gamma_lut, sizeof(gamma.lut));
 }
 
-void initialise_resample(pisp_be_resample_config &resample)
+void read_resample(boost::property_tree::ptree &root)
 {
-	boost::property_tree::ptree root;
-	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
-	auto params = root.get_child("resample_filters");
+	auto &filters = root.get_child("resample_filters");
 
-	std::vector<int16_t> resample_filters_v;
-	for (auto &x : params)
-		resample_filters_v.push_back(x.second.get_value<int16_t>());
-	int16_t *resample_filters = &resample_filters_v[0];
+	for (auto const &filter : filters)
+	{
+		pisp_be_resample_config r;
+		constexpr unsigned int num_coefs = sizeof(r.coef) / sizeof(r.coef[0]);
+		unsigned int i = 0;
 
-	memcpy(resample.coef, resample_filters, sizeof(resample.coef));
+		for (auto &c : filter.second)
+		{
+			r.coef[i] = c.second.get_value<int16_t>();
+			if (++i == num_coefs)
+				break;
+		}
+		if (i != num_coefs)
+			throw std::runtime_error("read_resample: Incorrect number of filter coefficients");
+
+		resample_map.emplace(filter.first, r);
+	}
 }
 
 // Macros for the sharpening filters, to avoid repeating the same code 5 times
@@ -197,6 +207,15 @@ void initialise_ycbcr_inverse(pisp_be_ccm_config &ycbcr_inverse, const std::stri
 	get_matrix(inverse_ycbcr_map, ycbcr_inverse, colour_space);
 }
 
+void initialise_resample(pisp_be_resample_config &resample, const std::string &filter)
+{
+	memset(resample.coef, 0, sizeof(resample.coef));
+
+	auto it = resample_map.find(filter);
+	if (it != resample_map.end())
+		memcpy(resample.coef, it->second.coef, sizeof(resample.coef));
+}
+
 void BackEnd::InitialiseConfig()
 {
 	boost::property_tree::ptree root;
@@ -217,9 +236,11 @@ void BackEnd::InitialiseConfig()
 	initialise_sharpen(be_config_.sharpen, be_config_.sh_fc_combine);
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_GAMMA + PISP_BE_RGB_ENABLE_SHARPEN;
 
+	read_resample(root);
 	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 	{
-		initialise_resample(be_config_.resample[i]);
+		// Start with a sensible default
+		initialise_resample(be_config_.resample[i], "lanczos3");
 		be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_RESAMPLE(i);
 	}
 }
