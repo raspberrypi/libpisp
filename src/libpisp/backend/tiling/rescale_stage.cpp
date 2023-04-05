@@ -29,7 +29,7 @@ Length2 RescaleStage::GetOutputImageSize() const
 
 void RescaleStage::PushStartUp(int output_start, Dir dir)
 {
-	PISP_LOG(debug, "Enter with output_start " << output_start);
+	PISP_LOG(debug, "(" << name_ << ") Enter with output_start " << output_start);
 
 	int input_start_P = output_start * config_.scale[dir];
 	int input_start = input_start_P >> config_.precision;
@@ -40,7 +40,7 @@ void RescaleStage::PushStartUp(int output_start, Dir dir)
 	output_interval_.offset = output_start;
 	input_interval_.offset = input_start_w_context;
 
-	PISP_LOG(debug, "Exit with input_start " << input_start_w_context);
+	PISP_LOG(debug, "(" << name_ << ") Exit with input_start " << input_start_w_context);
 	upstream_->PushStartUp(input_start_w_context, dir);
 }
 
@@ -50,7 +50,7 @@ void RescaleStage::PushStartUp(int output_start, Dir dir)
 
 int RescaleStage::PushEndDown(int input_end, Dir dir)
 {
-	PISP_LOG(debug, "Enter with input_end " << input_end);
+	PISP_LOG(debug, "(" << name_ << ") Enter with input_end " << input_end);
 
 	int input_image_size = GetInputImageSize()[dir];
 	input_interval_.SetEnd(input_end);
@@ -88,7 +88,7 @@ int RescaleStage::PushEndDown(int input_end, Dir dir)
 
 	output_interval_.SetEnd(output_end_exc);
 
-	PISP_LOG(debug, "Exit with output_end " << output_end_exc);
+	PISP_LOG(debug, "(" << name_ << ") Exit with output_end " << output_end_exc);
 	PushEndUp(downstream_->PushEndDown(output_end_exc, dir), dir);
 
 	// If we didn't quite finish the output then we can't get too close to the end of the input because another tile will be
@@ -96,7 +96,7 @@ int RescaleStage::PushEndDown(int input_end, Dir dir)
 	if (output_interval_.End() < config_.output_image_size[dir] &&
 		input_interval_.End() > input_image_size - GetPipeline()->GetConfig().min_tile_size[dir])
 	{
-		PISP_LOG(debug, "Too close to input image edge - try again");
+		PISP_LOG(debug, "(" << name_ << ") Too close to input image edge - try again");
 		PushEndDown(input_image_size - GetPipeline()->GetConfig().min_tile_size[dir], dir);
 	}
 
@@ -105,7 +105,7 @@ int RescaleStage::PushEndDown(int input_end, Dir dir)
 
 void RescaleStage::PushEndUp(int output_end, Dir dir)
 {
-	PISP_LOG(debug, "Enter with output_end " << output_end);
+	PISP_LOG(debug, "(" << name_ << ") Enter with output_end " << output_end);
 
 	int input_end_w_context_exc;
 	if (config_.rescaler_type == RescalerType::Downscaler)
@@ -133,17 +133,17 @@ void RescaleStage::PushEndUp(int output_end, Dir dir)
 	output_interval_.SetEnd(output_end);
 	input_interval_.SetEnd(input_end_w_context_exc);
 
-	PISP_LOG(debug, "Exit with input_end " << input_end_w_context_exc);
+	PISP_LOG(debug, "(" << name_ << ") Exit with input_end " << input_end_w_context_exc);
 }
 
 void RescaleStage::PushCropDown(Interval interval, Dir dir)
 {
-	PISP_LOG(debug, "Enter with interval " << interval);
+	PISP_LOG(debug, "(" << name_ << ") Enter with interval " << interval);
 
 	PISP_ASSERT(interval > input_interval_);
 	crop_ = interval - input_interval_;
 	input_interval_ = interval;
 
-	PISP_LOG(debug, "Exit with interval " << output_interval_);
+	PISP_LOG(debug, "(" << name_ << ") Exit with interval " << output_interval_);
 	downstream_->PushCropDown(output_interval_, dir);
 }
