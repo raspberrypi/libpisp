@@ -2,12 +2,14 @@
 
 pisp_sources += files([
     'pisp_utils.cpp',
-    'pisp_logging.cpp'
+    'pisp_logging.cpp',
+    'pisp_pwl.cpp',
 ])
 
 common_headers = files([
     'pisp_common.h',
     'pisp_logging.hpp',
+    'pisp_pwl.hpp',
     'pisp_types.h',
     'pisp_utils.hpp'
 ])
