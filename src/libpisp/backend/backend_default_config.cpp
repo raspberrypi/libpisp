@@ -10,7 +10,9 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
+#include <map>
 #include <string>
+#include <vector>
 
 #include "pisp_be_config.h"
 
@@ -21,6 +23,9 @@
 
 namespace
 {
+
+std::map<std::string, pisp_be_ccm_config> ycbcr_map;
+std::map<std::string, pisp_be_ccm_config> inverse_ycbcr_map;
 
 void initialise_debin(pisp_be_debin_config &debin)
 {
@@ -121,6 +126,62 @@ void initialise_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_c
 	shfc.y_factor = 0.75 * (1 << 8);
 }
 
+void read_ycbcr(boost::property_tree::ptree &root)
+{
+	auto encoding = root.get_child("colour_encoding");
+
+	for (auto const &enc : encoding)
+	{
+		static const std::string keys[2] { "ycbcr", "ycbcr_inverse" };
+		unsigned int i = 0;
+
+		for (auto &key : keys)
+		{
+			auto matrix = enc.second.get_child(key);
+			pisp_be_ccm_config ccm;
+
+			i = 0;
+			for (auto &x : matrix.get_child("coeffs"))
+			{
+				ccm.coeffs[i] = x.second.get_value<int16_t>();
+				if (++i == 9)
+					break;
+			}
+			if (i != 9)
+				throw std::runtime_error("read_ycbcr: Incorrect number of matrix coefficients");
+
+			i = 0;
+			for (auto &x : matrix.get_child("offsets"))
+			{
+				ccm.offsets[i] = x.second.get_value<int32_t>();
+				if (++i == 3)
+					break;
+			}
+			if (i != 3)
+				throw std::runtime_error("read_ycbcr: Incorrect number of matrix offsets");
+
+			if (key == "ycbcr")
+				ycbcr_map.emplace(enc.first, ccm);
+			else
+				inverse_ycbcr_map.emplace(enc.first, ccm);
+		}
+	}
+}
+
+void get_matrix(const std::map<std::string, pisp_be_ccm_config> &map, pisp_be_ccm_config &matrix,
+				const std::string &colour_space)
+{
+	memset(matrix.coeffs, 0, sizeof(matrix.coeffs));
+	memset(matrix.offsets, 0, sizeof(matrix.offsets));
+
+	auto it = map.find(colour_space);
+	if (it != map.end())
+	{
+		memcpy(matrix.coeffs, it->second.coeffs, sizeof(matrix.coeffs));
+		memcpy(matrix.offsets, it->second.offsets, sizeof(matrix.offsets));
+	}
+}
+
 } // namespace
 
 namespace PiSP
@@ -128,59 +189,33 @@ namespace PiSP
 
 void initialise_ycbcr(pisp_be_ccm_config &ycbcr, const std::string &colour_space)
 {
-	boost::property_tree::ptree root;
-	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
-	auto encoding = root.get_child("colour_encoding");
-	auto params = encoding.get_child(colour_space).get_child("ycbcr");
-
-	std::vector<int16_t> coeffs_v;
-	for (auto &x : params.get_child("coeffs"))
-		coeffs_v.push_back(x.second.get_value<int16_t>());
-	int16_t *coeffs = &coeffs_v[0];
-
-	std::vector<int32_t> offsets_v;
-	for (auto &x : params.get_child("offsets"))
-		offsets_v.push_back(x.second.get_value<int32_t>());
-	int32_t *offsets = &offsets_v[0];
-
-	memcpy(ycbcr.coeffs, coeffs, sizeof(ycbcr.coeffs));
-	memcpy(ycbcr.offsets, offsets, sizeof(ycbcr.offsets));
+	get_matrix(ycbcr_map, ycbcr, colour_space);
 }
 
 void initialise_ycbcr_inverse(pisp_be_ccm_config &ycbcr_inverse, const std::string &colour_space)
 {
-	boost::property_tree::ptree root;
-	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
-	auto encoding = root.get_child("colour_encoding");
-	auto selection = encoding.get_child("select").data();
-	auto params = encoding.get_child(colour_space).get_child("ycbcr_inverse");
-
-	std::vector<int16_t> coeffs_v;
-	for (auto &x : params.get_child("coeffs"))
-		coeffs_v.push_back(x.second.get_value<int16_t>());
-	int16_t *coeffs = &coeffs_v[0];
-
-	std::vector<int32_t> offsets_v;
-	for (auto &x : params.get_child("offsets"))
-		offsets_v.push_back(x.second.get_value<int32_t>());
-	int32_t *offsets = &offsets_v[0];
-
-	memcpy(ycbcr_inverse.coeffs, coeffs, sizeof(ycbcr_inverse.coeffs));
-	memcpy(ycbcr_inverse.offsets, offsets, sizeof(ycbcr_inverse.offsets));
+	get_matrix(inverse_ycbcr_map, ycbcr_inverse, colour_space);
 }
 
 void BackEnd::InitialiseConfig()
 {
+	boost::property_tree::ptree root;
+	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
+
 	memset(&be_config_, 0, sizeof(be_config_));
+
 	initialise_debin(be_config_.debin);
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEBIN;
 
+	read_ycbcr(root);
+	// Start with a sensible default
 	initialise_ycbcr(be_config_.ycbcr, "jpeg");
 	initialise_ycbcr_inverse(be_config_.ycbcr_inverse, "jpeg");
+	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_YCBCR_INVERSE;
+
 	initialise_gamma(be_config_.gamma);
 	initialise_sharpen(be_config_.sharpen, be_config_.sh_fc_combine);
-	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_YCBCR_INVERSE +
-								  PISP_BE_RGB_ENABLE_GAMMA + PISP_BE_RGB_ENABLE_SHARPEN;
+	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_GAMMA + PISP_BE_RGB_ENABLE_SHARPEN;
 
 	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 	{
