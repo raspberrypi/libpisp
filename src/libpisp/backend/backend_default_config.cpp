@@ -28,20 +28,28 @@ std::map<std::string, pisp_be_ccm_config> ycbcr_map;
 std::map<std::string, pisp_be_ccm_config> inverse_ycbcr_map;
 std::map<std::string, pisp_be_resample_config> resample_map;
 
-void initialise_debin(pisp_be_debin_config &debin)
+void initialise_debin(const boost::property_tree::ptree &root, pisp_be_debin_config &debin)
 {
-	static const int8_t default_coeffs[] = { -7, 105, 35, -5 };
-	static_assert(sizeof(default_coeffs) == sizeof(debin.coeffs), "Debin filter size mismatch");
+	constexpr unsigned int num_coefs = sizeof(debin.coeffs) / sizeof(debin.coeffs[0]);
+	auto &coefs = root.get_child("debin.coefs");
+	unsigned int i = 0;
+
+	for (auto &c : coefs)
+	{
+		debin.coeffs[i] = c.second.get_value<int8_t>();
+		if (++i == num_coefs)
+			break;
+	}
+	if (i != num_coefs)
+		throw std::runtime_error("Debin filter size mismatch");
 
 	debin.h_enable = debin.v_enable = 1;
-	memcpy(debin.coeffs, default_coeffs, sizeof(debin.coeffs));
 }
 
-void initialise_gamma(pisp_be_gamma_config &gamma)
+void initialise_gamma(const boost::property_tree::ptree root, pisp_be_gamma_config &gamma)
 {
-	boost::property_tree::ptree root;
-	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
-	auto params = root.get_child("gamma_lut");
+	auto gamma = root.get_child("gamma_lut");
+	unsigned int i = 0;
 
 	std::vector<std::string> gamma_lut_v;
 	for (auto &x : params)
@@ -53,7 +61,7 @@ void initialise_gamma(pisp_be_gamma_config &gamma)
 	memcpy(gamma.lut, gamma_lut, sizeof(gamma.lut));
 }
 
-void read_resample(boost::property_tree::ptree &root)
+void read_resample(const boost::property_tree::ptree &root)
 {
 	auto &filters = root.get_child("resample_filters");
 
@@ -136,7 +144,7 @@ void initialise_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_c
 	shfc.y_factor = 0.75 * (1 << 8);
 }
 
-void read_ycbcr(boost::property_tree::ptree &root)
+void read_ycbcr(const boost::property_tree::ptree &root)
 {
 	auto encoding = root.get_child("colour_encoding");
 
@@ -223,7 +231,7 @@ void BackEnd::InitialiseConfig()
 
 	memset(&be_config_, 0, sizeof(be_config_));
 
-	initialise_debin(be_config_.debin);
+	initialise_debin(root, be_config_.debin);
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEBIN;
 
 	read_ycbcr(root);

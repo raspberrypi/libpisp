@@ -1,4 +1,7 @@
 {
+    "debin": {
+        "coefs": [-7, 105, 35, -5]
+    },
     "colour_encoding": {
         "jpeg": {
             "ycbcr": {
