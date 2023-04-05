@@ -1,5 +1,11 @@
 # SPDX-License-Identifier: CC0-1.0
 
+config_install_dir = get_option('prefix') / get_option('datadir') / 'libpisp'
+
+conf_data = configuration_data()
+conf_data.set('PISP_BE_CONFIG_DIR', '"' + config_install_dir + '"')
+configure_file(output : 'config.h', configuration : conf_data)
+
 backend_sources = files([
     'backend.cpp',
     'backend_default_config.cpp',
@@ -8,7 +14,8 @@ backend_sources = files([
 
 backend_headers = files([
     'backend.hpp',
-    'pisp_be_config.h'
+    'pisp_be_config.h',
+    meson.current_build_dir() / 'config.h',
 ])
 
 pisp_headers += backend_headers
@@ -20,6 +27,6 @@ if install
 endif
 
 install_data('backend_default_config.json',
-             install_dir : '/usr/local/share/libpisp/')
+             install_dir : config_install_dir)
 
 subdir('tiling')

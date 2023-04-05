@@ -10,14 +10,13 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
+#include <filesystem>
 #include <map>
 #include <string>
 #include <vector>
 
 #include "common/pisp_pwl.hpp"
 #include "pisp_be_config.h"
-
-#define DEFAULT_CONFIG_FILE "/usr/local/share/libpisp/backend_default_config.json"
 
 // Where it might be helpful we initialise some blocks with the "obvious" default parameters. This saves users the trouble,
 // and they can just "enable" the blocks.
@@ -260,10 +259,14 @@ void initialise_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_c
 	shfc = default_shfc;
 }
 
-void BackEnd::InitialiseConfig()
+void BackEnd::InitialiseConfig(const std::string filename)
 {
 	boost::property_tree::ptree root;
-	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
+
+	if (!std::filesystem::exists(filename))
+		throw std::runtime_error("BE: Could not find config json file: " + filename);
+
+	boost::property_tree::read_json(filename, root);
 
 	memset(&be_config_, 0, sizeof(be_config_));
 
