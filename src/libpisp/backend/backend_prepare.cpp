@@ -538,15 +538,21 @@ void BackEnd::updateSmartResize()
 					if (resampler_output_width * 2 < input_width)
 					{
 						// Try to put 2x downscale into the resampler, everything else into
-						// the downscaler. But remember that it must do *at least* 2x.
-						downscaler_output_width = std::min(resampler_output_width * 2, input_width / 2);
+						// the downscaler. But remember that it must do *at least* 2x, and no
+						// more than 8x (being careful to round that limit up)..
+						downscaler_output_width = std::clamp(resampler_output_width * 2,
+															 (input_width + 7) / 8,
+															 input_width / 2);
 					}
 					// Now the same for the height.
 					if (resampler_output_height * 2 < input_height)
 					{
 						// Try to put 2x downscale into the resampler, everything else into
-						// the downscaler. But remember that it must do *at least* 2x.
-						downscaler_output_height = std::min(resampler_output_height * 2, input_height / 2);
+						// the downscaler. But remember that it must do *at least* 2x and no
+						// more than 8x (being careful to round that limit up)..
+						downscaler_output_height = std::clamp(resampler_output_height * 2,
+															  (input_height + 7) / 8,
+															  input_height / 2);
 					}
 
 					PISP_LOG(debug, "Using downscaler, output size "
@@ -558,54 +564,63 @@ void BackEnd::updateSmartResize()
 					downscale.scaled_height = downscaler_output_height;
 					SetDownscale(i, downscale);
 					be_config_.global.rgb_enables |= PISP_BE_RGB_ENABLE_DOWNSCALE(i);
+
+					// Now adjust the input dimensions that the code below (which
+					// programs the resampler) will see, so that it can, if necessary,
+					// do its PPF coefficient adjustment.
+					input_width = downscaler_output_width;
+					input_height = downscaler_output_height;
 				}
 				else
 				{
 					be_config_.global.rgb_enables &= ~PISP_BE_RGB_ENABLE_DOWNSCALE(i);
-
-					// If the following conditions are met:
-					//
-					// - The x and y scale factors are the same,
-					// - We are downscaling in both directions by a factor of > 2,
-					// - The downscale factor is *smaller* than the number of filter taps - 1,
-					//
-					// then we can use the PPF as a trapezoidal downscaler by setting up
-					// the filter coefficients (per used phase) correctly. This improves
-					// on image quality for larger downscale factors.
-					double scale_factor_x = (double)(input_width - 1) / (resampler_output_width - 1);
-					double scale_factor_y = (double)(input_height - 1) / (resampler_output_height - 1);
-					if (std::abs(scale_factor_x - scale_factor_y) < 0.01 && scale_factor_x > 2 &&
-						scale_factor_x < NumTaps - 1)
-					{
-						PISP_LOG(debug, "Setting the PPF as a trapezoidal filter");
-
-						pisp_be_resample_config resample;
-						pisp_be_resample_extra resample_extra = {};
-						memset(&resample, 0, sizeof(resample));
-						for (unsigned int p = 0; p < NumPhases; p++)
-						{
-							// Initial phase for the current pixel (offset 2 in the filter)
-							// is calculated as 1 - p / NumPhases
-							resample.coef[p * NumTaps + 0] =
-								(1 << ResamplePrecission) - (p << ResamplePrecission) / NumPhases;
-
-							resample.coef[p * NumTaps + 0] /= scale_factor_x;
-
-							double scale = scale_factor_x - (1.0 - (double)p / NumPhases);
-							for (unsigned int t = 1; t < 1 + std::ceil(scale_factor_x); t++)
-							{
-								double s = std::min(1.0, scale);
-								resample.coef[p * NumTaps + t] = s * (1 << ResamplePrecission) / scale_factor_x;
-								scale -= s;
-							}
-						}
-
-						// resample_extra will be filled in below.
-						SetResample(i, resample, resample_extra);
-					}
 				}
 
-				// Finally program up the resampler.
+				// Finally program up the resampler block.
+				// If the following conditions are met:
+				//
+				// - The x and y scale factors are the same,
+				// - We are downscaling in both directions by a factor of > 2,
+				// - The downscale factor is *smaller* than the number of filter taps - 1,
+				//
+				// then we can use the PPF as a trapezoidal downscaler by setting up
+				// the filter coefficients (per used phase) correctly. This improves
+				// on image quality for larger downscale factors.
+				double scale_factor_x = (double)(input_width - 1) / (resampler_output_width - 1);
+				double scale_factor_y = (double)(input_height - 1) / (resampler_output_height - 1);
+				if (scale_factor_x > 2.1 &&
+					scale_factor_x < scale_factor_y * 1.1 && scale_factor_y < scale_factor_x * 1.1)
+				{
+					PISP_LOG(debug, "Setting the PPF as a trapezoidal filter");
+
+					scale_factor_x = std::min<double>(scale_factor_x, NumTaps - 1);
+
+					pisp_be_resample_config resample;
+					pisp_be_resample_extra resample_extra = {};
+					memset(&resample, 0, sizeof(resample));
+					for (unsigned int p = 0; p < NumPhases; p++)
+					{
+						// Initial phase for the current pixel (offset 2 in the filter)
+						// is calculated as 1 - p / NumPhases
+						resample.coef[p * NumTaps + 0] =
+							(1 << ResamplePrecission) - (p << ResamplePrecission) / NumPhases;
+
+						resample.coef[p * NumTaps + 0] /= scale_factor_x;
+
+						double scale = scale_factor_x - (1.0 - (double)p / NumPhases);
+						for (unsigned int t = 1; t < 1 + std::ceil(scale_factor_x); t++)
+						{
+							double s = std::min(1.0, scale);
+							resample.coef[p * NumTaps + t] = s * (1 << ResamplePrecission) / scale_factor_x;
+							scale -= s;
+						}
+					}
+
+					// resample_extra will be filled in below.
+					SetResample(i, resample, resample_extra);
+				}
+
+				// Last thing is to set the output dimensions.
 				pisp_be_resample_extra resample = {};
 				resample.scaled_width = resampler_output_width;
 				resample.scaled_height = resampler_output_height;
