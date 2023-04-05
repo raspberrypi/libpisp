@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "common/pisp_pwl.hpp"
 #include "pisp_be_config.h"
 
 #define DEFAULT_CONFIG_FILE "/usr/local/share/libpisp/backend_default_config.json"
@@ -46,19 +47,45 @@ void initialise_debin(const boost::property_tree::ptree &root, pisp_be_debin_con
 	debin.h_enable = debin.v_enable = 1;
 }
 
-void initialise_gamma(const boost::property_tree::ptree root, pisp_be_gamma_config &gamma)
+void initialise_gamma(const boost::property_tree::ptree &root, pisp_be_gamma_config &gamma)
 {
-	auto gamma = root.get_child("gamma_lut");
-	unsigned int i = 0;
+	constexpr unsigned int num_points = sizeof(gamma.lut) / sizeof(gamma.lut[0]);
 
-	std::vector<std::string> gamma_lut_v;
-	for (auto &x : params)
-		gamma_lut_v.push_back(x.second.data());
-	uint32_t gamma_lut[PISP_BE_GAMMA_LUT_SIZE];
-	for (int i = 0; i < PISP_BE_GAMMA_LUT_SIZE; i++)
-		gamma_lut[i] = std::stoul(gamma_lut_v[i], nullptr, 16);
+	PiSP::Pwl pwl;
+	pwl.Read(root.get_child("gamma.lut"));
 
-	memcpy(gamma.lut, gamma_lut, sizeof(gamma.lut));
+	static constexpr unsigned int SlopeBits = 14;
+	static constexpr unsigned int PosBits = 16;
+
+	int lastY = 0;
+	for (unsigned int i = 0; i < num_points; i++)
+	{
+		int x, y;
+		if (i < 32)
+			x = i * 512;
+		else if (i < 48)
+			x = (i - 32) * 1024 + 16384;
+		else
+			x = std::min(65535u, (i - 48) * 2048 + 32768);
+
+		y = pwl.Eval(x);
+		if (y < 0 || (i && y < lastY))
+			throw std::runtime_error("initialise_gamma: Malformed LUT");
+
+		if (i)
+		{
+			unsigned int slope = y - lastY;
+			if (slope >= (1u << SlopeBits))
+			{
+				slope = (1u << SlopeBits) - 1;
+				y = lastY + slope;
+			}
+			gamma.lut[i - 1] |= slope << PosBits;
+		}
+
+		gamma.lut[i] = y;
+		lastY = y;
+	}
 }
 
 void read_resample(const boost::property_tree::ptree &root)
@@ -240,9 +267,11 @@ void BackEnd::InitialiseConfig()
 	initialise_ycbcr_inverse(be_config_.ycbcr_inverse, "jpeg");
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_YCBCR_INVERSE;
 
-	initialise_gamma(be_config_.gamma);
+	initialise_gamma(root, be_config_.gamma);
+	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_GAMMA;
+
 	initialise_sharpen(be_config_.sharpen, be_config_.sh_fc_combine);
-	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_GAMMA + PISP_BE_RGB_ENABLE_SHARPEN;
+	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_SHARPEN;
 
 	read_resample(root);
 	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
