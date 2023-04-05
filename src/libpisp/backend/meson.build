@@ -15,7 +15,6 @@ backend_sources = files([
 backend_headers = files([
     'backend.hpp',
     'pisp_be_config.h',
-    meson.current_build_dir() / 'config.h',
 ])
 
 pisp_headers += backend_headers
