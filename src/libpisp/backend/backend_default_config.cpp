@@ -49,6 +49,19 @@ void initialise_debin(const boost::property_tree::ptree &root, pisp_be_debin_con
 	debin.h_enable = debin.v_enable = 1;
 }
 
+void initialise_demosaic(const boost::property_tree::ptree &root, pisp_be_demosaic_config &demosaic)
+{
+	auto &params = root.get_child("demosaic");
+	demosaic.sharper = params.get_child("sharper").get_value<uint8_t>();
+	demosaic.fc_mode = params.get_child("fc_mode").get_value<uint8_t>();
+}
+
+void initialise_false_colour(const boost::property_tree::ptree &root, pisp_be_false_colour_config &fc)
+{
+	auto &params = root.get_child("false_colour");
+	fc.distance = params.get_child("distance").get_value<uint8_t>();
+}
+
 void initialise_gamma(const boost::property_tree::ptree &root, pisp_be_gamma_config &gamma)
 {
 	constexpr unsigned int num_points = sizeof(gamma.lut) / sizeof(gamma.lut[0]);
@@ -272,6 +285,12 @@ void BackEnd::InitialiseConfig(const std::string filename)
 
 	initialise_debin(root, be_config_.debin);
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEBIN;
+
+	initialise_demosaic(root, be_config_.demosaic);
+	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEMOSAIC;
+
+	initialise_false_colour(root, be_config_.false_colour);
+	be_config_.dirty_flags_bayer |= PISP_BE_RGB_ENABLE_FALSE_COLOUR;
 
 	read_ycbcr(root);
 	// Start with a sensible default

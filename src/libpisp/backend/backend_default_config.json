@@ -3,6 +3,15 @@
     {
         "coefs": [-7, 105, 35, -5]
     },
+    "demosaic":
+    {
+        "sharper": 8,
+        "fc_mode": 1
+    },
+    "false_colour":
+    {
+        "distance": 2
+    },
     "colour_encoding":
     {
         "jpeg":
