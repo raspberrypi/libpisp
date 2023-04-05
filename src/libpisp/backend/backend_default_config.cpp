@@ -29,6 +29,9 @@ std::map<std::string, pisp_be_ccm_config> ycbcr_map;
 std::map<std::string, pisp_be_ccm_config> inverse_ycbcr_map;
 std::map<std::string, pisp_be_resample_config> resample_map;
 
+pisp_be_sharpen_config default_sharpen;
+pisp_be_sh_fc_combine_config default_shfc;
+
 void initialise_debin(const boost::property_tree::ptree &root, pisp_be_debin_config &debin)
 {
 	constexpr unsigned int num_coefs = sizeof(debin.coeffs) / sizeof(debin.coeffs[0]);
@@ -112,40 +115,40 @@ void read_resample(const boost::property_tree::ptree &root)
 }
 
 // Macros for the sharpening filters, to avoid repeating the same code 5 times
-#define FILTER(i) {																						\
-		auto filter = params.get_child("filter" #i);													\
-		std::vector<int8_t> kernel_v;																	\
-		for (auto &x : filter.get_child("kernel"))														\
-			kernel_v.push_back(x.second.get_value<int8_t>());											\
-		int8_t* kernel = &kernel_v[0];																	\
-		uint16_t offset = filter.get_child("offset").get_value<uint16_t>();								\
-		uint16_t threshold_slope = filter.get_child("threshold_slope").get_value<uint16_t>();			\
-		uint16_t scale = filter.get_child("scale").get_value<uint16_t>();								\
-		memcpy(sharpen.kernel##i, kernel, sizeof(sharpen.kernel##i));									\
-		memcpy(&sharpen.threshold_offset##i, &offset, sizeof(sharpen.threshold_offset##i));				\
-		memcpy(&sharpen.threshold_slope##i, &threshold_slope, sizeof(sharpen.threshold_slope##i));		\
-		memcpy(&sharpen.scale##i, &scale, sizeof(sharpen.scale##i));									\
+#define FILTER(i)                                                                                                      \
+	{                                                                                                                  \
+		auto filter = params.get_child("filter" #i);                                                                   \
+		std::vector<int8_t> kernel_v;                                                                                  \
+		for (auto &x : filter.get_child("kernel"))                                                                     \
+			kernel_v.push_back(x.second.get_value<int8_t>());                                                          \
+		int8_t *kernel = &kernel_v[0];                                                                                 \
+		uint16_t offset = filter.get_child("offset").get_value<uint16_t>();                                            \
+		uint16_t threshold_slope = filter.get_child("threshold_slope").get_value<uint16_t>();                          \
+		uint16_t scale = filter.get_child("scale").get_value<uint16_t>();                                              \
+		memcpy(default_sharpen.kernel##i, kernel, sizeof(default_sharpen.kernel##i));                                  \
+		memcpy(&default_sharpen.threshold_offset##i, &offset, sizeof(default_sharpen.threshold_offset##i));            \
+		memcpy(&default_sharpen.threshold_slope##i, &threshold_slope, sizeof(default_sharpen.threshold_slope##i));     \
+		memcpy(&default_sharpen.scale##i, &scale, sizeof(default_sharpen.scale##i));                                   \
 	}
 
-#define POS_NEG(i) {																					\
-		auto tive = params.get_child(#i "tive");														\
-		uint16_t strength = tive.get_child("strength").get_value<uint16_t>();							\
-		uint16_t pre_limit = tive.get_child("pre_limit").get_value<uint16_t>();							\
-		std::vector<uint16_t> function_v;																\
-		for (auto &x : tive.get_child("function"))														\
-			function_v.push_back(x.second.get_value<uint16_t>());										\
-		uint16_t* function = &function_v[0];															\
-		uint16_t limit = tive.get_child("limit").get_value<uint16_t>();									\
-		memcpy(&sharpen.i##tive_strength, &strength, sizeof(sharpen.i##tive_strength));					\
-		memcpy(&sharpen.i##tive_pre_limit, &pre_limit, sizeof(sharpen.i##tive_pre_limit));				\
-		memcpy(sharpen.i##tive_func, function, sizeof(sharpen.i##tive_func));							\
-		memcpy(&sharpen.i##tive_limit, &limit, sizeof(sharpen.i##tive_limit));				\
+#define POS_NEG(i)                                                                                                     \
+	{                                                                                                                  \
+		auto tive = params.get_child(#i "tive");                                                                       \
+		uint16_t strength = tive.get_child("strength").get_value<uint16_t>();                                          \
+		uint16_t pre_limit = tive.get_child("pre_limit").get_value<uint16_t>();                                        \
+		std::vector<uint16_t> function_v;                                                                              \
+		for (auto &x : tive.get_child("function"))                                                                     \
+			function_v.push_back(x.second.get_value<uint16_t>());                                                      \
+		uint16_t *function = &function_v[0];                                                                           \
+		uint16_t limit = tive.get_child("limit").get_value<uint16_t>();                                                \
+		memcpy(&default_sharpen.i##tive_strength, &strength, sizeof(default_sharpen.i##tive_strength));                \
+		memcpy(&default_sharpen.i##tive_pre_limit, &pre_limit, sizeof(default_sharpen.i##tive_pre_limit));             \
+		memcpy(default_sharpen.i##tive_func, function, sizeof(default_sharpen.i##tive_func));                          \
+		memcpy(&default_sharpen.i##tive_limit, &limit, sizeof(default_sharpen.i##tive_limit));                         \
 	}
 
-void initialise_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc)
+void read_sharpen(const boost::property_tree::ptree &root)
 {
-	boost::property_tree::ptree root;
-	boost::property_tree::read_json(DEFAULT_CONFIG_FILE, root);
 	auto params = root.get_child("sharpen");
 
 	FILTER(0);
@@ -162,13 +165,13 @@ void initialise_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_c
 	uint8_t white = params.get_child("white").get_value<uint8_t>();
 	uint8_t black = params.get_child("black").get_value<uint8_t>();
 	uint8_t grey = params.get_child("grey").get_value<uint8_t>();
-	memcpy(&sharpen.enables, &enables, sizeof(sharpen.enables));
-	memcpy(&sharpen.white, &white, sizeof(sharpen.white));
-	memcpy(&sharpen.black, &black, sizeof(sharpen.black));
-	memcpy(&sharpen.grey, &grey, sizeof(sharpen.grey));
+	memcpy(&default_sharpen.enables, &enables, sizeof(default_sharpen.enables));
+	memcpy(&default_sharpen.white, &white, sizeof(default_sharpen.white));
+	memcpy(&default_sharpen.black, &black, sizeof(default_sharpen.black));
+	memcpy(&default_sharpen.grey, &grey, sizeof(default_sharpen.grey));
 
-	memset(&shfc, 0, sizeof(shfc));
-	shfc.y_factor = 0.75 * (1 << 8);
+	memset(&default_shfc, 0, sizeof(default_shfc));
+	default_shfc.y_factor = 0.75 * (1 << 8);
 }
 
 void read_ycbcr(const boost::property_tree::ptree &root)
@@ -251,6 +254,12 @@ void initialise_resample(pisp_be_resample_config &resample, const std::string &f
 		memcpy(resample.coef, it->second.coef, sizeof(resample.coef));
 }
 
+void initialise_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc)
+{
+	sharpen = default_sharpen;
+	shfc = default_shfc;
+}
+
 void BackEnd::InitialiseConfig()
 {
 	boost::property_tree::ptree root;
@@ -270,6 +279,7 @@ void BackEnd::InitialiseConfig()
 	initialise_gamma(root, be_config_.gamma);
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_GAMMA;
 
+	read_sharpen(root);
 	initialise_sharpen(be_config_.sharpen, be_config_.sh_fc_combine);
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_SHARPEN;
 
