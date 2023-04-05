@@ -173,14 +173,10 @@ void read_sharpen(const boost::property_tree::ptree &root)
 	POS_NEG(nega);
 
 	std::string enables_s = params.get_child("enables").data();
-	uint8_t enables = std::stoul(enables_s, nullptr, 16);
-	uint8_t white = params.get_child("white").get_value<uint8_t>();
-	uint8_t black = params.get_child("black").get_value<uint8_t>();
-	uint8_t grey = params.get_child("grey").get_value<uint8_t>();
-	memcpy(&default_sharpen.enables, &enables, sizeof(default_sharpen.enables));
-	memcpy(&default_sharpen.white, &white, sizeof(default_sharpen.white));
-	memcpy(&default_sharpen.black, &black, sizeof(default_sharpen.black));
-	memcpy(&default_sharpen.grey, &grey, sizeof(default_sharpen.grey));
+	default_sharpen.enables = std::stoul(enables_s, nullptr, 16);
+	default_sharpen.white = params.get_child("white").get_value<uint8_t>();
+	default_sharpen.black = params.get_child("black").get_value<uint8_t>();
+	default_sharpen.grey = params.get_child("grey").get_value<uint8_t>();
 
 	memset(&default_shfc, 0, sizeof(default_shfc));
 	default_shfc.y_factor = 0.75 * (1 << 8);
