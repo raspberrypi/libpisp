@@ -26,7 +26,8 @@ namespace
 
 std::map<std::string, pisp_be_ccm_config> ycbcr_map;
 std::map<std::string, pisp_be_ccm_config> inverse_ycbcr_map;
-std::map<std::string, pisp_be_resample_config> resample_map;
+std::map<std::string, pisp_be_resample_config> resample_filter_map;
+std::vector<std::pair<double, std::string>> resample_select_list;
 
 pisp_be_sharpen_config default_sharpen;
 pisp_be_sh_fc_combine_config default_shfc;
@@ -105,14 +106,15 @@ void initialise_gamma(const boost::property_tree::ptree &root, pisp_be_gamma_con
 
 void read_resample(const boost::property_tree::ptree &root)
 {
-	auto &filters = root.get_child("resample_filters");
+	auto &filters = root.get_child("resample.filters");
+	unsigned int i;
 
 	for (auto const &filter : filters)
 	{
 		pisp_be_resample_config r;
 		constexpr unsigned int num_coefs = sizeof(r.coef) / sizeof(r.coef[0]);
-		unsigned int i = 0;
 
+		i = 0;
 		for (auto &c : filter.second)
 		{
 			r.coef[i] = c.second.get_value<int16_t>();
@@ -122,8 +124,22 @@ void read_resample(const boost::property_tree::ptree &root)
 		if (i != num_coefs)
 			throw std::runtime_error("read_resample: Incorrect number of filter coefficients");
 
-		resample_map.emplace(filter.first, r);
+		resample_filter_map.emplace(filter.first, r);
 	}
+
+	auto &smart = root.get_child("resample.smart_selection");
+	for (auto &scale : smart.get_child("downscale"))
+		resample_select_list.emplace_back(scale.second.get_value<double>(), std::string {});
+
+	i = 0;
+	for (auto &filter : smart.get_child("filter"))
+	{
+		resample_select_list[i].second = filter.second.get_value<std::string>();
+		if (++i == resample_select_list.size())
+			break;
+	}
+	if (i != resample_select_list.size())
+		throw std::runtime_error("read_resample: Incorrect number of filters");
 }
 
 // Macros for the sharpening filters, to avoid repeating the same code 5 times
@@ -257,9 +273,20 @@ void initialise_resample(pisp_be_resample_config &resample, const std::string &f
 {
 	memset(resample.coef, 0, sizeof(resample.coef));
 
-	auto it = resample_map.find(filter);
-	if (it != resample_map.end())
+	auto it = resample_filter_map.find(filter);
+	if (it != resample_filter_map.end())
 		memcpy(resample.coef, it->second.coef, sizeof(resample.coef));
+}
+
+void initialise_resample(pisp_be_resample_config &resample, double downscale)
+{
+	auto it = std::find_if(resample_select_list.begin(), resample_select_list.end(),
+						   [downscale](const auto &item) { return item.first >= downscale; });
+
+	if (it != resample_select_list.end())
+		initialise_resample(resample, it->second);
+	else
+		initialise_resample(resample, resample_select_list.back().second);
 }
 
 void initialise_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc)
@@ -305,7 +332,7 @@ void BackEnd::InitialiseConfig(const std::string filename)
 	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 	{
 		// Start with a sensible default
-		initialise_resample(be_config_.resample[i], "lanczos3");
+		initialise_resample(be_config_.resample[i], "michel-netravali");
 		be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_RESAMPLE(i);
 	}
 }

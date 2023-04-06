@@ -163,6 +163,7 @@ void initialise_ycbcr(pisp_be_ccm_config &ycbcr, const std::string &colour_space
 void initialise_ycbcr_inverse(pisp_be_ccm_config &ycbcr_inverse, const std::string &colour_space);
 // Fill in the coefficients from a filter string name ("lanczos3", "lanczos2", "bicubic-spline", "michel-netravali").
 void initialise_resample(pisp_be_resample_config &resample, const std::string &filter);
+void initialise_resample(pisp_be_resample_config &resample, double downscale);
 void initialise_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc);
 
 } // namespace PiSP

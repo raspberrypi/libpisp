@@ -502,6 +502,8 @@ void BackEnd::finaliseConfig()
 
 void BackEnd::updateSmartResize()
 {
+	std::string filter;
+
 	// First get the size of the input to the rescalers. The crops are zero when not in use.
 	uint16_t input_width = be_config_.crop.width;
 	if (!input_width)
@@ -576,6 +578,11 @@ void BackEnd::updateSmartResize()
 					be_config_.global.rgb_enables &= ~PISP_BE_RGB_ENABLE_DOWNSCALE(i);
 				}
 
+				pisp_be_resample_config resample;
+				pisp_be_resample_extra resample_extra;
+				memset(&resample, 0, sizeof(resample));
+				memset(&resample_extra, 0, sizeof(resample_extra));
+
 				// Finally program up the resampler block.
 				// If the following conditions are met:
 				//
@@ -595,9 +602,6 @@ void BackEnd::updateSmartResize()
 
 					scale_factor_x = std::min<double>(scale_factor_x, NumTaps - 1);
 
-					pisp_be_resample_config resample;
-					pisp_be_resample_extra resample_extra = {};
-					memset(&resample, 0, sizeof(resample));
 					for (unsigned int p = 0; p < NumPhases; p++)
 					{
 						// Initial phase for the current pixel (offset 2 in the filter)
@@ -619,13 +623,17 @@ void BackEnd::updateSmartResize()
 					// resample_extra will be filled in below.
 					SetResample(i, resample, resample_extra);
 				}
+				else
+				{
+					// Let's choose a resampling filter based on the scaling factor.
+					// The selection mapping is defined in the config json file.
+					initialise_resample(resample, scale_factor_x);
+				}
 
 				// Last thing is to set the output dimensions.
-				pisp_be_resample_extra resample = {};
-				resample.scaled_width = resampler_output_width;
-				resample.scaled_height = resampler_output_height;
-				SetResample(i, resample);
-				be_config_.global.rgb_enables |= PISP_BE_RGB_ENABLE_RESAMPLE(i);
+				resample_extra.scaled_width = resampler_output_width;
+				resample_extra.scaled_height = resampler_output_height;
+				SetResample(i, resample_extra);
 			}
 		}
 	}
