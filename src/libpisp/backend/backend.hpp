@@ -11,7 +11,6 @@
 
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 
-#include "backend/config.h"
 #include "variants/pisp_variant.hpp"
 #include "pisp_be_config.h"
 #include "tiling/pisp_tiling.hpp"
@@ -109,8 +108,7 @@ public:
 	void SetDownscale(unsigned int i, pisp_be_downscale_extra const &downscale_extra);
 	void SetHog(pisp_be_hog_config const &hog);
 
-	void InitialiseConfig(const std::string filename =
-							std::string(PISP_BE_CONFIG_DIR) + "/" + "backend_default_config.json");
+	void InitialiseConfig(const std::string filename = {});
 	void Prepare(pisp_be_tiles_config *config);
 	void MergeConfig(const pisp_be_config &config);
 

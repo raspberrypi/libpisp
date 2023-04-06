@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "backend/config.h"
 #include "common/pisp_pwl.hpp"
 #include "pisp_be_config.h"
 
@@ -299,8 +300,10 @@ void BackEnd::InitialiseConfig(const std::string filename)
 {
 	boost::property_tree::ptree root;
 
-	if (!std::filesystem::exists(filename))
-		throw std::runtime_error("BE: Could not find config json file: " + filename);
+	std::string file = filename.empty() ? std::string(PISP_BE_CONFIG_DIR) + "/" + "backend_default_config.json"
+										: filename;
+	if (!std::filesystem::exists(file))
+		throw std::runtime_error("BE: Could not find config json file: " + file);
 
 	boost::property_tree::read_json(filename, root);
 
