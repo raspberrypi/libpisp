@@ -24,7 +24,7 @@ constexpr unsigned int MaxStripeHeight = 3072;
 constexpr unsigned int ScalePrecision = 12;
 constexpr unsigned int UnityScale = 1 << 12;
 // PPF properties
-constexpr unsigned int ResamplePrecission = 10;
+constexpr unsigned int ResamplePrecision = 10;
 constexpr unsigned int NumPhases = 16;
 constexpr unsigned int NumTaps = 6;
 // HoG feature constants
@@ -607,7 +607,7 @@ void BackEnd::updateSmartResize()
 						// Initial phase for the current pixel (offset 2 in the filter)
 						// is calculated as 1 - p / NumPhases
 						resample.coef[p * NumTaps + 0] =
-							(1 << ResamplePrecission) - (p << ResamplePrecission) / NumPhases;
+							(1 << ResamplePrecision) - (p << ResamplePrecision) / NumPhases;
 
 						resample.coef[p * NumTaps + 0] /= scale_factor_x;
 
@@ -615,7 +615,7 @@ void BackEnd::updateSmartResize()
 						for (unsigned int t = 1; t < 1 + std::ceil(scale_factor_x); t++)
 						{
 							double s = std::min(1.0, scale);
-							resample.coef[p * NumTaps + t] = s * (1 << ResamplePrecission) / scale_factor_x;
+							resample.coef[p * NumTaps + t] = s * (1 << ResamplePrecision) / scale_factor_x;
 							scale -= s;
 						}
 					}
