@@ -12,6 +12,7 @@
 
 #include <filesystem>
 #include <map>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -25,48 +26,54 @@
 namespace
 {
 
+std::mutex mutex;
+bool init = false;
+
 std::map<std::string, pisp_be_ccm_config> ycbcr_map;
 std::map<std::string, pisp_be_ccm_config> inverse_ycbcr_map;
 std::map<std::string, pisp_be_resample_config> resample_filter_map;
 std::vector<std::pair<double, std::string>> resample_select_list;
-
+pisp_be_debin_config default_debin;
+pisp_be_demosaic_config default_demosaic;
 pisp_be_sharpen_config default_sharpen;
+pisp_be_gamma_config default_gamma;
+pisp_be_false_colour_config default_fc;
 pisp_be_sh_fc_combine_config default_shfc;
 
-void initialise_debin(const boost::property_tree::ptree &root, pisp_be_debin_config &debin)
+void read_debin(const boost::property_tree::ptree &root)
 {
-	constexpr unsigned int num_coefs = sizeof(debin.coeffs) / sizeof(debin.coeffs[0]);
+	constexpr unsigned int num_coefs = sizeof(default_debin.coeffs) / sizeof(default_debin.coeffs[0]);
 	auto &coefs = root.get_child("debin.coefs");
 	unsigned int i = 0;
 
 	for (auto &c : coefs)
 	{
-		debin.coeffs[i] = c.second.get_value<int8_t>();
+		default_debin.coeffs[i] = c.second.get_value<int8_t>();
 		if (++i == num_coefs)
 			break;
 	}
 	if (i != num_coefs)
 		throw std::runtime_error("Debin filter size mismatch");
 
-	debin.h_enable = debin.v_enable = 1;
+	default_debin.h_enable = default_debin.v_enable = 1;
 }
 
-void initialise_demosaic(const boost::property_tree::ptree &root, pisp_be_demosaic_config &demosaic)
+void read_demosaic(const boost::property_tree::ptree &root)
 {
 	auto &params = root.get_child("demosaic");
-	demosaic.sharper = params.get_child("sharper").get_value<uint8_t>();
-	demosaic.fc_mode = params.get_child("fc_mode").get_value<uint8_t>();
+	default_demosaic.sharper = params.get_child("sharper").get_value<uint8_t>();
+	default_demosaic.fc_mode = params.get_child("fc_mode").get_value<uint8_t>();
 }
 
-void initialise_false_colour(const boost::property_tree::ptree &root, pisp_be_false_colour_config &fc)
+void read_false_colour(const boost::property_tree::ptree &root)
 {
 	auto &params = root.get_child("false_colour");
-	fc.distance = params.get_child("distance").get_value<uint8_t>();
+	default_fc.distance = params.get_child("distance").get_value<uint8_t>();
 }
 
-void initialise_gamma(const boost::property_tree::ptree &root, pisp_be_gamma_config &gamma)
+void read_gamma(const boost::property_tree::ptree &root)
 {
-	constexpr unsigned int num_points = sizeof(gamma.lut) / sizeof(gamma.lut[0]);
+	constexpr unsigned int num_points = sizeof(default_gamma.lut) / sizeof(default_gamma.lut[0]);
 
 	PiSP::Pwl pwl;
 	pwl.Read(root.get_child("gamma.lut"));
@@ -97,10 +104,10 @@ void initialise_gamma(const boost::property_tree::ptree &root, pisp_be_gamma_con
 				slope = (1u << SlopeBits) - 1;
 				y = lastY + slope;
 			}
-			gamma.lut[i - 1] |= slope << PosBits;
+			default_gamma.lut[i - 1] |= slope << PosBits;
 		}
 
-		gamma.lut[i] = y;
+		default_gamma.lut[i] = y;
 		lastY = y;
 	}
 }
@@ -260,6 +267,26 @@ void get_matrix(const std::map<std::string, pisp_be_ccm_config> &map, pisp_be_cc
 namespace PiSP
 {
 
+void initialise_debin(pisp_be_debin_config &debin)
+{
+	debin = default_debin;
+}
+
+void initialise_demosaic(pisp_be_demosaic_config &demosaic)
+{
+	demosaic = default_demosaic;
+}
+
+void initialise_false_colour(pisp_be_false_colour_config &fc)
+{
+	fc = default_fc;
+}
+
+void initialise_gamma(pisp_be_gamma_config &gamma)
+{
+	gamma = default_gamma;
+}
+
 void initialise_ycbcr(pisp_be_ccm_config &ycbcr, const std::string &colour_space)
 {
 	get_matrix(ycbcr_map, ycbcr, colour_space);
@@ -298,44 +325,54 @@ void initialise_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_c
 
 void BackEnd::InitialiseConfig(const std::string filename)
 {
-	boost::property_tree::ptree root;
+	std::scoped_lock<std::mutex> l(mutex);
 
-	std::string file = filename.empty() ? std::string(PISP_BE_CONFIG_DIR) + "/" + "backend_default_config.json"
-										: filename;
-	if (!std::filesystem::exists(file))
-		throw std::runtime_error("BE: Could not find config json file: " + file);
+	if (!init)
+	{
+		std::string file = filename.empty() ? std::string(PISP_BE_CONFIG_DIR) + "/" + "backend_default_config.json"
+											: filename;
+		if (!std::filesystem::exists(file))
+			throw std::runtime_error("BE: Could not find config json file: " + file);
 
-	boost::property_tree::read_json(filename, root);
+		boost::property_tree::ptree root;
+		boost::property_tree::read_json(file, root);
+
+		read_debin(root);
+		read_demosaic(root);
+		read_false_colour(root);
+		read_ycbcr(root);
+		read_gamma(root);
+		read_sharpen(root);
+		read_resample(root);
+		init = true;
+	}
 
 	memset(&be_config_, 0, sizeof(be_config_));
 
-	initialise_debin(root, be_config_.debin);
+	initialise_debin(be_config_.debin);
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEBIN;
 
-	initialise_demosaic(root, be_config_.demosaic);
+	initialise_demosaic(be_config_.demosaic);
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEMOSAIC;
 
-	initialise_false_colour(root, be_config_.false_colour);
+	initialise_false_colour(be_config_.false_colour);
 	be_config_.dirty_flags_bayer |= PISP_BE_RGB_ENABLE_FALSE_COLOUR;
 
-	read_ycbcr(root);
 	// Start with a sensible default
 	initialise_ycbcr(be_config_.ycbcr, "jpeg");
 	initialise_ycbcr_inverse(be_config_.ycbcr_inverse, "jpeg");
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_YCBCR_INVERSE;
 
-	initialise_gamma(root, be_config_.gamma);
+	initialise_gamma(be_config_.gamma);
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_GAMMA;
 
-	read_sharpen(root);
 	initialise_sharpen(be_config_.sharpen, be_config_.sh_fc_combine);
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_SHARPEN;
 
-	read_resample(root);
 	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 	{
 		// Start with a sensible default
-		initialise_resample(be_config_.resample[i], "michel-netravali");
+		initialise_resample(be_config_.resample[i], "lanczos3");
 		be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_RESAMPLE(i);
 	}
 }
