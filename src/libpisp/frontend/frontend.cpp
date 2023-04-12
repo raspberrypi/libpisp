@@ -141,7 +141,7 @@ void finalise_compression(pisp_fe_config const &fe_config, int i)
 		PISP_LOG(fatal, "FrontEnd::finalise: compressed output is not 8 bit");
 }
 
-}; // namespace
+} // namespace
 
 FrontEnd::FrontEnd(bool streaming, PiSPVariant const &variant, int align) : variant_(variant), align_(align)
 {
