@@ -4,6 +4,10 @@
  *
  * pisp_logging.cpp - PiSP logging library
  */
+
+#include <cstdlib>
+#include <mutex>
+
 #include <boost/log/core.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/sources/logger.hpp>
@@ -20,30 +24,71 @@ namespace trivial = boost::log::trivial;
 
 #include "pisp_logging.hpp"
 
-using namespace PiSP;
-
-static boost::shared_ptr<sinks::synchronous_sink<sinks::text_ostream_backend>> console;
-
-void PiSP::logging_init(void)
+namespace PiSP
 {
-	logging::add_common_attributes();
 
+namespace {
+
+std::mutex mutex;
+
+boost::shared_ptr<sinks::synchronous_sink<sinks::text_ostream_backend>> console;
+boost::shared_ptr<sinks::synchronous_sink<sinks::text_file_backend>> file;
+
+void logging_file_init(const char *filename, unsigned int level)
+{
 	logging::formatter format =
-		expr::format("[%1%] LIBPISP %2%")
+		expr::format("[libpisp %1%] %2%")
 		% expr::attr<trivial::severity_level>("Severity")
 		% expr::smessage;
 
-	// console sink
-	console = logging::add_console_log(std::clog);
-	console->set_formatter(format);
-	console->set_filter(trivial::severity >= trivial::info);
-
-	// fs sink
-	auto fs_sink = logging::add_file_log(
-			keywords::file_name = "log.txt",
+	// file sink
+	file = logging::add_file_log(
+			keywords::file_name = filename,
 			keywords::rotation_size = 1 * 1024 * 1024,
 			keywords::open_mode = std::ios_base::trunc,
-			keywords::filter = trivial::severity >= trivial::debug);
-	fs_sink->set_formatter(format);
-	fs_sink->locked_backend()->auto_flush(true);
+			keywords::filter = trivial::severity >= level);
+	file->set_formatter(format);
+	file->locked_backend()->auto_flush(true);
 }
+
+} // namespace
+
+void logging_init()
+{
+	std::scoped_lock<std::mutex> l(mutex);
+	// Default to "warning" level.
+	unsigned int level = 3;
+
+	// Can only initialise the console logging once.
+	if (console)
+		return;
+
+	logging::add_common_attributes();
+
+	logging::formatter format =
+		expr::format("[libpisp %1%] %2%")
+		% expr::attr<trivial::severity_level>("Severity")
+		% expr::smessage;
+
+	char *lev = std::getenv("LIBPISP_LOG_LEVEL");
+	if (lev)
+		level = std::atoi(lev);
+
+	// Console sink.
+	console = logging::add_console_log(std::clog);
+	console->set_formatter(format);
+	console->set_filter(trivial::severity >= level);
+
+	// File sink if needed.
+	const char *log_file = std::getenv("LIBPISP_LOG_FILE");
+	if (log_file)
+	{
+		lev = std::getenv("LIBPISP_LOG_FILE_LEVEL");
+		if (lev)
+			level = std::atoi(lev);
+
+		logging_file_init(log_file, level);
+	}
+}
+
+} // namespace PiSP

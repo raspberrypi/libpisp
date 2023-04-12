@@ -11,8 +11,10 @@ subdir('libpisp')
 pisp_sources += frontend_sources
 pisp_sources += backend_sources
 
+boost_args = ['-DBOOST_BIND_GLOBAL_PLACEHOLDERS', '-DBOOST_LOG_DYN_LINK=1']
+
 boost_dep = dependency('boost', modules : ['log', 'log_setup', 'thread'])
-add_project_arguments('-DBOOST_BIND_GLOBAL_PLACEHOLDERS', language : 'cpp')
+add_project_arguments(boost_args, language : 'cpp')
 
 pisp_deps = [
     boost_dep
@@ -40,7 +42,7 @@ libpisp_dep = declare_dependency(
     include_directories : include_directories(inc_dirs),
     link_with : libpisp,
     dependencies : pisp_deps,
-    compile_args : '-DBOOST_BIND_GLOBAL_PLACEHOLDERS'
+    compile_args : boost_args
 )
 
 if install
