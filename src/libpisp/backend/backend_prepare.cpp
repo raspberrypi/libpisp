@@ -634,6 +634,7 @@ void BackEnd::updateSmartResize()
 				resample_extra.scaled_width = resampler_output_width;
 				resample_extra.scaled_height = resampler_output_height;
 				SetResample(i, resample_extra);
+				be_config_.global.rgb_enables |= PISP_BE_RGB_ENABLE_RESAMPLE(i);
 			}
 		}
 	}
