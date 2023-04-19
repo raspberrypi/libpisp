@@ -12,7 +12,7 @@
 // implementation of the PiSP that is being used. Whatever the build system being used is, it needs
 // to select the correct C file in this directory that implements these functions.
 
-namespace PiSP
+namespace libpisp
 {
 
 struct PiSPVariant
@@ -87,4 +87,4 @@ struct PiSPVariant
 extern const PiSPVariant BCM2712_HW;
 extern const PiSPVariant BCM2712_HW2;
 
-} // namespace PiSP
+} // namespace libpisp

@@ -75,7 +75,7 @@ void read_gamma(const boost::property_tree::ptree &root)
 {
 	constexpr unsigned int num_points = sizeof(default_gamma.lut) / sizeof(default_gamma.lut[0]);
 
-	PiSP::Pwl pwl;
+	libpisp::Pwl pwl;
 	pwl.Read(root.get_child("gamma.lut"));
 
 	static constexpr unsigned int SlopeBits = 14;
@@ -264,7 +264,7 @@ void get_matrix(const std::map<std::string, pisp_be_ccm_config> &map, pisp_be_cc
 
 } // namespace
 
-namespace PiSP
+namespace libpisp
 {
 
 void initialise_debin(pisp_be_debin_config &debin)
@@ -377,4 +377,4 @@ void BackEnd::InitialiseConfig(const std::string filename)
 	}
 }
 
-} // namespace PiSP
+} // namespace libpisp

@@ -9,7 +9,7 @@
 #include "pisp_common.h"
 #include "pisp_logging.hpp"
 
-namespace PiSP
+namespace libpisp
 {
 
 uint32_t compute_x_offset(uint32_t /* pisp_image_format */ format, int x)
@@ -199,4 +199,4 @@ std::size_t get_plane_size(const pisp_image_format_config &config, int plane)
 	return plane_size >= (1ULL << 32) ? 0 : plane_size;
 }
 
-} // namespace PiSP
+} // namespace libpisp

@@ -17,7 +17,7 @@
 
 // Definition of the PiSP Back End class.
 
-namespace PiSP
+namespace libpisp
 {
 
 class BackEnd
@@ -164,4 +164,4 @@ void initialise_resample(pisp_be_resample_config &resample, const std::string &f
 void initialise_resample(pisp_be_resample_config &resample, double downscale);
 void initialise_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc);
 
-} // namespace PiSP
+} // namespace libpisp

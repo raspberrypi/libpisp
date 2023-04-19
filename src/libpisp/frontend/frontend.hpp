@@ -17,7 +17,7 @@
 #include "pisp_fe_config.h"
 #include "pisp_statistics.h"
 
-namespace PiSP
+namespace libpisp
 {
 
 class FrontEnd
@@ -82,4 +82,4 @@ protected: // TODO: Should be private
 	mutable boost::interprocess::interprocess_mutex mutex_;
 };
 
-} // namespace PiSP
+} // namespace libpisp

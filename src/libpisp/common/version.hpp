@@ -8,8 +8,8 @@
 
 #include <string>
 
-namespace PiSP {
+namespace libpisp {
 
 const std::string& libpispVersion();
 
-} // namespace PiSP
+} // namespace libpisp

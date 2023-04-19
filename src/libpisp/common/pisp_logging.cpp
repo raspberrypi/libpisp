@@ -24,7 +24,7 @@ namespace trivial = boost::log::trivial;
 
 #include "pisp_logging.hpp"
 
-namespace PiSP
+namespace libpisp
 {
 
 namespace {
@@ -91,4 +91,4 @@ void logging_init()
 	}
 }
 
-} // namespace PiSP
+} // namespace libpisp

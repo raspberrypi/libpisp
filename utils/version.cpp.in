@@ -6,7 +6,7 @@
  */
 #include "common/version.hpp"
 
-namespace PiSP {
+namespace libpisp {
 
 const std::string versionString {"@VCS_TAG@"};
 
@@ -15,4 +15,4 @@ const std::string& libpisp_get_version()
     return versionString;
 }
 
-} // namespace PiSP
+} // namespace libpisp

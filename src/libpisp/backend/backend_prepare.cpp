@@ -13,7 +13,7 @@
 #include "common/pisp_utils.hpp"
 #include "tiling/types.hpp"
 
-using namespace PiSP;
+using namespace libpisp;
 
 namespace
 {

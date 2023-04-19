@@ -37,7 +37,7 @@ constexpr unsigned int RoundUp = (1 << ScalePrecision) - 1;
 
 } // namespace
 
-namespace PiSP
+namespace libpisp
 {
 
 void tile_pipeline(TilingConfig const &config, Tile *tiles, int num_tiles, Length2 *grid)
@@ -114,4 +114,4 @@ void tile_pipeline(TilingConfig const &config, Tile *tiles, int num_tiles, Lengt
 	PISP_LOG(info, "Made " << grid->dx << "x" << grid->dy << " tiles");
 }
 
-} // namespace PiSP
+} // namespace libpisp

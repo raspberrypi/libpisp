@@ -12,7 +12,7 @@
 
 #include "types.hpp"
 
-namespace PiSP
+namespace libpisp
 {
 
 constexpr int NumOutputBranches = 2;
@@ -66,4 +66,4 @@ inline std::ostream &operator<<(std::ostream &os, TilingConfig const &tc)
 
 void tile_pipeline(TilingConfig const &config, Tile *tile, int num_tile, tiling::Length2 *grid);
 
-} // namespace PiSP
+} // namespace libpisp

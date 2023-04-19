@@ -9,7 +9,7 @@
 
 #include "common/pisp_logging.hpp"
 
-using namespace PiSP;
+using namespace libpisp;
 
 namespace
 {

@@ -6,7 +6,7 @@
  */
 #include "pisp_variant.hpp"
 
-namespace PiSP {
+namespace libpisp {
 
 const PiSPVariant BCM2712_HW = {
 	.numFrontEnds_ = 2,
@@ -34,4 +34,4 @@ const PiSPVariant BCM2712_HW2 = {
 	.backEndDownscaler_ = {{ { false, true } }}
 };
 
-} // namespace PiSP
+} // namespace libpisp

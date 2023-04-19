@@ -10,7 +10,7 @@
 
 #include "pisp_pwl.hpp"
 
-using namespace PiSP;
+using namespace libpisp;
 
 void Pwl::Read(boost::property_tree::ptree const &params)
 {

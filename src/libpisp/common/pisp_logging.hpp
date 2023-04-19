@@ -18,8 +18,8 @@ do { \
 
 #define PISP_ASSERT(x) assert(x)
 
-namespace PiSP
+namespace libpisp
 {
 	// Call this before you try and use any logging.
 	void logging_init();
-} // namespace PiSP
+} // namespace libpisp

@@ -12,7 +12,7 @@
 
 #include <boost/property_tree/ptree.hpp>
 
-namespace PiSP
+namespace libpisp
 {
 
 class Pwl
@@ -80,4 +80,4 @@ private:
 	std::vector<Point> points_;
 };
 
-} // namespace PiSP
+} // namespace libpisp
