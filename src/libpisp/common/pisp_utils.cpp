@@ -99,6 +99,12 @@ void compute_stride(pisp_image_format_config &config)
 	compute_stride_align(config, PISP_BACK_END_OUTPUT_MIN_ALIGN);
 }
 
+void compute_optimal_stride(pisp_image_format_config &config)
+{
+	// Use our preferred alignment of 64 bytes.
+	compute_stride_align(config, PISP_BACK_END_OUTPUT_MAX_ALIGN);
+}
+
 void compute_addr_offset(const pisp_image_format_config &config, int x, int y, uint32_t *addr_offset,
 						 uint32_t *addr_offset2)
 {
