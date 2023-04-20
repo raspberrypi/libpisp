@@ -45,10 +45,13 @@ uint32_t compute_x_offset(uint32_t /* pisp_image_format */ format, int x)
 		else
 			PISP_ASSERT(0);
 
-		if (format & PISP_IMAGE_FORMAT_THREE_CHANNEL)
-		{
-			if (PISP_IMAGE_FORMAT_interleaved(format))
-				x_offset *= PISP_IMAGE_FORMAT_sampling_422(format) ? 2 : 3;
+		if ((format & PISP_IMAGE_FORMAT_THREE_CHANNEL) && PISP_IMAGE_FORMAT_interleaved(format)) {
+			if (PISP_IMAGE_FORMAT_bpp_32(format))
+				x_offset *= 4;
+			else if (PISP_IMAGE_FORMAT_sampling_422(format))
+				x_offset *= 2;
+			else
+				x_offset *= 3;
 		}
 	}
 	return x_offset;
