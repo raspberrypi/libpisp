@@ -119,6 +119,8 @@ public:
 
 	void SetSmartResize(unsigned int i, SmartResize const &smart_resize);
 
+	unsigned int GetMaxDownscale() const;
+
 	void lock()
 	{
 		mutex_.lock();

@@ -498,3 +498,20 @@ void BackEnd::SetSmartResize(unsigned int i, BackEnd::SmartResize const &smart_r
 	smart_resize_[i] = smart_resize;
 	smart_resize_dirty_ |= (1 << i);
 }
+
+unsigned int BackEnd::GetMaxDownscale() const
+{
+	// Return an estimate of the largest horizontal downscale we can do.
+	unsigned int max_tile_width = config_.max_tile_width;
+	if (!max_tile_width)
+		max_tile_width = variant_.backEndMaxTileWidth(0);
+
+	// We reckon a 640 tile-width implementation can do 24x safely with formats that
+	// want 1 byte per pixel.
+	unsigned int downscale = 24;
+	const unsigned int ref_tile_width = 640;
+	for (unsigned int tw = ref_tile_width; max_tile_width < tw; tw /= 2, downscale /= 2);
+	for (unsigned int tw = ref_tile_width * 2; max_tile_width >= tw; tw *= 2, downscale *= 2);
+
+	return downscale;
+}
