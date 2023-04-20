@@ -341,9 +341,14 @@ unsigned int get_pixel_alignment(uint32_t format, int byte_alignment)
 		alignment_pixels = byte_alignment / 2;
 	else if (PISP_IMAGE_FORMAT_bps_10(format))
 		alignment_pixels = byte_alignment * 3 / 4;
+	else if (PISP_IMAGE_FORMAT_bpp_32(format))
+		alignment_pixels = byte_alignment / 4;
 
 	if (PISP_IMAGE_FORMAT_planar(format) && !PISP_IMAGE_FORMAT_sampling_444(format))
 		alignment_pixels *= 2; // the UV planes in fully planar 420/422 output will have half the width
+	else if (PISP_IMAGE_FORMAT_interleaved(format) &&
+			 (PISP_IMAGE_FORMAT_sampling_422(format) || PISP_IMAGE_FORMAT_sampling_420(format)))
+		alignment_pixels /= 2; // YUYV type outputs need only 8 pixels to make 16 bytes
 
 	return alignment_pixels;
 }
