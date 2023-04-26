@@ -507,11 +507,8 @@ unsigned int BackEnd::GetMaxDownscale() const
 		max_tile_width = variant_.backEndMaxTileWidth(0);
 
 	// We reckon a 640 tile-width implementation can do 24x safely with formats that
-	// want 1 byte per pixel.
+	// want 1 byte per pixel. This should approximately scale with the max tile width.
 	unsigned int downscale = 24;
 	const unsigned int ref_tile_width = 640;
-	for (unsigned int tw = ref_tile_width; max_tile_width < tw; tw /= 2, downscale /= 2);
-	for (unsigned int tw = ref_tile_width * 2; max_tile_width >= tw; tw *= 2, downscale *= 2);
-
-	return downscale;
+	return downscale * max_tile_width / ref_tile_width;
 }
