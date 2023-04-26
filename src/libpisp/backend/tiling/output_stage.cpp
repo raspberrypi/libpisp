@@ -79,12 +79,15 @@ int OutputStage::PushEndDown(int input_end, Dir dir)
 		if (aligned_output_end > output_interval_.offset)
 		{
 			output_end = aligned_output_end;
-			PISP_LOG(warning, "(" << name_ << ") Unable to achieve optimal alignment " << config_.max_alignment[dir]);
+			PISP_LOG(debug, "(" << name_ << ") Unable to achieve optimal alignment " << config_.max_alignment[dir]);
 		}
 		else if (input_interval_.offset < image_size)
 		{ // test against size in case this branch already finished
-			PISP_LOG(fatal, "(" << name_ << ") Unable to achieve mandatory alignment " << config_.min_alignment[dir]);
-			throw TilingException();
+			PISP_LOG(warning, "(" << name_ << ") Unable to achieve mandatory alignment " << config_.min_alignment[dir]);
+			output_end = aligned_output_end;
+			// Just because this output can't make progress, the other branch may - at which point this
+			// branch may then succeed again. So this isn't necessarily fatal. Let the split stage decide
+			// if there was no progress at all.
 		}
 	}
 	input_interval_.SetEnd(input_end);

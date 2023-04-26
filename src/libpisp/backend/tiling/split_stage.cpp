@@ -68,12 +68,19 @@ int SplitStage::PushEndDown(int input_end, Dir dir)
 	for (auto d : downstream_)
 	{
 		int branch_end = d->PushEndDown(input_end, dir);
+		// (It is OK for a branch to make no progress at all - so long as another branch does!)
 		if (branch_end > input_interval_.End())
 			input_interval_.SetEnd(branch_end);
 	}
 
-	// Finally tell all the branches now what they will really get, which is that minimum end point.
+	// Finally tell all the branches now what they will really get, which is that end point.
 	PISP_LOG(debug, "(" << name_ << ") Split using input_end " << input_interval_.End());
+	if (input_interval_.length == 0)
+	{
+		PISP_LOG(fatal, "(" << name_ << ") Neither branch can make progress");
+		throw TilingException();
+	}
+
 	for (auto d : downstream_)
 		d->PushEndDown(input_interval_.End(), dir);
 
