@@ -22,6 +22,7 @@ struct PiSPVariant
 	static constexpr unsigned int MaxFrontEndBranchs = 4;
 	static constexpr unsigned int MaxBackEndBranches = 4;
 
+	unsigned int version_;
 	unsigned int numFrontEnds_;
 	unsigned int numBackEnds_;
 	std::array<unsigned int, MaxFrontEnds> numFrontEndBranches_;
@@ -32,6 +33,11 @@ struct PiSPVariant
 	std::array<unsigned int, MaxBackEnds> numBackEndBranches_;
 	std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> backEndIntegralImage_;
 	std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> backEndDownscaler_;
+
+	unsigned int version() const
+	{
+		return version_;
+	}
 
 	unsigned int numFrontEnds() const
 	{
@@ -84,7 +90,7 @@ struct PiSPVariant
 	}
 };
 
-extern const PiSPVariant BCM2712_HW;
-extern const PiSPVariant BCM2712_HW2;
+extern const PiSPVariant BCM2712_C0;
+extern const PiSPVariant BCM2712_D0;
 
 } // namespace libpisp
