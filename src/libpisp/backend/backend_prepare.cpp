@@ -294,8 +294,10 @@ void finalise_output(pisp_be_output_format_config &config)
 		throw std::runtime_error("finalise_output: image stride should be at least 16-byte aligned");
 }
 
-void check_tiles(std::vector<pisp_tile> const &tiles, uint32_t rgb_enables, unsigned int numBranches)
+void check_tiles(std::vector<pisp_tile> const &tiles, uint32_t rgb_enables, unsigned int numBranches,
+		 TilingConfig const &tiling_config)
 {
+	int tile_num = 0;
 	for (auto &tile : tiles)
 	{
 		PISP_ASSERT(tile.input_width && tile.input_height); // zero inputs shouldn't be possible
@@ -318,18 +320,38 @@ void check_tiles(std::vector<pisp_tile> const &tiles, uint32_t rgb_enables, unsi
 			// A zero-sized tile is legitimate meaning "no output", but otherwise minimum tile sizes must be respected.
 			if (width_after_crop && height_after_crop)
 			{
-				if (width_after_crop < PISP_BACK_END_MIN_TILE_WIDTH ||
-					height_after_crop < PISP_BACK_END_MIN_TILE_HEIGHT)
-					throw std::runtime_error("Tile too small after crop");
+				bool rh_edge = tile.output_offset_x[i] + tile.output_width[i] == tiling_config.output_image_size[i].dx;
 
-				if (tile.resample_in_width[i] < PISP_BACK_END_MIN_TILE_WIDTH ||
-					tile.resample_in_height[i] < PISP_BACK_END_MIN_TILE_HEIGHT)
-					throw std::runtime_error("Tile too small after downscale");
-				if (tile.output_width[i] < PISP_BACK_END_MIN_TILE_WIDTH ||
-					tile.output_height[i] < PISP_BACK_END_MIN_TILE_HEIGHT)
-					throw std::runtime_error("Tile too small at output");
+				if (width_after_crop < PISP_BACK_END_MIN_TILE_WIDTH)
+				{
+					PISP_LOG(warning, "Tile narrow after crop: tile " << tile_num << " output " << i
+						 << " input_width " << tile.input_width << " after_crop " << width_after_crop
+						 << " crop start " << tile.crop_x_start[i] << " end " << tile.crop_x_end[i]);
+					if (!rh_edge)
+						throw std::runtime_error("Tile width too small after crop");
+				}
+				if (height_after_crop < PISP_BACK_END_MIN_TILE_HEIGHT)
+					throw std::runtime_error("Tile height too small after crop");
+
+				if (tile.resample_in_width[i] < PISP_BACK_END_MIN_TILE_WIDTH)
+				{
+					PISP_LOG(warning, "Tile narrow after downscale: tile " << tile_num << " output " << i
+						 << " input_width " << tile.input_width << " after_crop " << width_after_crop
+						 << " after downscale " << tile.resample_in_width[i]);
+					if (!rh_edge)
+						throw std::runtime_error("Tile width too small after downscale");
+				}
+
+				if (tile.resample_in_height[i] < PISP_BACK_END_MIN_TILE_HEIGHT)
+					throw std::runtime_error("Tile height too small after downscale");
+
+				if (!rh_edge && tile.output_width[i] < PISP_BACK_END_MIN_TILE_WIDTH)
+					throw std::runtime_error("Tile width too small at output");
+				if (tile.output_height[i] < PISP_BACK_END_MIN_TILE_HEIGHT)
+					throw std::runtime_error("Tile height too small at output");
 			}
 		}
+		tile_num++;
 	}
 }
 
@@ -709,7 +731,7 @@ void BackEnd::updateTiles()
 		// outside the actual image width (and we've chosen not to handle compression like that).
 		tiling_config.compressed_input = false;
 		tiles_ = retilePipeline(tiling_config);
-		check_tiles(tiles_, c.global.rgb_enables, variant_.backEndNumBranches(0));
+		check_tiles(tiles_, c.global.rgb_enables, variant_.backEndNumBranches(0), tiling_config);
 		finalise_tiling_ = true;
 	}
 

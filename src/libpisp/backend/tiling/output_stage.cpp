@@ -65,10 +65,8 @@ int OutputStage::PushEndDown(int input_end, Dir dir)
 
 	int output_end = input_end;
 	int image_size = GetInputImageSize()[dir];
-	int min_tile_size = GetPipeline()->GetConfig().min_tile_size[dir];
-	// Pull the end back if very close to, but not quite at, the end - otherwise the next tile will become infeasibly small.
-	if (output_end < image_size && image_size - output_end < min_tile_size)
-		output_end = image_size - min_tile_size;
+	// We no longer pull this tile back if it looks to be the penultimate one and the final one might be very
+	// narrow. It should get enough context on the left to work fine.
 	bool mirrored = (dir == Dir::X && config_.x_mirrored);
 	int aligned_output_end = align_end(output_end, image_size, config_.max_alignment[dir], mirrored);
 	if (aligned_output_end > output_interval_.offset)
