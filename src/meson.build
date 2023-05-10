@@ -21,8 +21,10 @@ pisp_deps = [
 ]
 
 # Generate a version string:
-version_cpp = vcs_tag(command : [meson.project_source_root() + '/utils/version.py', meson.project_version()],
-                      input : meson.project_source_root() + '/utils/version.cpp.in',
+version_script = meson.project_source_root() / 'utils' / 'version.py'
+version_template = meson.project_source_root() / 'utils' / 'version.cpp.in'
+version_cpp = vcs_tag(command : [version_script, meson.project_version()],
+                      input : version_template,
                       output : 'version.cpp',
                       fallback : meson.project_version())
 
