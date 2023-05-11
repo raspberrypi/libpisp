@@ -10,6 +10,6 @@
 
 namespace libpisp {
 
-const std::string& libpispVersion();
+const std::string& version();
 
 } // namespace libpisp

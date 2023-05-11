@@ -11,7 +11,8 @@ common_headers = files([
     'pisp_logging.hpp',
     'pisp_pwl.hpp',
     'pisp_types.h',
-    'pisp_utils.hpp'
+    'pisp_utils.hpp',
+    'version.hpp',
 ])
 
 pisp_headers += common_headers

@@ -10,7 +10,7 @@ namespace libpisp {
 
 const std::string versionString {"@VCS_TAG@"};
 
-const std::string& libpisp_get_version()
+const std::string& version()
 {
     return versionString;
 }
