@@ -18,7 +18,4 @@ common_headers = files([
 pisp_headers += common_headers
 
 common_include_dir = pisp_include_dir / 'common'
-
-if install
-    install_headers(common_headers, subdir: common_include_dir)
-endif
+install_headers(common_headers, subdir: common_include_dir)

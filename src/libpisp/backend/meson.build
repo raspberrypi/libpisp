@@ -20,10 +20,7 @@ backend_headers = files([
 pisp_headers += backend_headers
 
 backend_include_dir = pisp_include_dir / 'backend'
-
-if install
-    install_headers(backend_headers, subdir: backend_include_dir)
-endif
+install_headers(backend_headers, subdir: backend_include_dir)
 
 install_data('backend_default_config.json',
              install_dir : config_install_dir)

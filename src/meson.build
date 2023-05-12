@@ -4,8 +4,6 @@ inc_dirs = ['.', 'libpisp']
 
 pisp_include_dir = 'libpisp'
 
-install = not meson.is_subproject()
-
 subdir('libpisp')
 
 pisp_sources += frontend_sources
@@ -30,28 +28,25 @@ version_cpp = vcs_tag(command : [version_script, meson.project_version()],
 
 pisp_sources += version_cpp
 
-libpisp = shared_library(
+libpisp = library(
     meson.project_name(),
     pisp_sources,
+    soversion : meson.project_version(),
     include_directories : include_directories(inc_dirs),
     name_prefix : '',
-    install : install,
-    dependencies : pisp_deps
+    install : true,
+    dependencies : pisp_deps,
 )
 
 libpisp_dep = declare_dependency(
-    sources : pisp_sources,
     include_directories : include_directories(inc_dirs),
     link_with : libpisp,
     dependencies : pisp_deps,
-    compile_args : boost_args
 )
 
-if install
-    pkg_mod = import('pkgconfig')
-    pkg_mod.generate(libpisp,
-                     description : 'PiSP Library',
-                     subdirs : 'libpisp')
+pkg_mod = import('pkgconfig')
+pkg_mod.generate(libpisp,
+                 description : 'PiSP Library',
+                 subdirs : 'libpisp')
 
-    meson.add_install_script('ldconfig')
-endif
+meson.add_install_script('ldconfig')

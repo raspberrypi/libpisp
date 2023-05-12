@@ -27,7 +27,4 @@ tiling_headers = files([
 ])
 
 tiling_include_dir = backend_include_dir / 'tiling'
-
-if install
-    install_headers(tiling_headers, subdir: tiling_include_dir)
-endif
+install_headers(tiling_headers, subdir: tiling_include_dir)
