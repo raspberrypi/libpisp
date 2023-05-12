@@ -5,7 +5,7 @@ pisp_sources += files([
 ])
 
 variants_headers = files([
-    'pisp_variant.hpp'
+    'variant.hpp'
 ])
 
 variants_include_dir = pisp_include_dir / 'variants'

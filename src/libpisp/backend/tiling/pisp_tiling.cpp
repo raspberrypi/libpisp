@@ -8,7 +8,7 @@
 
 #include <memory>
 
-#include "common/pisp_logging.hpp"
+#include "common/logging.hpp"
 
 #include "context_stage.hpp"
 #include "crop_stage.hpp"

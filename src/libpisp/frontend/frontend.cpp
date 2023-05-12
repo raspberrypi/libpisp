@@ -7,8 +7,8 @@
  */
 #include "frontend.hpp"
 
-#include "common/pisp_logging.hpp"
-#include "common/pisp_utils.hpp"
+#include "common/logging.hpp"
+#include "common/utils.hpp"
 
 using namespace libpisp;
 

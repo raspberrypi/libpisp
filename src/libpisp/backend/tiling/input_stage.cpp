@@ -6,7 +6,7 @@
  */
 #include "input_stage.hpp"
 
-#include "common/pisp_logging.hpp"
+#include "common/logging.hpp"
 
 #include "pipeline.hpp"
 

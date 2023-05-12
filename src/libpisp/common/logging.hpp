@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
  *
- * pisp_logging.hpp - PiSP logging library
+ * logging.hpp - PiSP logging library
  */
 #pragma once
 

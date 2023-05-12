@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
  *
- * pisp_utils.hpp - PiSP buffer helper utilities
+ * utils.hpp - PiSP buffer helper utilities
  */
 #pragma once
 

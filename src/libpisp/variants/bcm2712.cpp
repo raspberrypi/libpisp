@@ -4,7 +4,7 @@
  *
  * bcm2712.cpp - BCM2712 PiSP variant configuration
  */
-#include "pisp_variant.hpp"
+#include "variant.hpp"
 
 namespace libpisp {
 

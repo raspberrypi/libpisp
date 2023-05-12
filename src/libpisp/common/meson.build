@@ -8,13 +8,11 @@ pisp_sources += files([
 
 common_headers = files([
     'pisp_common.h',
-    'pisp_logging.hpp',
+    'logging.hpp',
     'pisp_types.h',
-    'pisp_utils.hpp',
+    'utils.hpp',
     'version.hpp',
 ])
-
-pisp_headers += common_headers
 
 common_include_dir = pisp_include_dir / 'common'
 install_headers(common_headers, subdir: common_include_dir)
