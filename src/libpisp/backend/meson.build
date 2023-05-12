@@ -17,8 +17,6 @@ backend_headers = files([
     'pisp_be_config.h',
 ])
 
-pisp_headers += backend_headers
-
 backend_include_dir = pisp_include_dir / 'backend'
 install_headers(backend_headers, subdir: backend_include_dir)
 

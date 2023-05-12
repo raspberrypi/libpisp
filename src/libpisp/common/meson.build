@@ -9,7 +9,6 @@ pisp_sources += files([
 common_headers = files([
     'pisp_common.h',
     'pisp_logging.hpp',
-    'pisp_pwl.hpp',
     'pisp_types.h',
     'pisp_utils.hpp',
     'version.hpp',

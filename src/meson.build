@@ -1,5 +1,4 @@
 pisp_sources = []
-pisp_headers = []
 inc_dirs = ['.', 'libpisp']
 
 pisp_include_dir = 'libpisp'
