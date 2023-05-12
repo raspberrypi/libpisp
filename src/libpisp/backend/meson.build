@@ -4,7 +4,7 @@ config_install_dir = get_option('prefix') / get_option('datadir') / 'libpisp'
 
 conf_data = configuration_data()
 conf_data.set('PISP_BE_CONFIG_DIR', '"' + config_install_dir + '"')
-configure_file(output : 'config.h', configuration : conf_data)
+configure_file(output : 'pisp_build_config.h', configuration : conf_data)
 
 backend_sources = files([
     'backend.cpp',

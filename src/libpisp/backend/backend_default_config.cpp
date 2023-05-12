@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "backend/config.h"
+#include "backend/pisp_build_config.h"
 #include "common/pisp_pwl.hpp"
 #include "pisp_be_config.h"
 
