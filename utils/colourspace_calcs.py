@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 #
 # Copyright (C) 2023, Raspberry Pi Ltd
-# 
+#
 # colourspace_calcs.py - Colourspace matrix generation
 #
 # This short utility generates colour space matrices and offsets for
