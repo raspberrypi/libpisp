@@ -51,6 +51,8 @@ public:
 	BackEnd(Config const &user_config, PiSPVariant const &variant);
 	~BackEnd();
 
+	PiSPVariant const &GetVariant() const { return variant_; }
+
 	void SetGlobal(pisp_be_global_config const &global);
 	void GetGlobal(pisp_be_global_config &global) const;
 	void SetInputFormat(pisp_image_format_config const &input_format);
