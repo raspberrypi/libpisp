@@ -19,7 +19,7 @@ const PiSPVariant BCM2712_C0 {
 	.backEndMaxTileWidth_ = 640,
 	.numBackEndBranches_ = { 2 },
 	.backEndIntegralImage_ = {{ { false, false } }},
-	.backEndDownscaler_ = {{ { true, true } }}
+	.backEndDownscaler_ = {{ { false, true } }}
 };
 
 const PiSPVariant BCM2712_D0 {
