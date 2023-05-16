@@ -547,6 +547,8 @@ void BackEnd::updateSmartResize()
 		{
 			if (smart_resize_[i].width && smart_resize_[i].height)
 			{
+				uint16_t resampler_input_width = input_width;
+				uint16_t resampler_input_height = input_height;
 				uint16_t resampler_output_width = smart_resize_[i].width;
 				uint16_t resampler_output_height = smart_resize_[i].height;
 
@@ -597,8 +599,8 @@ void BackEnd::updateSmartResize()
 					// Now adjust the input dimensions that the code below (which
 					// programs the resampler) will see, so that it can, if necessary,
 					// do its PPF coefficient adjustment.
-					input_width = downscaler_output_width;
-					input_height = downscaler_output_height;
+					resampler_input_width = downscaler_output_width;
+					resampler_input_height = downscaler_output_height;
 				}
 				else
 				{
@@ -620,8 +622,8 @@ void BackEnd::updateSmartResize()
 				// then we can use the PPF as a trapezoidal downscaler by setting up
 				// the filter coefficients (per used phase) correctly. This improves
 				// on image quality for larger downscale factors.
-				double scale_factor_x = (double)(input_width - 1) / (resampler_output_width - 1);
-				double scale_factor_y = (double)(input_height - 1) / (resampler_output_height - 1);
+				double scale_factor_x = (double)(resampler_input_width - 1) / (resampler_output_width - 1);
+				double scale_factor_y = (double)(resampler_input_height - 1) / (resampler_output_height - 1);
 				if (scale_factor_x > 2.1 &&
 					scale_factor_x < scale_factor_y * 1.1 && scale_factor_y < scale_factor_x * 1.1)
 				{
