@@ -7,6 +7,7 @@
  */
 #include "backend.hpp"
 
+#include <cmath>
 #include <string>
 
 #include "common/logging.hpp"
