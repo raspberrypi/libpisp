@@ -8,6 +8,8 @@
 
 #include "stages.hpp"
 
+#include <cstdint>
+
 namespace tiling
 {
 

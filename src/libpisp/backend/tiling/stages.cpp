@@ -2,6 +2,8 @@
 
 #include "pipeline.hpp"
 
+#include <cstdint>
+
 using namespace tiling;
 
 Stage::Stage(char const *name, Pipeline *pipeline, int struct_offset)
