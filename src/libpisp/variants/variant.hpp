@@ -136,7 +136,7 @@ public:
 		return (id < num_be_ && branch < num_be_branches_[id]) ? be_downscaler_[id][branch] : 0;
 	}
 
-	bool BackendRGB32Supported(unsigned int id)
+	bool BackendRGB32Supported(unsigned int id) const
 	{
 		return id < num_be_ ? be_rgb32_support_ : false;
 	}
