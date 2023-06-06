@@ -369,7 +369,7 @@ void BackEnd::InitialiseConfig(const std::string filename)
 	initialise_sharpen(be_config_.sharpen, be_config_.sh_fc_combine);
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_SHARPEN;
 
-	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
+	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
 	{
 		// Start with a sensible default
 		initialise_resample(be_config_.resample[i], "lanczos3");

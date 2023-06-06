@@ -76,7 +76,7 @@ public:
 protected: // TODO: Should be private
 	void getOutputSize(unsigned int output_num, uint16_t &width, uint16_t &height) const;
 
-	const PiSPVariant variant_;
+	const PiSPVariant &variant_;
 	pisp_fe_config fe_config_;
 	int align_;
 	mutable boost::interprocess::interprocess_mutex mutex_;

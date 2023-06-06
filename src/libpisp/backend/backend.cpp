@@ -79,7 +79,7 @@ const config_param config_map[] = {
 BackEnd::BackEnd(Config const &config, PiSPVariant const &variant)
 	: config_(config), variant_(variant), retile_(true), finalise_tiling_(true)
 {
-	unsigned int max_tile_width = variant_.backEndMaxTileWidth(0);
+	unsigned int max_tile_width = variant_.BackEndMaxTileWidth(0);
 
 	if (config_.max_tile_width > max_tile_width)
 		PISP_LOG(fatal, "Configured max tile width " << config_.max_tile_width << " exceeds " << max_tile_width);
@@ -441,7 +441,7 @@ void BackEnd::SetResample(unsigned int i, pisp_be_resample_extra const &resample
 
 void BackEnd::SetOutputFormat(unsigned int i, pisp_be_output_format_config const &output_format)
 {
-	PISP_ASSERT(i < variant_.backEndNumBranches(0));
+	PISP_ASSERT(i < variant_.BackEndNumBranches(0));
 	be_config_.output_format[i] = output_format;
 
 	if (output_format.image.format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE)
@@ -467,7 +467,7 @@ void BackEnd::SetHog(pisp_be_hog_config const &hog)
 
 void BackEnd::GetOutputFormat(unsigned int i, pisp_be_output_format_config &output_format) const
 {
-	PISP_ASSERT(i < variant_.backEndNumBranches(0));
+	PISP_ASSERT(i < variant_.BackEndNumBranches(0));
 	output_format = be_config_.output_format[i];
 }
 
@@ -493,7 +493,7 @@ void BackEnd::MergeConfig(const pisp_be_config &config)
 
 void BackEnd::SetSmartResize(unsigned int i, BackEnd::SmartResize const &smart_resize)
 {
-	PISP_ASSERT(i < variant_.backEndNumBranches(0));
+	PISP_ASSERT(i < variant_.BackEndNumBranches(0));
 	// Non-zero width and height will be interpreted as "enabled".
 	smart_resize_[i] = smart_resize;
 	smart_resize_dirty_ |= (1 << i);
@@ -504,7 +504,7 @@ unsigned int BackEnd::GetMaxDownscale() const
 	// Return an estimate of the largest horizontal downscale we can do.
 	unsigned int max_tile_width = config_.max_tile_width;
 	if (!max_tile_width)
-		max_tile_width = variant_.backEndMaxTileWidth(0);
+		max_tile_width = variant_.BackEndMaxTileWidth(0);
 
 	// We reckon a 640 tile-width implementation can do 24x safely with formats that
 	// want 1 byte per pixel. This should approximately scale with the max tile width.

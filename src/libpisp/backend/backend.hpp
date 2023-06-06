@@ -51,8 +51,6 @@ public:
 	BackEnd(Config const &user_config, PiSPVariant const &variant);
 	~BackEnd();
 
-	PiSPVariant const &GetVariant() const { return variant_; }
-
 	void SetGlobal(pisp_be_global_config const &global);
 	void GetGlobal(pisp_be_global_config &global) const;
 	void SetInputFormat(pisp_image_format_config const &input_format);
@@ -147,7 +145,7 @@ protected:
 	void getOutputSize(int output_num, uint16_t *width, uint16_t *height, pisp_image_format_config const &ifmt) const;
 
 	Config config_;
-	const PiSPVariant variant_;
+	const PiSPVariant &variant_;
 	pisp_be_config be_config_;
 	pisp_image_format_config max_input_;
 	bool retile_;

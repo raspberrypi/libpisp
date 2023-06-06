@@ -474,7 +474,7 @@ void BackEnd::finaliseConfig()
 		finalise_cac(be_config_.cac, be_config_.cac_extra, be_config_.input_format.width,
 					 be_config_.input_format.height);
 
-	for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++)
+	for (unsigned int j = 0; j < variant_.BackEndNumBranches(0); j++)
 	{
 		bool enabled = be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(j);
 
@@ -489,7 +489,7 @@ void BackEnd::finaliseConfig()
 
 			if (dirty_flags_rgb & PISP_BE_RGB_ENABLE_DOWNSCALE(j))
 			{
-				if (variant_.backEndDownscalerAvailable(0, j))
+				if (variant_.BackEndDownscalerAvailable(0, j))
 					finalise_downscale(be_config_.downscale[j], be_config_.downscale_extra[j], w, h);
 				else
 					throw std::runtime_error("Downscale is not available in output branch " + std::to_string(j));
@@ -520,7 +520,7 @@ void BackEnd::finaliseConfig()
 
 	uint32_t output_enables = be_config_.global.bayer_enables &
 							  (PISP_BE_BAYER_ENABLE_TDN_OUTPUT | PISP_BE_BAYER_ENABLE_STITCH_OUTPUT);
-	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
+	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
 		output_enables |= be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(i);
 
 	output_enables |= be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_HOG;
@@ -542,7 +542,7 @@ void BackEnd::updateSmartResize()
 
 	// Look through the output branches adjusting the scaling blocks where "smart resizing"
 	// has been requested.
-	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
+	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
 	{
 		if ((smart_resize_dirty_ & (1 << i)) || (be_config_.dirty_flags_extra & PISP_BE_DIRTY_CROP))
 		{
@@ -560,7 +560,7 @@ void BackEnd::updateSmartResize()
 				// We're doing to use the downscaler if it's available and we're downscaling
 				// by more than 2x.
 				// \todo - increase this "2x" threshold by using different resampler kernels.
-				if (variant_.backEndDownscalerAvailable(0, i) &&
+				if (variant_.BackEndDownscalerAvailable(0, i) &&
 					(resampler_output_width * 2 < input_width || resampler_output_height * 2 < input_height))
 				{
 					uint16_t downscaler_output_width = input_width;
@@ -692,7 +692,7 @@ void BackEnd::updateTiles()
 			tiling_config.crop = tiling::Interval2(tiling::Interval(0, c.input_format.width),
 												   tiling::Interval(0, c.input_format.height));
 
-		for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
+		for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
 		{
 			tiling_config.output_h_mirror[i] = be_config_.output_format[i].transform & PISP_BE_TRANSFORM_HFLIP;
 			tiling_config.downscale_factor[i] =
@@ -724,7 +724,7 @@ void BackEnd::updateTiles()
 		}
 
 		tiling_config.max_tile_size.dx = config_.max_tile_width ? config_.max_tile_width
-																: variant_.backEndMaxTileWidth(0);
+																: variant_.BackEndMaxTileWidth(0);
 		tiling_config.max_tile_size.dy = config_.max_stripe_height ? config_.max_stripe_height : MaxStripeHeight;
 		tiling_config.min_tile_size = tiling::Length2(PISP_BACK_END_MIN_TILE_WIDTH, PISP_BACK_END_MIN_TILE_HEIGHT);
 		tiling_config.resample_enables = be_config_.global.rgb_enables / (int)PISP_BE_RGB_ENABLE_RESAMPLE0;
@@ -734,7 +734,7 @@ void BackEnd::updateTiles()
 		// outside the actual image width (and we've chosen not to handle compression like that).
 		tiling_config.compressed_input = false;
 		tiles_ = retilePipeline(tiling_config);
-		check_tiles(tiles_, c.global.rgb_enables, variant_.backEndNumBranches(0), tiling_config);
+		check_tiles(tiles_, c.global.rgb_enables, variant_.BackEndNumBranches(0), tiling_config);
 		finalise_tiling_ = true;
 	}
 
@@ -780,7 +780,7 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 		if (tiles[i].input.output != tiles[i].input.input)
 			throw std::runtime_error("BackEnd::retilePipeline: tiling error in Bayer pipe");
 
-		for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++)
+		for (unsigned int j = 0; j < variant_.BackEndNumBranches(0); j++)
 		{
 			bool enabled = (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(j));
 
@@ -847,8 +847,8 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 					unsigned int frac_y = (resample_size.y.offset * be_config_.downscale[j].scale_factor_v) &
 										  ((1 << ScalePrecision) - 1);
 					// Fractional component of the input required to generate the output pixel.
-					t.downscale_phase_x[p * variant_.backEndNumBranches(0) + j] = (UnityScale - frac_x);
-					t.downscale_phase_y[p * variant_.backEndNumBranches(0) + j] = (UnityScale - frac_y);
+					t.downscale_phase_x[p * variant_.BackEndNumBranches(0) + j] = (UnityScale - frac_x);
+					t.downscale_phase_y[p * variant_.BackEndNumBranches(0) + j] = (UnityScale - frac_y);
 				}
 
 				if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_RESAMPLE(j))
@@ -859,18 +859,18 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 					unsigned int interpolated_pix_y =
 						(t.output_offset_y[j] * NumPhases * be_config_.resample[j].scale_factor_v) >> ScalePrecision;
 					// Phase of the interpolated input pixel.
-					t.resample_phase_x[p * variant_.backEndNumBranches(0) + j] =
+					t.resample_phase_x[p * variant_.BackEndNumBranches(0) + j] =
 						((interpolated_pix_x % NumPhases) << ScalePrecision) / NumPhases;
-					t.resample_phase_y[p * variant_.backEndNumBranches(0) + j] =
+					t.resample_phase_y[p * variant_.BackEndNumBranches(0) + j] =
 						((interpolated_pix_y % NumPhases) << ScalePrecision) / NumPhases;
 					// Account for any user defined initial phase - this could be negative!
-					t.resample_phase_x[p * variant_.backEndNumBranches(0) + j] +=
+					t.resample_phase_x[p * variant_.BackEndNumBranches(0) + j] +=
 						be_config_.resample_extra[j].initial_phase_h[p];
-					t.resample_phase_y[p * variant_.backEndNumBranches(0) + j] +=
+					t.resample_phase_y[p * variant_.BackEndNumBranches(0) + j] +=
 						be_config_.resample_extra[j].initial_phase_v[p];
 					// Have to be within this range, else some calculation went wrong.
-					PISP_ASSERT(t.resample_phase_x[p * variant_.backEndNumBranches(0) + j] <= 2 * (UnityScale - 1));
-					PISP_ASSERT(t.resample_phase_y[p * variant_.backEndNumBranches(0) + j] <= 2 * (UnityScale - 1));
+					PISP_ASSERT(t.resample_phase_x[p * variant_.BackEndNumBranches(0) + j] <= 2 * (UnityScale - 1));
+					PISP_ASSERT(t.resample_phase_y[p * variant_.BackEndNumBranches(0) + j] <= 2 * (UnityScale - 1));
 				}
 			}
 
@@ -878,22 +878,22 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 			if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_RESAMPLE(j))
 			{
 				int phase_max = (be_config_.resample[j].scale_factor_h * UnityScale / 2) >> ScalePrecision;
-				if (std::abs(t.resample_phase_x[0 * variant_.backEndNumBranches(0) + j] -
-							 t.resample_phase_x[1 * variant_.backEndNumBranches(0) + j]) > phase_max ||
-					std::abs(t.resample_phase_x[1 * variant_.backEndNumBranches(0) + j] -
-							 t.resample_phase_x[2 * variant_.backEndNumBranches(0) + j]) > phase_max ||
-					std::abs(t.resample_phase_x[0 * variant_.backEndNumBranches(0) + j] -
-							 t.resample_phase_x[2 * variant_.backEndNumBranches(0) + j]) > phase_max)
+				if (std::abs(t.resample_phase_x[0 * variant_.BackEndNumBranches(0) + j] -
+							 t.resample_phase_x[1 * variant_.BackEndNumBranches(0) + j]) > phase_max ||
+					std::abs(t.resample_phase_x[1 * variant_.BackEndNumBranches(0) + j] -
+							 t.resample_phase_x[2 * variant_.BackEndNumBranches(0) + j]) > phase_max ||
+					std::abs(t.resample_phase_x[0 * variant_.BackEndNumBranches(0) + j] -
+							 t.resample_phase_x[2 * variant_.BackEndNumBranches(0) + j]) > phase_max)
 				{
 					throw std::runtime_error("Resample phase x for tile is > 0.5 pixels on the output dimensions.");
 				}
 				phase_max = (be_config_.resample[j].scale_factor_v * UnityScale / 2) >> ScalePrecision;
-				if (std::abs(t.resample_phase_y[0 * variant_.backEndNumBranches(0) + j] -
-							 t.resample_phase_y[1 * variant_.backEndNumBranches(0) + j]) > phase_max ||
-					std::abs(t.resample_phase_y[1 * variant_.backEndNumBranches(0) + j] -
-							 t.resample_phase_y[2 * variant_.backEndNumBranches(0) + j]) > phase_max ||
-					std::abs(t.resample_phase_y[0 * variant_.backEndNumBranches(0) + j] -
-							 t.resample_phase_y[2 * variant_.backEndNumBranches(0) + j]) > phase_max)
+				if (std::abs(t.resample_phase_y[0 * variant_.BackEndNumBranches(0) + j] -
+							 t.resample_phase_y[1 * variant_.BackEndNumBranches(0) + j]) > phase_max ||
+					std::abs(t.resample_phase_y[1 * variant_.BackEndNumBranches(0) + j] -
+							 t.resample_phase_y[2 * variant_.BackEndNumBranches(0) + j]) > phase_max ||
+					std::abs(t.resample_phase_y[0 * variant_.BackEndNumBranches(0) + j] -
+							 t.resample_phase_y[2 * variant_.BackEndNumBranches(0) + j]) > phase_max)
 				{
 					throw std::runtime_error("Resample phase y for tile is > 0.5 pixels on the output dimensions.");
 				}
@@ -933,7 +933,7 @@ void BackEnd::finaliseTiling()
 			t.cac_grid_offset_y = (t.input_offset_y + be_config_.cac_extra.offset_y) * be_config_.cac.grid_step_y;
 		}
 
-		for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++)
+		for (unsigned int j = 0; j < variant_.BackEndNumBranches(0); j++)
 		{
 			int output_offset_x_unflipped = t.output_offset_x[j], output_offset_y_unflipped = t.output_offset_y[j];
 
@@ -1051,14 +1051,14 @@ void BackEnd::Prepare(pisp_be_tiles_config *config)
 
 	// 2. Also check the output configuration (including HOG) is all filled in and looks sensible. Again, addresses must be
 	// left to the HAL.
-	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
+	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
 	{
 		pisp_image_format_config &image_config = be_config_.output_format[i].image;
 		ComputeOutputImageFormat(i, image_config, be_config_.input_format);
 
 		if (image_config.format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE)
 		{
-			if (!variant_.backEndIntegralImage(0, i))
+			if (!variant_.BackEndIntegralImage(0, i))
 				throw std::runtime_error("Integral images are not supported in the current configuration.");
 			integral_image_output = true;
 		}
