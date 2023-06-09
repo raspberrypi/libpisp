@@ -1,4 +1,5 @@
 project('libpisp', 'c', 'cpp',
+        meson_version : '>= 0.64.0',
         version : '0.0.1',
         default_options : [
             'werror=true',
