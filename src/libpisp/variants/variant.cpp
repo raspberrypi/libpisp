@@ -16,6 +16,8 @@ namespace {
 
 const PiSPVariant variant_error {};
 
+} // namespace
+
 const PiSPVariant BCM2712_C0 {
 	"BCM2712_C0",			/* Name */
 	0x00114666,				/* FrontEnd version */
@@ -50,8 +52,6 @@ const PiSPVariant BCM2712_D0 {
 	true,					/* BackEnd RGB32 output format support */
 };
 
-} // namespace
-
 const std::vector<PiSPVariant> &get_variants()
 {
 	static const std::vector<PiSPVariant> variants {
@@ -66,13 +66,13 @@ const PiSPVariant &get_variant(unsigned int fe_version, unsigned int be_version)
 {
 	const std::vector<PiSPVariant> &variants = get_variants();
 
-	auto it = std::find_if(variants.begin(), variants.end(), 
+	auto it = std::find_if(variants.begin(), variants.end(),
 				   [fe_version, be_version](const auto &hw) { return hw.FrontEndVersion() == fe_version &&
 																	 hw.BackEndVersion() == be_version; });
 
 	if (it == variants.end())
 		return variant_error;
-	
+
 	return *it;
 }
 
