@@ -130,6 +130,14 @@ void finalise_downscale(pisp_be_downscale_config &downscale, pisp_be_downscale_e
 	PISP_LOG(debug, "width " << width << " scaled_width " << downscale_extra.scaled_width);
 	PISP_LOG(debug, "height " << height << " scaled_height " << downscale_extra.scaled_height);
 
+	// Normally we set scale factors here, but for some tests we need special values
+	if (downscale.scale_factor_h != 0 && downscale.scale_factor_v != 0 &&
+	    downscale.scale_recip_h != 0 && downscale.scale_recip_v != 0)
+	{
+		PISP_LOG(debug, "using pre-configured scale factors\n");
+		return;
+	}
+
 	uint32_t scale_factor_h = (width << ScalePrecision) / (downscale_extra.scaled_width);
 	uint32_t scale_factor_v = (height << ScalePrecision) / (downscale_extra.scaled_height);
 
@@ -696,7 +704,8 @@ void BackEnd::updateTiles()
 		{
 			tiling_config.output_h_mirror[i] = be_config_.output_format[i].transform & PISP_BE_TRANSFORM_HFLIP;
 			tiling_config.downscale_factor[i] =
-				tiling::Length2(c.downscale[i].scale_factor_h, c.downscale[i].scale_factor_v);
+				tiling::Length2((c.input_format.width << ScalePrecision) / (c.downscale_extra[i].scaled_width),
+						(c.input_format.height << ScalePrecision) / (c.downscale_extra[i].scaled_height));
 			tiling_config.resample_factor[i] =
 				tiling::Length2(c.resample[i].scale_factor_h, c.resample[i].scale_factor_v);
 			tiling_config.downscale_image_size[i] =
@@ -842,9 +851,13 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 				// Calculate x/y initial downsampler/resampler phases per-plane.
 				if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_DOWNSCALE(j))
 				{
-					unsigned int frac_x = (resample_size.x.offset * be_config_.downscale[j].scale_factor_h) &
+					uint32_t downscale_factor_h =
+						(be_config_.input_format.width << ScalePrecision) / (be_config_.downscale_extra[j].scaled_width);
+					uint32_t downscale_factor_v =
+						(be_config_.input_format.height << ScalePrecision) / (be_config_.downscale_extra[j].scaled_height);
+					unsigned int frac_x = (resample_size.x.offset * downscale_factor_h) &
 										  ((1 << ScalePrecision) - 1);
-					unsigned int frac_y = (resample_size.y.offset * be_config_.downscale[j].scale_factor_v) &
+					unsigned int frac_y = (resample_size.y.offset * downscale_factor_v) &
 										  ((1 << ScalePrecision) - 1);
 					// Fractional component of the input required to generate the output pixel.
 					t.downscale_phase_x[p * variant_.BackEndNumBranches(0) + j] = (UnityScale - frac_x);

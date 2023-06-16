@@ -418,6 +418,10 @@ void BackEnd::SetDownscale(unsigned int i, pisp_be_downscale_config const &downs
 
 void BackEnd::SetDownscale(unsigned int i, pisp_be_downscale_extra const &downscale_extra)
 {
+	be_config_.downscale[i].scale_factor_h = 0;
+	be_config_.downscale[i].scale_factor_v = 0;
+	be_config_.downscale[i].scale_recip_h = 0;
+	be_config_.downscale[i].scale_recip_v = 0;
 	be_config_.downscale_extra[i] = downscale_extra;
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_DOWNSCALE(i);
 	retile_ = true;
