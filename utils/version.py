@@ -14,13 +14,13 @@ def generate_version():
     try:
         # Check if this is a git directory
         r = subprocess.run(['git', 'rev-parse', '--git-dir'],
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, universal_newlines=True)
         if r.returncode:
             raise RuntimeError('Invalid git directory!')
 
         # Get commit id
         r = subprocess.run(['git', 'rev-parse', '--verify', 'HEAD'],
-                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True)
         if r.returncode:
             raise RuntimeError('Invalid git commit!')
 
@@ -28,7 +28,7 @@ def generate_version():
 
         # Check dirty status
         r = subprocess.run(['git', 'diff-index', '--quiet', 'HEAD'],
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True)
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, universal_newlines=True)
         if r.returncode:
             commit = commit + '-dirty'
         
