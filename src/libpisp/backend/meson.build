@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: CC0-1.0
 
-config_install_dir = get_option('prefix') / get_option('datadir') / 'libpisp'
+config_install_dir = join_paths(get_option('prefix'), get_option('datadir'), 'libpisp')
 
 conf_data = configuration_data()
 conf_data.set('PISP_BE_CONFIG_DIR', '"' + config_install_dir + '"')
@@ -17,7 +17,7 @@ backend_headers = files([
     'pisp_be_config.h',
 ])
 
-backend_include_dir = pisp_include_dir / 'backend'
+backend_include_dir = join_paths(pisp_include_dir, 'backend')
 install_headers(backend_headers, subdir: backend_include_dir)
 
 install_data('backend_default_config.json',

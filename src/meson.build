@@ -10,7 +10,7 @@ pisp_sources += backend_sources
 
 boost_args = ['-DBOOST_BIND_GLOBAL_PLACEHOLDERS', '-DBOOST_LOG_DYN_LINK=1']
 
-boost_dep = dependency('boost', modules : ['log', 'log_setup', 'thread'])
+boost_dep = dependency('boost', modules : ['log', 'log_setup', 'thread', 'system'])
 add_project_arguments(boost_args, language : 'cpp')
 
 pisp_deps = [
@@ -18,8 +18,8 @@ pisp_deps = [
 ]
 
 # Generate a version string:
-version_script = meson.project_source_root() / 'utils' / 'version.py'
-version_template = meson.project_source_root() / 'utils' / 'version.cpp.in'
+version_script = join_paths(meson.source_root(), 'utils', 'version.py')
+version_template = join_paths(meson.source_root(), 'utils', 'version.cpp.in')
 version_cpp = vcs_tag(command : [version_script, meson.project_version()],
                       input : version_template,
                       output : 'version.cpp',
@@ -44,7 +44,8 @@ libpisp_dep = declare_dependency(
 )
 
 pkg_mod = import('pkgconfig')
-pkg_mod.generate(libpisp,
+pkg_mod.generate(name : meson.project_name(),
+                 version: meson.project_version(),
                  description : 'PiSP Library',
                  subdirs : 'libpisp')
 

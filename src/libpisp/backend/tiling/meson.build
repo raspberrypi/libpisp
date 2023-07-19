@@ -17,5 +17,5 @@ tiling_headers = files([
     'types.hpp',
 ])
 
-tiling_include_dir = backend_include_dir / 'tiling'
+tiling_include_dir = join_paths(backend_include_dir, 'tiling')
 install_headers(tiling_headers, subdir: tiling_include_dir)

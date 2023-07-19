@@ -14,5 +14,5 @@ common_headers = files([
     'version.hpp',
 ])
 
-common_include_dir = pisp_include_dir / 'common'
+common_include_dir = join_paths(pisp_include_dir, 'common')
 install_headers(common_headers, subdir: common_include_dir)
