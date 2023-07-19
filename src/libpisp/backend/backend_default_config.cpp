@@ -10,7 +10,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
-#include <filesystem>
+#include <fstream>
 #include <map>
 #include <mutex>
 #include <string>
@@ -331,12 +331,13 @@ void BackEnd::InitialiseConfig(const std::string filename)
 	{
 		std::string file = filename.empty() ? std::string(PISP_BE_CONFIG_DIR) + "/" + "backend_default_config.json"
 											: filename;
-		if (!std::filesystem::exists(file))
+		std::ifstream ifs(file);
+		if (!ifs.good())
 			throw std::runtime_error("BE: Could not find config json file: " + file);
+		ifs.close();
 
 		boost::property_tree::ptree root;
 		boost::property_tree::read_json(file, root);
-
 		read_debin(root);
 		read_demosaic(root);
 		read_false_colour(root);
@@ -358,7 +359,7 @@ void BackEnd::InitialiseConfig(const std::string filename)
 	initialise_false_colour(be_config_.false_colour);
 	be_config_.dirty_flags_bayer |= PISP_BE_RGB_ENABLE_FALSE_COLOUR;
 
-	// Start with a sensible default
+	// Start with a sensible default YCbCr -- must be full-range on 2712C1
 	initialise_ycbcr(be_config_.ycbcr, "jpeg");
 	initialise_ycbcr_inverse(be_config_.ycbcr_inverse, "jpeg");
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_YCBCR_INVERSE;
