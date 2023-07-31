@@ -38,14 +38,14 @@ const PiSPVariant BCM2712_C0 {
 const PiSPVariant BCM2712_D0 {
 	"BCM2712_D0",			/* Name */
 	0x00114666,				/* FrontEnd version */
-	0x02251301,				/* BackEnd version */
+	0x02252701,				/* BackEnd version */
 	2,						/* Number of FrontEnds */
 	1,						/* Number of BackEnds */
 	{ 2, 2 },				/* Number of branches per FrontEnd */
 	{ 6144, 6144 }, 		/* Maximum statistics width per FrontEnd branch */
 	{{ { true, true }, { true, true } }}, /* Availability of downscalers per FrontEnd branch */
 	{{ { 6144, 4096 }, { 6144, 4096 } }}, /* Maximum width of downscalers per FrontEnd branch */
-	320,					/* Maximum tile size of the BackEnd */
+	640,					/* Maximum tile size of the BackEnd */
 	{ 2 },					/* Number of branches per BackEnd */
 	{{ { false, false } }}, /* Availability of integral image output per BackEnd branch */
 	{{ { false, true } }},	/* Availability of downscalers per BackEnd branch */
