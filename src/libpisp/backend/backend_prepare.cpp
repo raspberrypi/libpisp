@@ -160,16 +160,33 @@ void finalise_decompression(pisp_be_config const &be_config)
 		throw std::runtime_error("BackEnd::finalise: compressed input is not 8bpp");
 }
 
+// TDN and Stitch I/O dimensions must match the input, though the format may differ.
+static void check_rawio_format(pisp_image_format_config &fmt, uint16_t w, uint16_t h)
+{
+	if (fmt.width == 0 || fmt.height == 0)
+	{
+		fmt.width = w;
+		fmt.height = h;
+	}
+	else if (fmt.width != w || fmt.height != h)
+		throw std::runtime_error("BackEnd::finalise: Image dimensions do not match input");
+
+	if (fmt.stride == 0)
+		compute_stride(fmt);
+	else
+		check_stride(fmt);
+}
+
 void finalise_tdn(pisp_be_config &config)
 {
 	int tdn_enabled = config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN;
 	int tdn_input_enabled = config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_INPUT;
 	int tdn_decompress_enabled = config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_DECOMPRESS;
 	int tdn_compress_enabled = config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_COMPRESS;
-	int tdn_output_enable = config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_OUTPUT;
+	int tdn_output_enabled = config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_OUTPUT;
 	uint32_t fmt = config.tdn_output_format.format;
 
-	if (tdn_enabled && !tdn_output_enable)
+	if (tdn_enabled && !tdn_output_enabled)
 		throw std::runtime_error("BackEnd::finalise: TDN output not enabled when TDN enabled");
 
 	if (PISP_IMAGE_FORMAT_compressed(fmt) && !tdn_compress_enabled)
@@ -181,13 +198,11 @@ void finalise_tdn(pisp_be_config &config)
 	if (tdn_compress_enabled && !PISP_IMAGE_FORMAT_bps_8(fmt))
 		throw std::runtime_error("BackEnd::finalise: TDN output does not match compression mode");
 
-	// TDN output width/height must match the input, though the format may differ.
-	config.tdn_output_format.width = config.input_format.width;
-	config.tdn_output_format.height = config.input_format.height;
-	if (!config.tdn_output_format.stride)
-		compute_stride(config.tdn_output_format);
-	else
-		check_stride(config.tdn_output_format);
+	if (tdn_output_enabled)
+          check_rawio_format(config.tdn_output_format, config.input_format.width, config.input_format.height);
+
+	if (tdn_input_enabled)
+		check_rawio_format(config.tdn_input_format, config.input_format.width, config.input_format.height);
 
 	if (!tdn_enabled)
 	{
@@ -241,19 +256,11 @@ void finalise_stitch(pisp_be_config &config)
 	if (stitch_compress_enabled && !PISP_IMAGE_FORMAT_bps_8(output_fmt))
 		throw std::runtime_error("BackEnd::finalise: stitch output does not match compression mode");
 
-	if (config.stitch_output_format.width == 0 && config.stitch_output_format.height == 0)
-	{
-		config.stitch_output_format.width = config.input_format.width;
-		config.stitch_output_format.height = config.input_format.height;
-		compute_stride(config.stitch_output_format);
-	}
+	if (stitch_output_enabled)
+		check_rawio_format(config.stitch_output_format, config.input_format.width, config.input_format.height);
 
-	if (config.stitch_input_format.width == 0 && config.stitch_input_format.height == 0)
-	{
-		config.stitch_input_format.width = config.input_format.width;
-		config.stitch_input_format.height = config.input_format.height;
-		compute_stride(config.stitch_input_format);
-	}
+	if (stitch_input_enabled)
+		check_rawio_format(config.stitch_input_format, config.input_format.width, config.input_format.height);
 
 	// Compute the motion_threshold reciprocal if it hasn't been done.
 	if (config.stitch.motion_threshold_recip == 0)
