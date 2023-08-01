@@ -27,7 +27,7 @@ uint32_t compute_x_offset(uint32_t /* pisp_image_format */ format, int x)
 		 // 48-bytes for a signed histogram cell.
 		x_offset = x * ((format & PISP_IMAGE_FORMAT_HOG_UNSIGNED) ? 32 : 48);
 	}
-	else if (format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE)
+	else if (format & (PISP_IMAGE_FORMAT_INTEGRAL_IMAGE | PISP_IMAGE_FORMAT_BPP_32))
 	{
 		// 32-bit words per sample.
 		x_offset = x * 4;
@@ -40,15 +40,11 @@ uint32_t compute_x_offset(uint32_t /* pisp_image_format */ format, int x)
 			x_offset = (x * 3 + 1) / 2;
 		else if (bps == PISP_IMAGE_FORMAT_BPS_10)
 			x_offset = (x / 3) * 4;
-		else if (bps == PISP_IMAGE_FORMAT_BPS_8)
-			x_offset = x;
 		else
-			PISP_ASSERT(0);
+			x_offset = x;
 
 		if ((format & PISP_IMAGE_FORMAT_THREE_CHANNEL) && PISP_IMAGE_FORMAT_interleaved(format)) {
-			if (PISP_IMAGE_FORMAT_bpp_32(format))
-				x_offset *= 4;
-			else if (PISP_IMAGE_FORMAT_sampling_422(format))
+			if (PISP_IMAGE_FORMAT_sampling_422(format))
 				x_offset *= 2;
 			else
 				x_offset *= 3;
