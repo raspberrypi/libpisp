@@ -65,11 +65,9 @@ int OutputStage::PushEndDown(int input_end, Dir dir)
 
 	int output_end = input_end;
 	int image_size = GetInputImageSize()[dir];
-	// We no longer pull this tile back if it looks to be the penultimate one and the final one might be very
-	// narrow. It should get enough context on the left to work fine.
 	bool mirrored = (dir == Dir::X && config_.x_mirrored);
 	int aligned_output_end = align_end(output_end, image_size, config_.max_alignment[dir], mirrored);
-	if (aligned_output_end > output_interval_.offset)
+	if (aligned_output_end >= output_interval_.offset + config_.max_alignment[dir])
 		output_end = aligned_output_end;
 	else
 	{
