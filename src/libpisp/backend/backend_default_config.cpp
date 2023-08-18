@@ -331,10 +331,11 @@ void BackEnd::InitialiseConfig(const std::string filename)
 	{
 		std::string file = filename.empty() ? std::string(PISP_BE_CONFIG_DIR) + "/" + "backend_default_config.json"
 											: filename;
-                std::ifstream ifs(file);
-                if (!ifs.good())
+		std::ifstream ifs(file);
+		if (!ifs.good())
 			throw std::runtime_error("BE: Could not find config json file: " + file);
-                ifs.close();
+
+		ifs.close();
 
 		boost::property_tree::ptree root;
 		boost::property_tree::read_json(file, root);
