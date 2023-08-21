@@ -48,4 +48,3 @@ pkg_mod.generate(libpisp,
                  description : 'PiSP Library',
                  subdirs : 'libpisp')
 
-meson.add_install_script('ldconfig')
