@@ -9,11 +9,11 @@
 
 #include <vector>
 
-#include <boost/interprocess/sync/interprocess_mutex.hpp>
-
-#include "variants/variant.hpp"
-#include "pisp_be_config.h"
+#include "common/shm_mutex.hpp"
 #include "tiling/pisp_tiling.hpp"
+#include "variants/variant.hpp"
+
+#include "pisp_be_config.h"
 
 // Definition of the PiSP Back End class.
 
@@ -152,7 +152,7 @@ protected:
 	bool finalise_tiling_;
 	std::vector<pisp_tile> tiles_;
 	int num_tiles_x_, num_tiles_y_;
-	mutable boost::interprocess::interprocess_mutex mutex_;
+	mutable ShmMutex mutex_;
 	std::vector<SmartResize> smart_resize_;
 	uint32_t smart_resize_dirty_;
 };

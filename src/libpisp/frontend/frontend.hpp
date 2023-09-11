@@ -9,9 +9,8 @@
 
 #include <cstring>
 
-#include <boost/interprocess/sync/interprocess_mutex.hpp>
-
 #include "common/pisp_types.h"
+#include "common/shm_mutex.hpp"
 #include "variants/variant.hpp"
 
 #include "pisp_fe_config.h"
@@ -79,7 +78,7 @@ protected: // TODO: Should be private
 	const PiSPVariant &variant_;
 	pisp_fe_config fe_config_;
 	int align_;
-	mutable boost::interprocess::interprocess_mutex mutex_;
+	mutable ShmMutex mutex_;
 };
 
 } // namespace libpisp

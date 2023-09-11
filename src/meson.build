@@ -8,11 +8,9 @@ subdir('libpisp')
 pisp_sources += frontend_sources
 pisp_sources += backend_sources
 
-boost_dep = dependency('boost', modules : ['thread'])
-
 pisp_deps = [
-    boost_dep,
     dependency('nlohmann_json', fallback : ['nlohmann_json', 'nlohmann_json_dep']),
+    dependency('threads')
 ]
 
 logging_dep = dependency('boost', modules : ['log', 'log_setup', 'thread'], required : get_option('logging'))

@@ -10,6 +10,7 @@ common_headers = files([
     'pisp_common.h',
     'logging.hpp',
     'pisp_types.h',
+    'shm_mutex.hpp',
     'utils.hpp',
     'version.hpp',
 ])
