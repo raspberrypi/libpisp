@@ -5,6 +5,10 @@
  * pisp_logging.cpp - PiSP logging library
  */
 
+#include "logging.hpp"
+
+#if PISP_LOGGING_ENABLE
+
 #include <cstdlib>
 #include <mutex>
 
@@ -21,8 +25,6 @@ namespace sinks = boost::log::sinks;
 namespace expr = boost::log::expressions;
 namespace keywords = boost::log::keywords;
 namespace trivial = boost::log::trivial;
-
-#include "logging.hpp"
 
 namespace libpisp
 {
@@ -92,3 +94,11 @@ void logging_init()
 }
 
 } // namespace libpisp
+
+#else
+
+void libpisp::logging_init()
+{
+}
+
+#endif // PISP_LOGGING_ENABLE

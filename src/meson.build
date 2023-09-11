@@ -8,15 +8,22 @@ subdir('libpisp')
 pisp_sources += frontend_sources
 pisp_sources += backend_sources
 
-boost_args = ['-DBOOST_BIND_GLOBAL_PLACEHOLDERS', '-DBOOST_LOG_DYN_LINK=1']
-
-boost_dep = dependency('boost', modules : ['log', 'log_setup', 'thread'])
-add_project_arguments(boost_args, language : 'cpp')
+boost_dep = dependency('boost', modules : ['thread'])
 
 pisp_deps = [
     boost_dep,
     dependency('nlohmann_json', fallback : ['nlohmann_json', 'nlohmann_json_dep']),
 ]
+
+logging_dep = dependency('boost', modules : ['log', 'log_setup', 'thread'], required : get_option('logging'))
+if logging_dep.found()
+    logging_args = ['-DPISP_LOGGING_ENABLE=1', '-DBOOST_BIND_GLOBAL_PLACEHOLDERS', '-DBOOST_LOG_DYN_LINK=1']
+    pisp_deps += logging_dep
+else
+    logging_args = '-DPISP_LOGGING_ENABLE=0'
+endif
+
+add_project_arguments(logging_args, language : 'cpp')
 
 meson.add_dist_script(meson.project_source_root() / 'utils' / 'gen-dist.sh')
 

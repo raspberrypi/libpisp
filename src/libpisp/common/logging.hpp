@@ -8,8 +8,6 @@
 
 #include <boost/log/trivial.hpp>
 
-#define PISP_LOGGING_ENABLE 1
-
 #define PISP_LOG(sev, stuff) \
 do { \
 	if (PISP_LOGGING_ENABLE) \
