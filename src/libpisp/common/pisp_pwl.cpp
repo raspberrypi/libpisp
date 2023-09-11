@@ -11,15 +11,16 @@
 #include "pisp_pwl.hpp"
 
 using namespace libpisp;
+using json = nlohmann::json;
 
-void Pwl::Read(boost::property_tree::ptree const &params)
+void Pwl::Read(json const &params)
 {
 	for (auto it = params.begin(); it != params.end(); it++)
 	{
-		double x = it->second.get_value<double>();
+		double x = it->get<double>();
 		assert(it == params.begin() || x > points_.back().x);
 		it++;
-		double y = it->second.get_value<double>();
+		double y = it->get<double>();
 		points_.push_back(Point(x, y));
 	}
 	assert(points_.size() >= 2);

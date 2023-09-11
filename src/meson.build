@@ -14,7 +14,8 @@ boost_dep = dependency('boost', modules : ['log', 'log_setup', 'thread'])
 add_project_arguments(boost_args, language : 'cpp')
 
 pisp_deps = [
-    boost_dep
+    boost_dep,
+    dependency('nlohmann_json', fallback : ['nlohmann_json', 'nlohmann_json_dep']),
 ]
 
 meson.add_dist_script(meson.project_source_root() / 'utils' / 'gen-dist.sh')

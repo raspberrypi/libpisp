@@ -7,18 +7,19 @@
  */
 #include "backend.hpp"
 
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
-
 #include <fstream>
 #include <map>
 #include <mutex>
 #include <string>
 #include <vector>
 
+#include <nlohmann/json.hpp>
+
 #include "backend/pisp_build_config.h"
 #include "common/pisp_pwl.hpp"
 #include "pisp_be_config.h"
+
+using json = nlohmann::json;
 
 // Where it might be helpful we initialise some blocks with the "obvious" default parameters. This saves users the trouble,
 // and they can just "enable" the blocks.
@@ -40,43 +41,37 @@ pisp_be_gamma_config default_gamma;
 pisp_be_false_colour_config default_fc;
 pisp_be_sh_fc_combine_config default_shfc;
 
-void read_debin(const boost::property_tree::ptree &root)
+void read_debin(const json &root)
 {
 	constexpr unsigned int num_coefs = sizeof(default_debin.coeffs) / sizeof(default_debin.coeffs[0]);
-	auto &coefs = root.get_child("debin.coefs");
-	unsigned int i = 0;
+	auto coefs = root["debin"]["coefs"].get<std::vector<int8_t>>();
 
-	for (auto &c : coefs)
-	{
-		default_debin.coeffs[i] = c.second.get_value<int8_t>();
-		if (++i == num_coefs)
-			break;
-	}
-	if (i != num_coefs)
+	if (coefs.size() != num_coefs)
 		throw std::runtime_error("Debin filter size mismatch");
 
+	memcpy(default_debin.coeffs, coefs.data(), sizeof(default_debin.coeffs));
 	default_debin.h_enable = default_debin.v_enable = 1;
 }
 
-void read_demosaic(const boost::property_tree::ptree &root)
+void read_demosaic(const json &root)
 {
-	auto &params = root.get_child("demosaic");
-	default_demosaic.sharper = params.get_child("sharper").get_value<uint8_t>();
-	default_demosaic.fc_mode = params.get_child("fc_mode").get_value<uint8_t>();
+	auto &params = root["demosaic"];
+	default_demosaic.sharper = params["sharper"].get<uint8_t>();
+	default_demosaic.fc_mode = params["fc_mode"].get<uint8_t>();
 }
 
-void read_false_colour(const boost::property_tree::ptree &root)
+void read_false_colour(const json &root)
 {
-	auto &params = root.get_child("false_colour");
-	default_fc.distance = params.get_child("distance").get_value<uint8_t>();
+	auto &params = root["false_colour"];
+	default_fc.distance = params["distance"].get<uint8_t>();
 }
 
-void read_gamma(const boost::property_tree::ptree &root)
+void read_gamma(const json &root)
 {
 	constexpr unsigned int num_points = sizeof(default_gamma.lut) / sizeof(default_gamma.lut[0]);
 
 	libpisp::Pwl pwl;
-	pwl.Read(root.get_child("gamma.lut"));
+	pwl.Read(root["gamma"]["lut"]);
 
 	static constexpr unsigned int SlopeBits = 14;
 	static constexpr unsigned int PosBits = 16;
@@ -112,37 +107,31 @@ void read_gamma(const boost::property_tree::ptree &root)
 	}
 }
 
-void read_resample(const boost::property_tree::ptree &root)
+void read_resample(const json &root)
 {
-	auto &filters = root.get_child("resample.filters");
-	unsigned int i;
+	auto &filters = root["resample"]["filters"];
 
-	for (auto const &filter : filters)
+	for (auto const &[name, filter] : filters.items())
 	{
 		pisp_be_resample_config r;
 		constexpr unsigned int num_coefs = sizeof(r.coef) / sizeof(r.coef[0]);
+		auto coefs = filter.get<std::vector<int16_t>>();
 
-		i = 0;
-		for (auto &c : filter.second)
-		{
-			r.coef[i] = c.second.get_value<int16_t>();
-			if (++i == num_coefs)
-				break;
-		}
-		if (i != num_coefs)
+		if (coefs.size() != num_coefs)
 			throw std::runtime_error("read_resample: Incorrect number of filter coefficients");
 
-		resample_filter_map.emplace(filter.first, r);
+		memcpy(r.coef, coefs.data(), sizeof(r.coef));
+		resample_filter_map.emplace(name, r);
 	}
 
-	auto &smart = root.get_child("resample.smart_selection");
-	for (auto &scale : smart.get_child("downscale"))
-		resample_select_list.emplace_back(scale.second.get_value<double>(), std::string {});
+	auto &smart = root["resample"]["smart_selection"];
+	for (auto &scale : smart["downscale"])
+		resample_select_list.emplace_back(scale.get<double>(), std::string {});
 
-	i = 0;
-	for (auto &filter : smart.get_child("filter"))
+	unsigned int i = 0;
+	for (auto &filter : smart["filter"])
 	{
-		resample_select_list[i].second = filter.second.get_value<std::string>();
+		resample_select_list[i].second = filter.get<std::string>();
 		if (++i == resample_select_list.size())
 			break;
 	}
@@ -153,14 +142,14 @@ void read_resample(const boost::property_tree::ptree &root)
 // Macros for the sharpening filters, to avoid repeating the same code 5 times
 #define FILTER(i)                                                                                                      \
 	{                                                                                                                  \
-		auto filter = params.get_child("filter" #i);                                                                   \
+		auto filter = params["filter" #i];                                                                             \
 		std::vector<int8_t> kernel_v;                                                                                  \
-		for (auto &x : filter.get_child("kernel"))                                                                     \
-			kernel_v.push_back(x.second.get_value<int8_t>());                                                          \
+		for (auto &x : filter["kernel"])                                                                               \
+			kernel_v.push_back(x.get<int8_t>());                                                                       \
 		int8_t *kernel = &kernel_v[0];                                                                                 \
-		uint16_t offset = filter.get_child("offset").get_value<uint16_t>();                                            \
-		uint16_t threshold_slope = filter.get_child("threshold_slope").get_value<uint16_t>();                          \
-		uint16_t scale = filter.get_child("scale").get_value<uint16_t>();                                              \
+		uint16_t offset = filter["offset"].get<uint16_t>();                                                            \
+		uint16_t threshold_slope = filter["threshold_slope"].get<uint16_t>();                                          \
+		uint16_t scale = filter["scale"].get<uint16_t>();                                                              \
 		memcpy(default_sharpen.kernel##i, kernel, sizeof(default_sharpen.kernel##i));                                  \
 		memcpy(&default_sharpen.threshold_offset##i, &offset, sizeof(default_sharpen.threshold_offset##i));            \
 		memcpy(&default_sharpen.threshold_slope##i, &threshold_slope, sizeof(default_sharpen.threshold_slope##i));     \
@@ -169,23 +158,23 @@ void read_resample(const boost::property_tree::ptree &root)
 
 #define POS_NEG(i)                                                                                                     \
 	{                                                                                                                  \
-		auto tive = params.get_child(#i "tive");                                                                       \
-		uint16_t strength = tive.get_child("strength").get_value<uint16_t>();                                          \
-		uint16_t pre_limit = tive.get_child("pre_limit").get_value<uint16_t>();                                        \
+		auto tive = params[#i "tive"];                                                                                 \
+		uint16_t strength = tive["strength"].get<uint16_t>();                                                          \
+		uint16_t pre_limit = tive["pre_limit"].get<uint16_t>();                                                        \
 		std::vector<uint16_t> function_v;                                                                              \
-		for (auto &x : tive.get_child("function"))                                                                     \
-			function_v.push_back(x.second.get_value<uint16_t>());                                                      \
+		for (auto &x : tive["function"])                                                                               \
+			function_v.push_back(x.get<uint16_t>());                                                                   \
 		uint16_t *function = &function_v[0];                                                                           \
-		uint16_t limit = tive.get_child("limit").get_value<uint16_t>();                                                \
+		uint16_t limit = tive["limit"].get<uint16_t>();                                                                \
 		memcpy(&default_sharpen.i##tive_strength, &strength, sizeof(default_sharpen.i##tive_strength));                \
 		memcpy(&default_sharpen.i##tive_pre_limit, &pre_limit, sizeof(default_sharpen.i##tive_pre_limit));             \
 		memcpy(default_sharpen.i##tive_func, function, sizeof(default_sharpen.i##tive_func));                          \
 		memcpy(&default_sharpen.i##tive_limit, &limit, sizeof(default_sharpen.i##tive_limit));                         \
 	}
 
-void read_sharpen(const boost::property_tree::ptree &root)
+void read_sharpen(const json &root)
 {
-	auto params = root.get_child("sharpen");
+	auto params = root["sharpen"];
 
 	FILTER(0);
 	FILTER(1);
@@ -196,54 +185,43 @@ void read_sharpen(const boost::property_tree::ptree &root)
 	POS_NEG(posi);
 	POS_NEG(nega);
 
-	std::string enables_s = params.get_child("enables").data();
+	std::string enables_s = params["enables"].get<std::string>();
 	default_sharpen.enables = std::stoul(enables_s, nullptr, 16);
-	default_sharpen.white = params.get_child("white").get_value<uint8_t>();
-	default_sharpen.black = params.get_child("black").get_value<uint8_t>();
-	default_sharpen.grey = params.get_child("grey").get_value<uint8_t>();
+	default_sharpen.white = params["white"].get<uint8_t>();
+	default_sharpen.black = params["black"].get<uint8_t>();
+	default_sharpen.grey = params["grey"].get<uint8_t>();
 
 	memset(&default_shfc, 0, sizeof(default_shfc));
 	default_shfc.y_factor = 0.75 * (1 << 8);
 }
 
-void read_ycbcr(const boost::property_tree::ptree &root)
+void read_ycbcr(const json &root)
 {
-	auto encoding = root.get_child("colour_encoding");
+	auto encoding = root["colour_encoding"];
 
-	for (auto const &enc : encoding)
+	for (auto const &[format, enc] : encoding.items())
 	{
 		static const std::string keys[2] { "ycbcr", "ycbcr_inverse" };
-		unsigned int i = 0;
 
 		for (auto &key : keys)
 		{
-			auto matrix = enc.second.get_child(key);
+			auto &matrix = enc[key];
 			pisp_be_ccm_config ccm;
 
-			i = 0;
-			for (auto &x : matrix.get_child("coeffs"))
-			{
-				ccm.coeffs[i] = x.second.get_value<int16_t>();
-				if (++i == 9)
-					break;
-			}
-			if (i != 9)
+			auto coeffs = matrix["coeffs"].get<std::vector<int16_t>>();
+			if (coeffs.size() != 9)
 				throw std::runtime_error("read_ycbcr: Incorrect number of matrix coefficients");
+			memcpy(ccm.coeffs, coeffs.data(), sizeof(ccm.coeffs));
 
-			i = 0;
-			for (auto &x : matrix.get_child("offsets"))
-			{
-				ccm.offsets[i] = x.second.get_value<int32_t>();
-				if (++i == 3)
-					break;
-			}
-			if (i != 3)
+			auto offsets = matrix["offsets"].get<std::vector<int32_t>>();
+			if (offsets.size() != 3)
 				throw std::runtime_error("read_ycbcr: Incorrect number of matrix offsets");
+			memcpy(ccm.offsets, offsets.data(), sizeof(ccm.offsets));
 
 			if (key == "ycbcr")
-				ycbcr_map.emplace(enc.first, ccm);
+				ycbcr_map.emplace(format, ccm);
 			else
-				inverse_ycbcr_map.emplace(enc.first, ccm);
+				inverse_ycbcr_map.emplace(format, ccm);
 		}
 	}
 }
@@ -335,10 +313,9 @@ void BackEnd::InitialiseConfig(const std::string filename)
 		if (!ifs.good())
 			throw std::runtime_error("BE: Could not find config json file: " + file);
 
+		json root = json::parse(ifs);
 		ifs.close();
 
-		boost::property_tree::ptree root;
-		boost::property_tree::read_json(file, root);
 		read_debin(root);
 		read_demosaic(root);
 		read_false_colour(root);

@@ -10,7 +10,7 @@
 #include <cmath>
 #include <vector>
 
-#include <boost/property_tree/ptree.hpp>
+#include <nlohmann/json.hpp>
 
 namespace libpisp
 {
@@ -41,7 +41,7 @@ public:
 	};
 	Pwl() {}
 	Pwl(std::vector<Point> const &points) : points_(points) {}
-	void Read(boost::property_tree::ptree const &params);
+	void Read(nlohmann::json const &params);
 	void Append(double x, double y, const double eps = 1e-6);
 	void Prepend(double x, double y, const double eps = 1e-6);
 	Interval Domain() const;
