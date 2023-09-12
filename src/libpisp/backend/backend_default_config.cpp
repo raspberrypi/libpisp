@@ -8,8 +8,6 @@
 #include "backend.hpp"
 
 #include <fstream>
-#include <map>
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -27,48 +25,34 @@ using json = nlohmann::json;
 namespace
 {
 
-std::mutex mutex;
-bool init = false;
-
-std::map<std::string, pisp_be_ccm_config> ycbcr_map;
-std::map<std::string, pisp_be_ccm_config> inverse_ycbcr_map;
-std::map<std::string, pisp_be_resample_config> resample_filter_map;
-std::vector<std::pair<double, std::string>> resample_select_list;
-pisp_be_debin_config default_debin;
-pisp_be_demosaic_config default_demosaic;
-pisp_be_sharpen_config default_sharpen;
-pisp_be_gamma_config default_gamma;
-pisp_be_false_colour_config default_fc;
-pisp_be_sh_fc_combine_config default_shfc;
-
-void read_debin(const json &root)
+void initialise_debin(const json &root, pisp_be_debin_config &debin)
 {
-	constexpr unsigned int num_coefs = sizeof(default_debin.coeffs) / sizeof(default_debin.coeffs[0]);
+	constexpr unsigned int num_coefs = sizeof(debin.coeffs) / sizeof(debin.coeffs[0]);
 	auto coefs = root["debin"]["coefs"].get<std::vector<int8_t>>();
 
 	if (coefs.size() != num_coefs)
 		throw std::runtime_error("Debin filter size mismatch");
 
-	memcpy(default_debin.coeffs, coefs.data(), sizeof(default_debin.coeffs));
-	default_debin.h_enable = default_debin.v_enable = 1;
+	memcpy(debin.coeffs, coefs.data(), sizeof(debin.coeffs));
+	debin.h_enable = debin.v_enable = 1;
 }
 
-void read_demosaic(const json &root)
+void initialise_demosaic(const json &root, pisp_be_demosaic_config &demosaic)
 {
 	auto &params = root["demosaic"];
-	default_demosaic.sharper = params["sharper"].get<uint8_t>();
-	default_demosaic.fc_mode = params["fc_mode"].get<uint8_t>();
+	demosaic.sharper = params["sharper"].get<uint8_t>();
+	demosaic.fc_mode = params["fc_mode"].get<uint8_t>();
 }
 
-void read_false_colour(const json &root)
+void initialise_false_colour(const json &root, pisp_be_false_colour_config &fc)
 {
 	auto &params = root["false_colour"];
-	default_fc.distance = params["distance"].get<uint8_t>();
+	fc.distance = params["distance"].get<uint8_t>();
 }
 
-void read_gamma(const json &root)
+void initialise_gamma(const json &root, pisp_be_gamma_config &gamma)
 {
-	constexpr unsigned int num_points = sizeof(default_gamma.lut) / sizeof(default_gamma.lut[0]);
+	constexpr unsigned int num_points = sizeof(gamma.lut) / sizeof(gamma.lut[0]);
 
 	libpisp::Pwl pwl;
 	pwl.Read(root["gamma"]["lut"]);
@@ -99,15 +83,16 @@ void read_gamma(const json &root)
 				slope = (1u << SlopeBits) - 1;
 				y = lastY + slope;
 			}
-			default_gamma.lut[i - 1] |= slope << PosBits;
+			gamma.lut[i - 1] |= slope << PosBits;
 		}
 
-		default_gamma.lut[i] = y;
+		gamma.lut[i] = y;
 		lastY = y;
 	}
 }
 
-void read_resample(const json &root)
+void read_resample(const json &root, std::map<std::string, pisp_be_resample_config> &resample_filter_map,
+				   std::vector<std::pair<double, std::string>> &resample_select_list)
 {
 	auto &filters = root["resample"]["filters"];
 
@@ -150,10 +135,10 @@ void read_resample(const json &root)
 		uint16_t offset = filter["offset"].get<uint16_t>();                                                            \
 		uint16_t threshold_slope = filter["threshold_slope"].get<uint16_t>();                                          \
 		uint16_t scale = filter["scale"].get<uint16_t>();                                                              \
-		memcpy(default_sharpen.kernel##i, kernel, sizeof(default_sharpen.kernel##i));                                  \
-		memcpy(&default_sharpen.threshold_offset##i, &offset, sizeof(default_sharpen.threshold_offset##i));            \
-		memcpy(&default_sharpen.threshold_slope##i, &threshold_slope, sizeof(default_sharpen.threshold_slope##i));     \
-		memcpy(&default_sharpen.scale##i, &scale, sizeof(default_sharpen.scale##i));                                   \
+		memcpy(sharpen.kernel##i, kernel, sizeof(sharpen.kernel##i));                                                  \
+		memcpy(&sharpen.threshold_offset##i, &offset, sizeof(sharpen.threshold_offset##i));                            \
+		memcpy(&sharpen.threshold_slope##i, &threshold_slope, sizeof(sharpen.threshold_slope##i));                     \
+		memcpy(&sharpen.scale##i, &scale, sizeof(sharpen.scale##i));                                                   \
 	}
 
 #define POS_NEG(i)                                                                                                     \
@@ -166,13 +151,13 @@ void read_resample(const json &root)
 			function_v.push_back(x.get<uint16_t>());                                                                   \
 		uint16_t *function = &function_v[0];                                                                           \
 		uint16_t limit = tive["limit"].get<uint16_t>();                                                                \
-		memcpy(&default_sharpen.i##tive_strength, &strength, sizeof(default_sharpen.i##tive_strength));                \
-		memcpy(&default_sharpen.i##tive_pre_limit, &pre_limit, sizeof(default_sharpen.i##tive_pre_limit));             \
-		memcpy(default_sharpen.i##tive_func, function, sizeof(default_sharpen.i##tive_func));                          \
-		memcpy(&default_sharpen.i##tive_limit, &limit, sizeof(default_sharpen.i##tive_limit));                         \
+		memcpy(&sharpen.i##tive_strength, &strength, sizeof(sharpen.i##tive_strength));                                \
+		memcpy(&sharpen.i##tive_pre_limit, &pre_limit, sizeof(sharpen.i##tive_pre_limit));                             \
+		memcpy(sharpen.i##tive_func, function, sizeof(sharpen.i##tive_func));                                          \
+		memcpy(&sharpen.i##tive_limit, &limit, sizeof(sharpen.i##tive_limit));                                         \
 	}
 
-void read_sharpen(const json &root)
+void read_sharpen(const json &root, pisp_be_sharpen_config sharpen, pisp_be_sh_fc_combine_config shfc)
 {
 	auto params = root["sharpen"];
 
@@ -186,16 +171,17 @@ void read_sharpen(const json &root)
 	POS_NEG(nega);
 
 	std::string enables_s = params["enables"].get<std::string>();
-	default_sharpen.enables = std::stoul(enables_s, nullptr, 16);
-	default_sharpen.white = params["white"].get<uint8_t>();
-	default_sharpen.black = params["black"].get<uint8_t>();
-	default_sharpen.grey = params["grey"].get<uint8_t>();
+	sharpen.enables = std::stoul(enables_s, nullptr, 16);
+	sharpen.white = params["white"].get<uint8_t>();
+	sharpen.black = params["black"].get<uint8_t>();
+	sharpen.grey = params["grey"].get<uint8_t>();
 
-	memset(&default_shfc, 0, sizeof(default_shfc));
-	default_shfc.y_factor = 0.75 * (1 << 8);
+	memset(&shfc, 0, sizeof(shfc));
+	shfc.y_factor = params["shfc_y_factor"].get<double>() * (1 << 8);
 }
 
-void read_ycbcr(const json &root)
+void read_ycbcr(const json &root, std::map<std::string, pisp_be_ccm_config> &ycbcr_map,
+				std::map<std::string, pisp_be_ccm_config> &inverse_ycbcr_map)
 {
 	auto encoding = root["colour_encoding"];
 
@@ -245,113 +231,80 @@ void get_matrix(const std::map<std::string, pisp_be_ccm_config> &map, pisp_be_cc
 namespace libpisp
 {
 
-void initialise_debin(pisp_be_debin_config &debin)
+void BackEnd::InitialiseYcbcr(const std::string &colour_space, pisp_be_ccm_config &ycbcr)
 {
-	debin = default_debin;
+	get_matrix(ycbcr_map_, ycbcr, colour_space);
 }
 
-void initialise_demosaic(pisp_be_demosaic_config &demosaic)
+void BackEnd::InitialiseYcbcrInverse(const std::string &colour_space, pisp_be_ccm_config &ycbcr_inverse)
 {
-	demosaic = default_demosaic;
+	get_matrix(inverse_ycbcr_map_, ycbcr_inverse, colour_space);
 }
 
-void initialise_false_colour(pisp_be_false_colour_config &fc)
-{
-	fc = default_fc;
-}
-
-void initialise_gamma(pisp_be_gamma_config &gamma)
-{
-	gamma = default_gamma;
-}
-
-void initialise_ycbcr(pisp_be_ccm_config &ycbcr, const std::string &colour_space)
-{
-	get_matrix(ycbcr_map, ycbcr, colour_space);
-}
-
-void initialise_ycbcr_inverse(pisp_be_ccm_config &ycbcr_inverse, const std::string &colour_space)
-{
-	get_matrix(inverse_ycbcr_map, ycbcr_inverse, colour_space);
-}
-
-void initialise_resample(pisp_be_resample_config &resample, const std::string &filter)
+void BackEnd::InitialiseResample(const std::string &filter, pisp_be_resample_config &resample)
 {
 	memset(resample.coef, 0, sizeof(resample.coef));
 
-	auto it = resample_filter_map.find(filter);
-	if (it != resample_filter_map.end())
+	auto it = resample_filter_map_.find(filter);
+	if (it != resample_filter_map_.end())
 		memcpy(resample.coef, it->second.coef, sizeof(resample.coef));
 }
 
-void initialise_resample(pisp_be_resample_config &resample, double downscale)
+void BackEnd::InitialiseResample(double downscale, pisp_be_resample_config &resample)
 {
-	auto it = std::find_if(resample_select_list.begin(), resample_select_list.end(),
+	auto it = std::find_if(resample_select_list_.begin(), resample_select_list_.end(),
 						   [downscale](const auto &item) { return item.first >= downscale; });
 
-	if (it != resample_select_list.end())
-		initialise_resample(resample, it->second);
+	if (it != resample_select_list_.end())
+		InitialiseResample(it->second, resample);
 	else
-		initialise_resample(resample, resample_select_list.back().second);
+		InitialiseResample(resample_select_list_.back().second, resample);
 }
 
-void initialise_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc)
+void BackEnd::InitialiseSharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc)
 {
-	sharpen = default_sharpen;
-	shfc = default_shfc;
+	sharpen = default_sharpen_;
+	shfc = default_shfc_;
 }
 
 void BackEnd::InitialiseConfig(const std::string filename)
 {
-	std::scoped_lock<std::mutex> l(mutex);
+	std::string file = filename.empty() ? std::string(PISP_BE_CONFIG_DIR) + "/" + "backend_default_config.json"
+										: filename;
+	std::ifstream ifs(file);
+	if (!ifs.good())
+		throw std::runtime_error("BE: Could not find config json file: " + file);
 
-	if (!init)
-	{
-		std::string file = filename.empty() ? std::string(PISP_BE_CONFIG_DIR) + "/" + "backend_default_config.json"
-											: filename;
-		std::ifstream ifs(file);
-		if (!ifs.good())
-			throw std::runtime_error("BE: Could not find config json file: " + file);
-
-		json root = json::parse(ifs);
-		ifs.close();
-
-		read_debin(root);
-		read_demosaic(root);
-		read_false_colour(root);
-		read_ycbcr(root);
-		read_gamma(root);
-		read_sharpen(root);
-		read_resample(root);
-		init = true;
-	}
+	json root = json::parse(ifs);
+	ifs.close();
 
 	memset(&be_config_, 0, sizeof(be_config_));
 
-	initialise_debin(be_config_.debin);
+	initialise_debin(root, be_config_.debin);
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEBIN;
-
-	initialise_demosaic(be_config_.demosaic);
+	initialise_demosaic(root, be_config_.demosaic);
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEMOSAIC;
-
-	initialise_false_colour(be_config_.false_colour);
+	initialise_false_colour(root, be_config_.false_colour);
 	be_config_.dirty_flags_bayer |= PISP_BE_RGB_ENABLE_FALSE_COLOUR;
-
-	// Start with a sensible default YCbCr -- must be full-range on 2712C1
-	initialise_ycbcr(be_config_.ycbcr, "jpeg");
-	initialise_ycbcr_inverse(be_config_.ycbcr_inverse, "jpeg");
-	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_YCBCR_INVERSE;
-
-	initialise_gamma(be_config_.gamma);
+	initialise_gamma(root, be_config_.gamma);
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_GAMMA;
 
-	initialise_sharpen(be_config_.sharpen, be_config_.sh_fc_combine);
+	read_ycbcr(root, ycbcr_map_, inverse_ycbcr_map_);
+	read_resample(root, resample_filter_map_, resample_select_list_);
+	read_sharpen(root, default_sharpen_, default_shfc_);
+
+	InitialiseSharpen(be_config_.sharpen, be_config_.sh_fc_combine);
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_SHARPEN;
+
+	// Start with a sensible default YCbCr -- must be full-range on 2712C1
+	InitialiseYcbcr("jpeg", be_config_.ycbcr);
+	InitialiseYcbcrInverse("jpeg", be_config_.ycbcr);
+	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_YCBCR_INVERSE;
 
 	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
 	{
 		// Start with a sensible default
-		initialise_resample(be_config_.resample[i], "lanczos3");
+		InitialiseResample("lanczos3", be_config_.resample[i]);
 		be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_RESAMPLE(i);
 	}
 }

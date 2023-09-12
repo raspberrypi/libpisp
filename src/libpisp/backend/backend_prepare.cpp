@@ -664,7 +664,7 @@ void BackEnd::updateSmartResize()
 				{
 					// Let's choose a resampling filter based on the scaling factor.
 					// The selection mapping is defined in the config json file.
-					initialise_resample(resample, scale_factor_x);
+					InitialiseResample(scale_factor_x, resample);
 				}
 
 				// Last thing is to set the output dimensions.

@@ -7,6 +7,7 @@
  */
 #pragma once
 
+#include <map>
 #include <vector>
 
 #include "common/shm_mutex.hpp"
@@ -108,7 +109,13 @@ public:
 	void SetDownscale(unsigned int i, pisp_be_downscale_extra const &downscale_extra);
 	void SetHog(pisp_be_hog_config const &hog);
 
+	void InitialiseYcbcr(const std::string &colour_space, pisp_be_ccm_config &ycbcr);
+	void InitialiseYcbcrInverse(const std::string &colour_space, pisp_be_ccm_config &ycbcr_inverse);
+	void InitialiseResample(const std::string &filter, pisp_be_resample_config &resample);
+	void InitialiseResample(double downscale, pisp_be_resample_config &resample);
+	void InitialiseSharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc);
 	void InitialiseConfig(const std::string filename = {});
+
 	void Prepare(pisp_be_tiles_config *config);
 	void MergeConfig(const pisp_be_config &config);
 
@@ -155,15 +162,15 @@ protected:
 	mutable ShmMutex mutex_;
 	std::vector<SmartResize> smart_resize_;
 	uint32_t smart_resize_dirty_;
+
+private:
+	// Default config
+	std::map<std::string, pisp_be_ccm_config> ycbcr_map_;
+	std::map<std::string, pisp_be_ccm_config> inverse_ycbcr_map_;
+	std::map<std::string, pisp_be_resample_config> resample_filter_map_;
+	std::vector<std::pair<double, std::string>> resample_select_list_;
+	pisp_be_sharpen_config default_sharpen_;
+	pisp_be_sh_fc_combine_config default_shfc_;
 };
-
-
-// Fill in the matrix from a string naming the colour space ("jpeg", "smpte170m, "rec709", "bt2020").
-void initialise_ycbcr(pisp_be_ccm_config &ycbcr, const std::string &colour_space);
-void initialise_ycbcr_inverse(pisp_be_ccm_config &ycbcr_inverse, const std::string &colour_space);
-// Fill in the coefficients from a filter string name ("lanczos3", "lanczos2", "bicubic-spline", "michel-netravali").
-void initialise_resample(pisp_be_resample_config &resample, const std::string &filter);
-void initialise_resample(pisp_be_resample_config &resample, double downscale);
-void initialise_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc);
 
 } // namespace libpisp

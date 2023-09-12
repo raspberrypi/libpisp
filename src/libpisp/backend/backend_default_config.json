@@ -368,6 +368,7 @@
         "enables": "0x1f",
         "white": 0,
         "black": 0,
-        "grey": 50
+        "grey": 50,
+        "shfc_y_factor": 0.75
     }
 }
