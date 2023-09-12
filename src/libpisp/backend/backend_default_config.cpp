@@ -267,7 +267,7 @@ void BackEnd::InitialiseSharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_c
 	shfc = default_shfc_;
 }
 
-void BackEnd::InitialiseConfig(const std::string filename)
+void BackEnd::initialiseDefaultConfig(const std::string &filename)
 {
 	std::string file = filename.empty() ? std::string(PISP_BE_CONFIG_DIR) + "/" + "backend_default_config.json"
 										: filename;

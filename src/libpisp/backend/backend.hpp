@@ -33,14 +33,17 @@ public:
 			HIGH_PRIORITY = 2 	// Not currently implemented
 		};
 
-		Config(unsigned int _max_stripe_height = 0, unsigned int _max_tile_width = 0, unsigned int _flags = 0)
-			: max_stripe_height(_max_stripe_height), max_tile_width(_max_tile_width), flags(_flags)
+		Config(unsigned int _max_stripe_height = 0, unsigned int _max_tile_width = 0, unsigned int _flags = 0,
+			   std::string _defaults_file = {})
+			: max_stripe_height(_max_stripe_height), max_tile_width(_max_tile_width), flags(_flags),
+			  defaults_file(_defaults_file)
 		{
 		}
 
 		unsigned int max_stripe_height; // Use zero to get "default behaviour"
 		unsigned int max_tile_width; // Can only go larger than h/w defined limit in simulations
 		unsigned int flags; // An "or" of the Flags above
+		std::string defaults_file; // json file for default IQ settings
 	};
 
 	struct SmartResize
@@ -114,7 +117,6 @@ public:
 	void InitialiseResample(const std::string &filter, pisp_be_resample_config &resample);
 	void InitialiseResample(double downscale, pisp_be_resample_config &resample);
 	void InitialiseSharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc);
-	void InitialiseConfig(const std::string filename = {});
 
 	void Prepare(pisp_be_tiles_config *config);
 	void MergeConfig(const pisp_be_config &config);
@@ -150,6 +152,8 @@ protected:
 	std::vector<pisp_tile> retilePipeline(TilingConfig const &tiling_config);
 	void finaliseTiling();
 	void getOutputSize(int output_num, uint16_t *width, uint16_t *height, pisp_image_format_config const &ifmt) const;
+
+	void initialiseDefaultConfig(const std::string &filename);
 
 	Config config_;
 	const PiSPVariant &variant_;

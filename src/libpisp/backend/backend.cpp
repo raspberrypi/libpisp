@@ -87,7 +87,7 @@ BackEnd::BackEnd(Config const &config, PiSPVariant const &variant)
 	smart_resize_.resize(2, { 0, 0 });
 	smart_resize_dirty_ = 0;
 
-	InitialiseConfig();
+	initialiseDefaultConfig(config.defaults_file);
 }
 
 BackEnd::~BackEnd()
