@@ -1,0 +1,37 @@
+name: libpisp build test
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+
+    runs-on: [ ubuntu-latest ]
+
+    strategy:
+      matrix:
+        compiler: [ g++, clang++ ]
+        build_type: [ release, debug ]
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 1
+        clean: true
+
+    - name: Install meson and ninja
+      run: pip3 install --user meson ninja
+  
+    - name: Install boost dependencies
+      run: sudo apt install -y libboost-log-dev libboost-thread-dev
+
+    - name: Configure meson
+      run: CXX=${{matrix.compiler}} meson setup build_${{matrix.compiler}}_${{matrix.build_type}} -Dbuildtype=${{matrix.build_type}}
+      timeout-minutes: 5
+
+    - name: Build
+      run: ninja -C build_${{matrix.compiler}}_${{matrix.build_type}}
+      timeout-minutes: 10

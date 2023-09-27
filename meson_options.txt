@@ -1,0 +1,1 @@
+option('logging', type : 'feature', value : 'auto')
