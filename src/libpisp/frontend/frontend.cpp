@@ -102,14 +102,13 @@ void finalise_agc(pisp_fe_agc_stats_config &agc, uint16_t width, uint16_t height
 void finalise_awb(pisp_fe_awb_stats_config &awb, uint16_t width, uint16_t height)
 {
 	 // Just a warning that ACLS algorithms might want the size calculations
-	 // here to match the Back End LSC.
+	 // here to match the Back End LSC. Here we round the cell width and height
+	// to the nearest even number.
 	if (awb.size_x == 0)
-		awb.size_x = std::max(2, ((width - 2 * awb.offset_x + PISP_AWB_STATS_SIZE - 1) / PISP_AWB_STATS_SIZE));
-	awb.size_x += (awb.size_x & 1);
+		awb.size_x = 2 * std::max(1, ((width - 2 * awb.offset_x + PISP_AWB_STATS_SIZE) / (2 * PISP_AWB_STATS_SIZE)));
 
 	if (awb.size_y == 0)
-		awb.size_y = std::max(2, ((height - 2 * awb.offset_y + PISP_AWB_STATS_SIZE - 1) / PISP_AWB_STATS_SIZE));
-	awb.size_y += (awb.size_y & 1);
+		awb.size_y = 2 * std::max(1, ((height - 2 * awb.offset_y + PISP_AWB_STATS_SIZE) / (2 * PISP_AWB_STATS_SIZE)));
 }
 
 void finalise_cdaf(pisp_fe_cdaf_stats_config &cdaf, uint16_t width, uint16_t height)
