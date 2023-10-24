@@ -140,50 +140,6 @@ void finalise_compression(pisp_fe_config const &fe_config, int i)
 		PISP_LOG(fatal, "FrontEnd::finalise: compressed output is not 8 bit");
 }
 
-void decimate_config(pisp_fe_config &fe_config)
-{
-	if (fe_config.global.enables & PISP_FE_ENABLE_LSC)
-	{
-		fe_config.lsc.centre_x >>= 1;
-		fe_config.lsc.centre_y >>= 1;
-	}
-
-	if (fe_config.global.enables & PISP_FE_ENABLE_CDAF_STATS)
-	{
-		fe_config.cdaf_stats.offset_x >>= 1;
-		fe_config.cdaf_stats.offset_y >>= 1;
-		fe_config.cdaf_stats.size_x >>= 1;
-		fe_config.cdaf_stats.size_y >>= 1;
-		fe_config.cdaf_stats.skip_x >>= 1;
-		fe_config.cdaf_stats.skip_y >>= 1;
-	}
-
-	if (fe_config.global.enables & PISP_FE_ENABLE_AWB_STATS)
-	{
-		fe_config.awb_stats.offset_x >>= 1;
-		fe_config.awb_stats.offset_y >>= 1;
-		fe_config.awb_stats.size_x >>= 1;
-		fe_config.awb_stats.size_y >>= 1;
-	}
-
-	if (fe_config.global.enables & PISP_FE_ENABLE_AGC_STATS)
-	{
-		fe_config.agc_stats.offset_x >>= 1;
-		fe_config.agc_stats.offset_y >>= 1;
-		fe_config.agc_stats.size_x >>= 1;
-		fe_config.agc_stats.size_y >>= 1;
-	}
-
-	for (unsigned int i = 0; i < PISP_FLOATING_STATS_NUM_ZONES; i++)
-	{
-		pisp_fe_floating_stats_region &region = fe_config.floating_stats.regions[i];
-		region.offset_x >>= 1;
-		region.offset_y >>= 1;
-		region.size_x >>= 1;
-		region.size_y >>= 1;
-	}
-}
-
 } // namespace
 
 FrontEnd::FrontEnd(bool streaming, PiSPVariant const &variant, int align) : variant_(variant), align_(align)
@@ -421,13 +377,13 @@ void FrontEnd::Prepare(pisp_fe_config *config)
 		height = 2 * (height >> 2) + ((height & 3) ? 1 : 0);
 	}
 
-	if (dirty_flags & PISP_FE_ENABLE_LSC)
+	if (dirty_flags & (PISP_FE_ENABLE_LSC | PISP_FE_ENABLE_DECIMATE))
 		finalise_lsc(fe_config_.lsc, width, height);
-	if (dirty_flags & PISP_FE_ENABLE_AGC_STATS)
+	if (dirty_flags & (PISP_FE_ENABLE_AGC_STATS | PISP_FE_ENABLE_DECIMATE))
 		finalise_agc(fe_config_.agc_stats, width, height);
-	if (dirty_flags & PISP_FE_ENABLE_AWB_STATS)
+	if (dirty_flags & (PISP_FE_ENABLE_AWB_STATS | PISP_FE_ENABLE_DECIMATE))
 		finalise_awb(fe_config_.awb_stats, width, height);
-	if (dirty_flags & PISP_FE_ENABLE_CDAF_STATS)
+	if (dirty_flags & (PISP_FE_ENABLE_CDAF_STATS | PISP_FE_ENABLE_DECIMATE))
 		finalise_cdaf(fe_config_.cdaf_stats, width, height);
 
 	width = fe_config_.input.format.width, height = fe_config_.input.format.height;
@@ -457,10 +413,6 @@ void FrontEnd::Prepare(pisp_fe_config *config)
 	}
 
 	*config = fe_config_;
-
-	// Fixup any grid offsets/sizes if stats decimation is enabled.
-	if (config->global.enables & PISP_FE_ENABLE_DECIMATE)
-		decimate_config(*config);
 
 	fe_config_.dirty_flags = fe_config_.dirty_flags_extra = 0;
 }
