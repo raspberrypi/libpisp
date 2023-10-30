@@ -7,6 +7,8 @@
  */
 #include "frontend.hpp"
 
+#include <cstddef>
+
 #include "common/logging.hpp"
 #include "common/utils.hpp"
 

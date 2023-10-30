@@ -88,7 +88,7 @@ int SplitStage::PushEndDown(int input_end, Dir dir)
 	return input_interval_.End();
 }
 
-void SplitStage::PushEndUp(int output_end, [[maybe_unused]] Dir dir)
+void SplitStage::PushEndUp([[maybe_unused]] int output_end, [[maybe_unused]] Dir dir)
 {
 	PISP_LOG(debug, "(" << name_ << ") Enter with output_end " << output_end);
 	// Genuinely nothing to do here, but we just like to log the usual trace information for consistency.

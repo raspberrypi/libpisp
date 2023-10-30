@@ -13,7 +13,7 @@ pisp_deps = [
     dependency('threads')
 ]
 
-logging_dep = dependency('boost', modules : ['log', 'log_setup', 'thread'], required : get_option('logging'))
+logging_dep = dependency('boost', modules : ['log', 'log_setup', 'thread', 'system'], required : get_option('logging'))
 if logging_dep.found()
     logging_args = ['-DPISP_LOGGING_ENABLE=1', '-DBOOST_BIND_GLOBAL_PLACEHOLDERS', '-DBOOST_LOG_DYN_LINK=1']
     pisp_deps += logging_dep

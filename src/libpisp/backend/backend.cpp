@@ -7,6 +7,8 @@
  */
 #include "backend.hpp"
 
+#include <cstring>
+
 #include "common/logging.hpp"
 
 using namespace libpisp;
