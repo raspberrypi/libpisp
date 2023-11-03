@@ -17,11 +17,12 @@ sudo meson install -C <build_dir>
 ```
 
 ## Linking libpisp with an application
-libpisp can be built and linked as a [meson subproject](https://mesonbuild.com/Subprojects.html) with the following dependency declaration in the target project:
+libpisp can be built and linked as a [meson subproject](https://mesonbuild.com/Subprojects.html) by using an appropriate [libpisp.wrap](utils/libpisp.wrap) file and the following dependency declaration in the target project:
 ```meson
 libpisp_dep = dependency('libpisp', fallback : ['libpisp', 'libpisp_dep'])
 ```
-Alternatively [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/) can be used to locate ``libpisp.so`` installed in on of the system directories for other build environments.
+
+Alternatively [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/) can be used to locate ``libpisp.so`` installed in of the system directories for other build environments.
 
 ## License
 Copyright © 2023, Raspberry Pi Ltd. Released under the BSD-2-Clause License.
