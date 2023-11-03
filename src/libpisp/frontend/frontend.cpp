@@ -142,6 +142,60 @@ void finalise_compression(pisp_fe_config const &fe_config, int i)
 		PISP_LOG(fatal, "FrontEnd::finalise: compressed output is not 8 bit");
 }
 
+template <typename T>
+std::enable_if_t<std::is_integral_v<T>> inline div2_even(T &val)
+{
+	val = ((val + 2) & ~3) >> 1;
+}
+
+void decimate_config(pisp_fe_config &fe_config)
+{
+	if (fe_config.global.enables & PISP_FE_ENABLE_LSC)
+	{
+		div2_even(fe_config.lsc.centre_x);
+		div2_even(fe_config.lsc.centre_y);
+	}
+
+	if (fe_config.global.enables & PISP_FE_ENABLE_CDAF_STATS)
+	{
+		div2_even(fe_config.cdaf_stats.offset_x);
+		div2_even(fe_config.cdaf_stats.offset_y);
+		div2_even(fe_config.cdaf_stats.size_x);
+		div2_even(fe_config.cdaf_stats.size_y);
+		div2_even(fe_config.cdaf_stats.skip_x);
+		div2_even(fe_config.cdaf_stats.skip_y);
+	}
+
+	if (fe_config.global.enables & PISP_FE_ENABLE_AWB_STATS)
+	{
+		div2_even(fe_config.awb_stats.offset_x);
+		div2_even(fe_config.awb_stats.offset_y);
+		div2_even(fe_config.awb_stats.size_x);
+		div2_even(fe_config.awb_stats.size_y);
+	}
+
+	if (fe_config.global.enables & PISP_FE_ENABLE_AGC_STATS)
+	{
+		div2_even(fe_config.agc_stats.offset_x);
+		div2_even(fe_config.agc_stats.offset_y);
+		div2_even(fe_config.agc_stats.size_x);
+		div2_even(fe_config.agc_stats.size_y);
+		div2_even(fe_config.agc_stats.row_offset_x);
+		div2_even(fe_config.agc_stats.row_offset_y);
+		div2_even(fe_config.agc_stats.row_size_x);
+		div2_even(fe_config.agc_stats.row_size_y);
+	}
+
+	for (unsigned int i = 0; i < PISP_FLOATING_STATS_NUM_ZONES; i++)
+	{
+		pisp_fe_floating_stats_region &region = fe_config.floating_stats.regions[i];
+		div2_even(region.offset_x);
+		div2_even(region.offset_y);
+		div2_even(region.size_x);
+		div2_even(region.size_y);
+	}
+}
+
 } // namespace
 
 FrontEnd::FrontEnd(bool streaming, PiSPVariant const &variant, int align) : variant_(variant), align_(align)
@@ -373,19 +427,13 @@ void FrontEnd::Prepare(pisp_fe_config *config)
 		height = fe_config_.stats_crop.height;
 	}
 
-	if (fe_config_.global.enables & PISP_FE_ENABLE_DECIMATE)
-	{
-		width = ((width + 2) & ~3) >> 1;
-		height = 2 * (height >> 2) + ((height & 3) ? 1 : 0);
-	}
-
-	if (dirty_flags & (PISP_FE_ENABLE_LSC | PISP_FE_ENABLE_DECIMATE))
+	if (dirty_flags & PISP_FE_ENABLE_LSC)
 		finalise_lsc(fe_config_.lsc, width, height);
-	if (dirty_flags & (PISP_FE_ENABLE_AGC_STATS | PISP_FE_ENABLE_DECIMATE))
+	if (dirty_flags & PISP_FE_ENABLE_AGC_STATS)
 		finalise_agc(fe_config_.agc_stats, width, height);
-	if (dirty_flags & (PISP_FE_ENABLE_AWB_STATS | PISP_FE_ENABLE_DECIMATE))
+	if (dirty_flags & PISP_FE_ENABLE_AWB_STATS)
 		finalise_awb(fe_config_.awb_stats, width, height);
-	if (dirty_flags & (PISP_FE_ENABLE_CDAF_STATS | PISP_FE_ENABLE_DECIMATE))
+	if (dirty_flags & PISP_FE_ENABLE_CDAF_STATS)
 		finalise_cdaf(fe_config_.cdaf_stats, width, height);
 
 	width = fe_config_.input.format.width, height = fe_config_.input.format.height;
@@ -415,6 +463,10 @@ void FrontEnd::Prepare(pisp_fe_config *config)
 	}
 
 	*config = fe_config_;
+
+	// Fixup any grid offsets/sizes if stats decimation is enabled.
+	if (config->global.enables & PISP_FE_ENABLE_DECIMATE)
+		decimate_config(*config);
 
 	fe_config_.dirty_flags = fe_config_.dirty_flags_extra = 0;
 }
