@@ -44,10 +44,14 @@ version_cpp = vcs_tag(command : version_cmd,
 
 pisp_sources += version_cpp
 
+# Label the .so with x.y versioning from the project.
+v = meson.project_version().split('.')
+soversion = v[0] + '.' + v[1]
+
 libpisp = library(
     meson.project_name(),
     pisp_sources,
-    soversion : meson.project_version(),
+    soversion : soversion,
     include_directories : include_directories(inc_dirs),
     name_prefix : '',
     install : true,
