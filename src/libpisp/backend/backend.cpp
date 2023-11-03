@@ -7,6 +7,7 @@
  */
 #include "backend.hpp"
 
+#include <cstdlib>
 #include <cstring>
 
 #include "common/logging.hpp"
@@ -89,7 +90,8 @@ BackEnd::BackEnd(Config const &config, PiSPVariant const &variant)
 	smart_resize_.resize(2, { 0, 0 });
 	smart_resize_dirty_ = 0;
 
-	initialiseDefaultConfig(config.defaults_file);
+	const char *env = std::getenv("LIBPISP_BE_CONFIG_FILE");
+	initialiseDefaultConfig(env ? std::string(env) : config.defaults_file);
 }
 
 BackEnd::~BackEnd()
