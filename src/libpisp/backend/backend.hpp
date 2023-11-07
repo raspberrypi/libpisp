@@ -8,6 +8,7 @@
 #pragma once
 
 #include <map>
+#include <string>
 #include <vector>
 
 #include "common/shm_mutex.hpp"
@@ -129,6 +130,9 @@ public:
 	void SetSmartResize(unsigned int i, SmartResize const &smart_resize);
 
 	unsigned int GetMaxDownscale() const;
+
+	std::string GetJsonConfig(pisp_be_tiles_config *config);
+	void SetJsonConfig(const std::string &json_config);
 
 	void lock()
 	{
