@@ -47,7 +47,7 @@ pisp_sources += version_cpp
 libpisp = library(
     meson.project_name(),
     pisp_sources,
-    soversion : meson.project_version(),
+    version : meson.project_version(),
     include_directories : include_directories(inc_dirs),
     name_prefix : '',
     install : true,
