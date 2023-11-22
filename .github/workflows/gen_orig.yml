@@ -1,0 +1,31 @@
+name: Generate source release tarball
+run-name: Generating source release tarball
+on:
+  push:
+    tags: # vX.Y.Z
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+jobs:
+  publish_tarball:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y meson pkgconf libboost-log-dev libboost-thread-dev nlohmann-json3-dev
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for 'git describe' to work
+      - name: Generate tarball
+        run: |
+          meson setup build
+          meson dist --no-tests --include-subprojects -C build
+      - name: Release tarball
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/meson-dist/*.tar.xz
+      - if: failure()
+        run: cat build/meson-logs/meson-log.txt
