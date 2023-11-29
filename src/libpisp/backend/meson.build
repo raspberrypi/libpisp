@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: CC0-1.0
+# Copyright (C) 2023, Raspberry Pi Ltd
 
 config_install_dir = get_option('prefix') / get_option('datadir') / 'libpisp'
 

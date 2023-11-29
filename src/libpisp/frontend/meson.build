@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: CC0-1.0
+# Copyright (C) 2023, Raspberry Pi Ltd
 
 frontend_sources = files([
     'frontend.cpp'
