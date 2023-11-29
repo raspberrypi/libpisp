@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (C) 2023, Raspberry Pi Ltd
+
 name: Generate source release tarball
 run-name: Generating source release tarball
 on:
