@@ -201,7 +201,7 @@ const std::vector<config_block> be_config {
 		{
 			{ "grid_step_x", offsetof(pisp_be_lsc_config, grid_step_x), sizeof(uint16_t), 1 },
 			{ "grid_step_y", offsetof(pisp_be_lsc_config, grid_step_y), sizeof(uint16_t), 1 },
-			{ "lut_packed", offsetof(pisp_be_lsc_config, lut_packed), sizeof(uint16_t), PISP_ARRAY_SIZE(pisp_be_lsc_config, lut_packed) },
+			{ "lut_packed", offsetof(pisp_be_lsc_config, lut_packed), sizeof(uint32_t), PISP_ARRAY_SIZE(pisp_be_lsc_config, lut_packed) },
 		}
 	},
 	{
