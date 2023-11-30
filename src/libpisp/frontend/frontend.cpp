@@ -18,42 +18,6 @@ using namespace libpisp;
 namespace
 {
 
-struct config_param
-{
-	uint32_t dirty_flag;
-	uint32_t dirty_flag_extra;
-	std::size_t offset;
-	std::size_t size;
-};
-
-const config_param config_map[] = {
-	// *_dirty_flag_extra types
-	{ 0, PISP_FE_DIRTY_GLOBAL,     offsetof(pisp_fe_config, global),           sizeof(pisp_fe_global_config)         },
-	{ 0, PISP_FE_DIRTY_FLOATING,   offsetof(pisp_fe_config, floating_stats),   sizeof(pisp_fe_floating_stats_config) },
-	{ 0, PISP_FE_DIRTY_OUTPUT_AXI, offsetof(pisp_fe_config, output_axi),       sizeof(pisp_fe_output_axi_config)     },
-	// *_dirty_flag types
-	{ PISP_FE_ENABLE_INPUT, 0, offsetof(pisp_fe_config, input), sizeof(pisp_fe_input_config)                         },
-	{ PISP_FE_ENABLE_DECOMPRESS, 0, offsetof(pisp_fe_config, decompress), sizeof(pisp_decompress_config)             },
-	{ PISP_FE_ENABLE_DECOMPAND, 0, offsetof(pisp_fe_config, decompand), sizeof(pisp_fe_decompand_config)             },
-	{ PISP_FE_ENABLE_BLA, 0, offsetof(pisp_fe_config, bla), sizeof(pisp_bla_config)                                  },
-	{ PISP_FE_ENABLE_DPC, 0, offsetof(pisp_fe_config, dpc), sizeof(pisp_fe_dpc_config)                               },
-	{ PISP_FE_ENABLE_STATS_CROP, 0, offsetof(pisp_fe_config, stats_crop), sizeof(pisp_fe_crop_config)                },
-	{ PISP_FE_ENABLE_BLC, 0, offsetof(pisp_fe_config, blc), sizeof(pisp_bla_config)                                  },
-	{ PISP_FE_ENABLE_CDAF_STATS, 0, offsetof(pisp_fe_config, cdaf_stats), sizeof(pisp_fe_cdaf_stats_config)          },
-	{ PISP_FE_ENABLE_AWB_STATS, 0, offsetof(pisp_fe_config, awb_stats), sizeof(pisp_fe_awb_stats_config)             },
-	{ PISP_FE_ENABLE_RGBY, 0, offsetof(pisp_fe_config, rgby), sizeof(pisp_fe_rgby_config)                            },
-	{ PISP_FE_ENABLE_LSC, 0, offsetof(pisp_fe_config, lsc), sizeof(pisp_fe_lsc_config)                               },
-	{ PISP_FE_ENABLE_AGC_STATS, 0, offsetof(pisp_fe_config, agc_stats), sizeof(pisp_agc_statistics)                  },
-	{ PISP_FE_ENABLE_CROP0, 0, offsetof(pisp_fe_config, ch[0].crop), sizeof(pisp_fe_crop_config)                     },
-	{ PISP_FE_ENABLE_DOWNSCALE0, 0, offsetof(pisp_fe_config, ch[0].downscale), sizeof(pisp_fe_downscale_config)      },
-	{ PISP_FE_ENABLE_COMPRESS0, 0, offsetof(pisp_fe_config, ch[0].compress), sizeof(pisp_compress_config)            },
-	{ PISP_FE_ENABLE_OUTPUT0, 0, offsetof(pisp_fe_config, ch[0].output), sizeof(pisp_fe_output_config)               },
-	{ PISP_FE_ENABLE_CROP1, 0, offsetof(pisp_fe_config, ch[1].crop), sizeof(pisp_fe_crop_config)                     },
-	{ PISP_FE_ENABLE_DOWNSCALE1, 0, offsetof(pisp_fe_config, ch[1].downscale), sizeof(pisp_fe_downscale_config)      },
-	{ PISP_FE_ENABLE_COMPRESS1, 0, offsetof(pisp_fe_config, ch[1].compress), sizeof(pisp_compress_config)            },
-	{ PISP_FE_ENABLE_OUTPUT1, 0, offsetof(pisp_fe_config, ch[1].output), sizeof(pisp_fe_output_config)               },
-};
-
 inline uint32_t block_enable(uint32_t block, unsigned int branch)
 {
 	return block << (4 * branch);
@@ -219,13 +183,12 @@ FrontEnd::FrontEnd(bool streaming, PiSPVariant const &variant, int align) : vari
 	}
 	else
 	{
-		pisp_fe_output_axi_config output_axi;
-		output_axi.maxlen_flags = 0xaf;
-		output_axi.cache_prot = 0x32;
-		output_axi.qos = 0x8410;
-		output_axi.thresh = 0x0140;
-		output_axi.throttle = 0x4100;
-		SetOutputAXI(output_axi);
+		fe_config_.output_axi.maxlen_flags = 0xaf;
+		fe_config_.output_axi.cache_prot = 0x32;
+		fe_config_.output_axi.qos = 0x8410;
+		fe_config_.output_axi.thresh = 0x0140;
+		fe_config_.output_axi.throttle = 0x4100;
+		fe_config_.dirty_flags_extra |= PISP_FE_DIRTY_OUTPUT_AXI;
 	}
 
 	pisp_fe_global_config global;
@@ -393,28 +356,6 @@ void FrontEnd::SetOutputBuffer(unsigned int output_num, pisp_fe_output_buffer_co
 
 	fe_config_.output_buffer[output_num] = output_buffer;
 	// Assume these always get written.
-}
-
-void FrontEnd::SetOutputAXI(pisp_fe_output_axi_config const &output_axi)
-{
-	fe_config_.output_axi = output_axi;
-	fe_config_.dirty_flags_extra |= PISP_FE_DIRTY_OUTPUT_AXI;
-}
-
-void FrontEnd::MergeConfig(const pisp_fe_config &config)
-{
-	for (auto const &param : config_map)
-	{
-		if ((param.dirty_flag & config.dirty_flags) || (param.dirty_flag_extra & config.dirty_flags_extra))
-		{
-			const uint8_t *src = reinterpret_cast<const uint8_t *>(&config) + param.offset;
-			uint8_t *dest = reinterpret_cast<uint8_t *>(&fe_config_) + param.offset;
-
-			memcpy(dest, src, param.size);
-			fe_config_.dirty_flags |= param.dirty_flag;
-			fe_config_.dirty_flags_extra |= param.dirty_flag_extra;
-		}
-	}
 }
 
 void FrontEnd::Prepare(pisp_fe_config *config)

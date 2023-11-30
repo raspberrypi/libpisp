@@ -53,8 +53,6 @@ public:
 	void SetOutputFormat(unsigned int output_num, pisp_image_format_config const &output_format);
 	void SetOutputBuffer(unsigned int output_num, pisp_fe_output_buffer_config const &output_buffer);
 	void SetOutputIntrLines(unsigned int output_num, int lines);
-	void SetOutputAXI(pisp_fe_output_axi_config const &output_axi);
-	void MergeConfig(const pisp_fe_config &config);
 	void Prepare(pisp_fe_config *config);
 
 	void lock()

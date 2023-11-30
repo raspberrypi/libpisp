@@ -120,7 +120,6 @@ public:
 	void InitialiseSharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc);
 
 	void Prepare(pisp_be_tiles_config *config);
-	void MergeConfig(const pisp_be_config &config);
 
 	bool ComputeOutputImageFormat(unsigned int i, pisp_image_format_config &output_format,
 								  pisp_image_format_config const &input_format) const;
