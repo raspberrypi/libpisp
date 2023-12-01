@@ -64,7 +64,7 @@ void tile_pipeline(TilingConfig const &config, Tile *tiles, int num_tiles, Lengt
 	std::unique_ptr<Stage> downscale_stages[NumOutputBranches];
 	std::unique_ptr<Stage> resample_stages[NumOutputBranches];
 	std::unique_ptr<Stage> output_stages[NumOutputBranches];
-	std::unique_ptr<Stage> hog_stage;
+
 	for (int i = 0; i < NumOutputBranches; i++)
 	{
 		Length2 const &output_image_size = config.output_image_size[i];

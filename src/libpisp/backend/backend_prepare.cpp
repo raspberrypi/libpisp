@@ -30,8 +30,6 @@ constexpr unsigned int UnityScale = 1 << 12;
 constexpr unsigned int ResamplePrecision = 10;
 constexpr unsigned int NumPhases = 16;
 constexpr unsigned int NumTaps = 6;
-// HoG feature constants
-constexpr unsigned int HogCellSize = 8;
 
 void check_stride(pisp_image_format_config const &config)
 {
@@ -487,9 +485,6 @@ void BackEnd::finaliseConfig()
 	{
 		bool enabled = be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(j);
 
-		if (j == PISP_BACK_END_HOG_OUTPUT)
-			enabled |= be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_HOG;
-
 		if (enabled)
 		{
 			// crop is enabled when it contains non-zero width/height
@@ -532,7 +527,6 @@ void BackEnd::finaliseConfig()
 	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
 		output_enables |= be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(i);
 
-	output_enables |= be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_HOG;
 	if (output_enables == 0)
 		throw std::runtime_error("BackEnd::finalise: PiSP not configured to do anything");
 }
@@ -718,20 +712,6 @@ void BackEnd::updateTiles()
 				calculate_output_alignment(c.output_format[i].image.format, PISP_BACK_END_OUTPUT_MIN_ALIGN);
 		}
 
-		// If HOG output is enabled, but the corresponding regular output isn't, we'll have to for that branch to get tiled up too.
-		if ((c.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(PISP_BACK_END_HOG_OUTPUT)) == 0 &&
-			(c.global.rgb_enables & PISP_BE_RGB_ENABLE_HOG))
-		{
-			uint16_t width, height;
-
-			getOutputSize(PISP_BACK_END_HOG_OUTPUT, &width, &height, be_config_.input_format);
-			tiling_config.output_image_size[PISP_BACK_END_HOG_OUTPUT] = tiling::Length2(width, height);
-			tiling_config.output_min_alignment[PISP_BACK_END_HOG_OUTPUT] =
-				tiling::Length2(8, 1); // I think 8 is basically right
-			tiling_config.output_max_alignment[PISP_BACK_END_HOG_OUTPUT] =
-				tiling::Length2(32, 1); // and this one probably doesn't much matter
-		}
-
 		tiling_config.max_tile_size.dx = config_.max_tile_width ? config_.max_tile_width
 																: variant_.BackEndMaxTileWidth(0);
 		tiling_config.max_tile_size.dy = config_.max_stripe_height ? config_.max_stripe_height : MaxStripeHeight;
@@ -792,9 +772,6 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 		for (unsigned int j = 0; j < variant_.BackEndNumBranches(0); j++)
 		{
 			bool enabled = (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(j));
-
-			if (j == PISP_BACK_END_HOG_OUTPUT)
-				enabled |= (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_HOG);
 
 			if (enabled && (tiles[i].output[j].output.x.length == 0 || tiles[i].output[j].output.y.length == 0))
 			{
@@ -959,19 +936,6 @@ void BackEnd::finaliseTiling()
 			PISP_LOG(debug, "Branch " << j << " output offsets " << t.output_offset_x[j] << "," << t.output_offset_y[j]
 									  << " address offsets " << t.output_addr_offset[j] << " and "
 									  << t.output_addr_offset2[j]);
-
-			if (j == PISP_BACK_END_HOG_OUTPUT)
-			{
-				if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_HOG)
-				{
-					// Convert image dimenstions to cell dimensions.  Remember, these are cell offsets.
-					// Use *unflipped* offsets as HOG doesn't flip its output.
-					int cell_offset_x = output_offset_x_unflipped / HogCellSize;
-					int cell_offset_y = output_offset_y_unflipped / HogCellSize;
-					compute_addr_offset(be_config_.hog_format, cell_offset_x, cell_offset_y, &t.output_hog_addr_offset,
-										nullptr);
-				}
-			}
 		}
 	}
 }
@@ -1018,36 +982,9 @@ bool BackEnd::ComputeOutputImageFormat(unsigned int i, pisp_image_format_config 
 	}
 }
 
-bool BackEnd::ComputeHogOutputImageFormat(pisp_image_format_config &fmt, pisp_image_format_config const &ifmt) const
-{
-	fmt.format = be_config_.hog.compute_signed ? PISP_IMAGE_FORMAT_HOG_SIGNED : PISP_IMAGE_FORMAT_HOG_UNSIGNED;
-	fmt.stride2 = 0;
-
-	if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_HOG)
-	{
-		uint16_t w, h;
-
-		getOutputSize(PISP_BACK_END_HOG_OUTPUT, &w, &h, ifmt);
-		// Configure HoG dimensions. The hardware only generates output for each complete cell.
-		fmt.width = w / HogCellSize;
-		fmt.height = h / HogCellSize;
-		compute_stride(fmt);
-		return true;
-	}
-	else
-	{
-		fmt.width = 0;
-		fmt.height = 0;
-		fmt.stride = 0;
-		return false;
-	}
-}
-
 void BackEnd::Prepare(pisp_be_tiles_config *config)
 {
 	PISP_LOG(debug, "New frame!");
-
-	bool integral_image_output = false;
 
 	// On every start-of-frame we:
 	// 1. Check the input configuration appears sensible.
@@ -1058,7 +995,7 @@ void BackEnd::Prepare(pisp_be_tiles_config *config)
 			 (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_INPUT))
 		throw std::runtime_error("BackEnd::preFrameUpdate: both Bayer and RGB inputs are enabled");
 
-	// 2. Also check the output configuration (including HOG) is all filled in and looks sensible. Again, addresses must be
+	// 2. Also check the output configuration is all filled in and looks sensible. Again, addresses must be
 	// left to the HAL.
 	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
 	{
@@ -1067,25 +1004,14 @@ void BackEnd::Prepare(pisp_be_tiles_config *config)
 
 		if (image_config.format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE)
 		{
-			if (!variant_.BackEndIntegralImage(0, i))
-				throw std::runtime_error("Integral images are not supported in the current configuration.");
-			integral_image_output = true;
+			throw std::runtime_error("Integral images are not supported.");
 		}
-	}
-
-	if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_HOG)
-	{
-		ComputeHogOutputImageFormat(be_config_.hog_format, be_config_.input_format);
-		be_config_.hog.stride = be_config_.hog_format.stride;
 	}
 
 	// 3. Fill in any other missing bits of config, and update the tiling if necessary.
 	updateSmartResize();
 	finaliseConfig();
 	updateTiles();
-
-	// Integral images are only valid for a single tile output.
-	PISP_ASSERT((num_tiles_x_ * num_tiles_y_ == 1) || !integral_image_output);
 
 	if (config)
 	{ // Allow passing of empty pointer, if only be_config_ should be filled

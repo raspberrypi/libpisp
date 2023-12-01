@@ -38,8 +38,11 @@ void BackEnd::SetGlobal(pisp_be_global_config const &global)
 	uint32_t changed_rgb_enables = (global.rgb_enables ^ be_config_.global.rgb_enables);
 
 	if (changed_rgb_enables & (PISP_BE_RGB_ENABLE_DOWNSCALE0 | PISP_BE_RGB_ENABLE_DOWNSCALE1 |
-							   PISP_BE_RGB_ENABLE_RESAMPLE0 | PISP_BE_RGB_ENABLE_RESAMPLE1 | PISP_BE_RGB_ENABLE_HOG))
-		retile_ = true; // must retile when rescaling OR HoG blocks change
+							   PISP_BE_RGB_ENABLE_RESAMPLE0 | PISP_BE_RGB_ENABLE_RESAMPLE1))
+		retile_ = true; // must retile when rescale change
+
+	if (global.rgb_enables & PISP_BE_RGB_ENABLE_HOG)
+		throw std::runtime_error("HOG output is not supported.");
 
 	be_config_.dirty_flags_bayer |=
 		(global.bayer_enables & ~be_config_.global.bayer_enables); // label anything newly enabled as dirty
@@ -382,26 +385,10 @@ void BackEnd::SetOutputFormat(unsigned int i, pisp_be_output_format_config const
 {
 	PISP_ASSERT(i < variant_.BackEndNumBranches(0));
 	be_config_.output_format[i] = output_format;
-
-	if (output_format.image.format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE)
-	{
-		// If this is an integral image request, we must constrain the format parameters!
-		be_config_.output_format[i].image.format = PISP_IMAGE_FORMAT_INTEGRAL_IMAGE +
-												   PISP_IMAGE_FORMAT_PLANARITY_PLANAR + PISP_IMAGE_FORMAT_SAMPLING_444 +
-												   (output_format.image.format & PISP_IMAGE_FORMAT_SHIFT_MASK) +
-												   (output_format.image.format & PISP_IMAGE_FORMAT_THREE_CHANNEL);
-	}
 	be_config_.output_format[i].pad[0] = be_config_.output_format[i].pad[1] = be_config_.output_format[i].pad[2] = 0;
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_OUTPUT(i);
 	// Should only need a retile if the transform has changed, othwise a finalise_tile will do.
 	retile_ = true;
-}
-
-void BackEnd::SetHog(pisp_be_hog_config const &hog)
-{
-	be_config_.hog = hog;
-	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_HOG;
-	finalise_tiling_ = true;
 }
 
 void BackEnd::GetOutputFormat(unsigned int i, pisp_be_output_format_config &output_format) const
