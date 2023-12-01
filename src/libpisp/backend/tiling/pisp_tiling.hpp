@@ -25,7 +25,6 @@ struct Tile
 	tiling::Region crop;
 	tiling::Region downscale[NumOutputBranches];
 	tiling::Region resample[NumOutputBranches];
-	tiling::Region hog;
 	tiling::Region output[NumOutputBranches];
 };
 
