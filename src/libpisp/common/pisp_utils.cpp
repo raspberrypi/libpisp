@@ -67,7 +67,9 @@ void compute_stride_align(pisp_image_format_config &config, int align)
 	if (PISP_IMAGE_FORMAT_compressed(config.format))
 		width = (width + 7) & ~7; // compression uses blocks of 8 samples
 
-	config.stride = compute_x_offset(config.format, width);
+	int32_t computed_stride = compute_x_offset(config.format, width);
+	if (!config.stride || config.stride < computed_stride)
+		config.stride = computed_stride;
 	config.stride2 = 0;
 
 	if (!PISP_IMAGE_FORMAT_HOG(config.format))
