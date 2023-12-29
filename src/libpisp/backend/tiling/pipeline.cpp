@@ -12,6 +12,8 @@
 #include "output_stage.hpp"
 #include "stages.hpp"
 
+#include <cstdint>
+
 using namespace tiling;
 
 Pipeline::Pipeline(char const *name, Config const &config) : name_(name), config_(config)
