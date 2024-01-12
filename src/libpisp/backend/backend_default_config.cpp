@@ -7,7 +7,10 @@
  */
 #include "backend.hpp"
 
+#include <dlfcn.h>
+#include <elf.h>
 #include <fstream>
+#include <link.h>
 #include <string>
 #include <vector>
 
@@ -24,6 +27,40 @@ using json = nlohmann::json;
 
 namespace
 {
+
+// Check if the RPATH or RUNPATH definitions exist in the ELF file. If they don't exist, it means that meson has
+// stripped them out when doing the install step.
+//
+// Source: https://stackoverflow.com/questions/2836330/is-there-a-programmatic-way-to-inspect-the-current-rpath-on-linux
+bool is_installed()
+{
+	const ElfW(Dyn) *dyn = _DYNAMIC;
+	for (; dyn->d_tag != DT_NULL; dyn++)
+	{
+		if (dyn->d_tag == DT_RPATH || dyn->d_tag == DT_RUNPATH)
+			return false;
+	}
+	return true;
+}
+
+std::string source_path()
+{
+	Dl_info dl_info;
+	std::string path;
+
+	if (dladdr(reinterpret_cast<void *>(source_path), &dl_info))
+		path = dl_info.dli_fname;
+
+	if (path.empty())
+		return {};
+
+	auto const pos = path.find_last_of('/');
+	if (pos == std::string::npos)
+		return {};
+
+	path.erase(pos, path.length() - pos);
+	return path;
+}
 
 void initialise_debin(pisp_be_debin_config &debin, const json &root)
 {
@@ -269,8 +306,22 @@ void BackEnd::InitialiseSharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_c
 
 void BackEnd::initialiseDefaultConfig(const std::string &filename)
 {
-	std::string file = filename.empty() ? std::string(PISP_BE_CONFIG_DIR) + "/" + "backend_default_config.json"
-										: filename;
+	std::string file(filename);
+
+	if (file.empty())
+	{
+		if (!is_installed())
+		{
+			std::string path = source_path();
+			if (path.empty())
+				throw std::runtime_error("BE: Could not determine the local source path");
+
+			file = path + "/libpisp/backend/backend_default_config.json";
+		}
+		else
+			file = std::string(PISP_BE_CONFIG_DIR) + "/" + "backend_default_config.json";
+	}
+
 	std::ifstream ifs(file);
 	if (!ifs.good())
 		throw std::runtime_error("BE: Could not find config json file: " + file);

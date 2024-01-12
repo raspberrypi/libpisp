@@ -16,6 +16,10 @@ pisp_deps = [
     dependency('threads')
 ]
 
+# Meson version >= 0.64 can simply use dependency('dl') for this, but we don't want to bump up the min version just yet.
+dl_dep = meson.get_compiler('c').find_library('dl', required : true)
+pisp_deps += dl_dep
+
 logging_dep = dependency('boost', modules : ['log', 'log_setup', 'thread', 'system'], required : get_option('logging'))
 if logging_dep.found()
     logging_args = ['-DPISP_LOGGING_ENABLE=1', '-DBOOST_BIND_GLOBAL_PLACEHOLDERS', '-DBOOST_LOG_DYN_LINK=1']
@@ -54,6 +58,7 @@ libpisp = library(
     include_directories : include_directories(inc_dirs),
     name_prefix : '',
     install : true,
+    build_rpath : meson.project_source_root(),
     dependencies : pisp_deps,
 )
 
