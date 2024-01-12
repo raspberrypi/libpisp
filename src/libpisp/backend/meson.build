@@ -25,4 +25,12 @@ install_headers(backend_headers, subdir: backend_include_dir)
 install_data('backend_default_config.json',
              install_dir : config_install_dir)
 
+# Copy the json config file to the build directory for running locally.
+custom_target('Default config to build dir',
+              input : 'backend_default_config.json',
+              output : 'backend_default_config.json',
+              command : ['cp', '@INPUT@', '@OUTPUT@'],
+              install : false,
+              build_by_default : true)
+
 subdir('tiling')
