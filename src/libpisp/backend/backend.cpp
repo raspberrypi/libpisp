@@ -147,6 +147,11 @@ void BackEnd::SetBlc(pisp_bla_config const &blc)
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_BLC;
 }
 
+void BackEnd::GetBlc(pisp_bla_config &blc) const
+{
+	blc = be_config_.blc;
+}
+
 void BackEnd::SetStitchInputFormat(pisp_image_format_config const &stitch_input_format)
 {
 	be_config_.stitch_input_format = stitch_input_format;

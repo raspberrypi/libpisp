@@ -72,6 +72,7 @@ public:
 	void GetTdnOutputFormat(pisp_image_format_config &tdn_output_format) const;
 	void SetSdn(pisp_be_sdn_config const &sdn);
 	void SetBlc(pisp_bla_config const &blc);
+	void GetBlc(pisp_bla_config &blc) const;
 	void SetStitchInputFormat(pisp_image_format_config const &stitch_input_format);
 	void GetStitchInputFormat(pisp_image_format_config &stitch_input_format) const;
 	void SetStitchDecompress(pisp_decompress_config const &stitch_decompress);
