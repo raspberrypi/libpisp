@@ -10,6 +10,7 @@
 
 #include <iostream>
 
+#include "common/pisp_pwl.hpp"
 #include "types.hpp"
 
 namespace libpisp
@@ -20,7 +21,7 @@ constexpr int NumOutputBranches = 2;
 struct Tile
 {
 	tiling::Region input;
-	tiling::Region decompress;
+	tiling::Region dedistort;
 	tiling::Region context;
 	tiling::Region crop[NumOutputBranches];
 	tiling::Region downscale[NumOutputBranches];
@@ -45,6 +46,7 @@ struct TilingConfig
 	tiling::Length2 inputAlignment;
 	tiling::Length2 outputMaxAlignment[NumOutputBranches]; // "preferred" alignment
 	tiling::Length2 outputMinAlignment[NumOutputBranches]; // "required" minimum alignment
+	Pwl dedistortPwls[3];
 };
 
 inline std::ostream &operator<<(std::ostream &os, TilingConfig const &tc)

@@ -5,6 +5,7 @@ backend_sources += files([
     'context_stage.cpp',
     'crop_stage.cpp',
     'input_stage.cpp',
+    'dedistort_stage.cpp',
     'output_stage.cpp',
     'pipeline.cpp',
     'pisp_tiling.cpp',

@@ -206,6 +206,7 @@ private:
 	void finaliseInputs() const;
 	void finaliseLsc();
 	void finaliseCac();
+	void finaliseDedistort();
 	void finaliseResample(unsigned int index, uint16_t width, uint16_t height);
 	void finaliseDownscale(unsigned int index, uint16_t width, uint16_t height);
 	void finaliseDecompression() const;

@@ -10,6 +10,7 @@
 
 #include "context_stage.hpp"
 #include "crop_stage.hpp"
+#include "dedistort_stage.hpp"
 #include "input_stage.hpp"
 #include "output_stage.hpp"
 #include "pipeline.hpp"

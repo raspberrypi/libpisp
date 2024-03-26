@@ -12,6 +12,7 @@
 
 #include "context_stage.hpp"
 #include "crop_stage.hpp"
+#include "dedistort_stage.hpp"
 #include "input_stage.hpp"
 #include "output_stage.hpp"
 #include "pipeline.hpp"
@@ -52,9 +53,12 @@ void tilePipeline(TilingConfig const &config, Tile *tiles, int numTiles, Length2
 									config.compressedInput ? CompressionAlign : 0);
 	InputStage inputStage("input", &pipeline, inputConfig, offsetof(Tile, input));
 
+	DedistortStage::Config dedistortConfig(config.dedistortPwls);
+	DedistortStage dedistortStage("dedistort", &inputStage, dedistortConfig, offsetof(Tile, dedistort));
+	
 	ContextStage::Config contextConfig(Crop2(Crop(PipelineContextX), Crop(PipelineContextY)),
 										Length2(PipelineAlignX, PipelineAlignY));
-	ContextStage contextStage("context", &inputStage, contextConfig, offsetof(Tile, context));
+	ContextStage contextStage("context", &dedistortStage, contextConfig, offsetof(Tile, context));
 
 	SplitStage splitStage("split", &contextStage);
 

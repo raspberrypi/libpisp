@@ -188,6 +188,24 @@ void BackEnd::finaliseCac()
 	config_->setCac(cac);
 }
 
+void BackEnd::finaliseDedistort()
+{
+	BeDedistortionConfig dd = config_->getDedistort();
+	uint16_t width = postTransposeWidth(), height = postTransposeHeight();
+
+	static constexpr int P = PISP_BE_DDX_STEP_PRECISION;
+
+	if (dd.grid_step_x == 0)
+		dd.grid_step_x = (PISP_BE_DDX_GRID_SIZE << P) / width;
+	if (dd.grid_step_y == 0)
+		dd.grid_step_y = (PISP_BE_DDX_GRID_SIZE << P) / height;
+
+	PISP_ASSERT(dd.grid_step_x * (width + dd.offset_x - 1) < (PISP_BE_DDX_GRID_SIZE << P));
+	PISP_ASSERT(dd.grid_step_y * (height + dd.offset_y - 1) < (PISP_BE_DDX_GRID_SIZE << P));
+
+	config_->setDedistort(dd);
+}
+
 void BackEnd::finaliseResample(unsigned int index, uint16_t width, uint16_t height)
 {
 	BeResampleConfig resample = config_->getResample(index);
@@ -529,6 +547,9 @@ void BackEnd::finaliseConfig()
 	if (dirty_flags_bayer & BayerEnable::Cac)
 		finaliseCac();
 
+	if (dirty_flags_rgb & RgbEnable::Dedistort)
+		finaliseDedistort();
+
 	for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++)
 	{
 		bool enabled = rgbEnables & getFlagForBranch(RgbEnable::Output0, j);
@@ -782,6 +803,30 @@ void BackEnd::updateTiles()
 		if (rgbEnables & RgbEnable::Downscale1)
 			tilingConfig.downscaleEnables |= (1 << 1);
 
+		// For dedistortion, look up the most -ve and most +ve source for a given output X coordinate
+		BeDedistortionConfig dd = config_->getDedistort();
+		if ((rgbEnables & RgbEnable::Dedistort) && dd.grid_step_x)
+		{
+			for (unsigned i = 0; i <= PISP_BE_DDX_GRID_SIZE; ++i)
+			{
+				int xpos = (i << PISP_BE_DDX_STEP_PRECISION) / dd.grid_step_x - dd.offset_x;
+				int left = xpos, right = xpos;
+				for (unsigned j = 0; j <= PISP_BE_DDX_GRID_SIZE; ++j)
+				{
+					// Since we're ignoring context, assume sub-pixel accuracy is not needed either!
+					int ipos = xpos + (*(dd.lut.data() + (j * (PISP_BE_DDX_GRID_SIZE + 1)) + i + 8) >> 4);
+					ipos = std::clamp(ipos, 0, 0 + postTransposeWidth());
+					if (ipos < left)
+						left = ipos;
+					if (ipos > right)
+						right = ipos;
+				}
+				tilingConfig.dedistortPwls[0].append(xpos, left);  // output->input min (left)
+				tilingConfig.dedistortPwls[1].append(xpos, right); // output->input max (right)
+				tilingConfig.dedistortPwls[2].append(right, xpos); // input->output min (right)
+			}
+		}
+
 		// Set compressed_input to false as otherwise the tiling would pad tiles up to multiples of 8 pixels even when these lie
 		// outside the actual image width (and we've chosen not to handle compression like that).
 		tilingConfig.compressedInput = false;
@@ -979,16 +1024,24 @@ void BackEnd::finaliseTiling()
 		PISP_LOG(debug, "Input offsets " << t.input_offset_x << "," << t.input_offset_y << " address offsets "
 										 << t.input_addr_offset << " and " << t.input_addr_offset2);
 
-		if (config_->getGlobal().bayerEnables & BayerEnable::Lsc)
+		if (bayerEnables & BayerEnable::Lsc)
 		{
 			t.lsc_grid_offset_x = (t.input_offset_x + config_->getExtras()->lsc.offset_x) * lsc.grid_step_x;
 			t.lsc_grid_offset_y = (t.input_offset_y + config_->getExtras()->lsc.offset_y) * lsc.grid_step_y;
 		}
 
-		if (config_->getGlobal().bayerEnables & BayerEnable::Cac)
+		if (bayerEnables & BayerEnable::Cac)
 		{
 			t.cac_grid_offset_x = (t.input_offset_x + config_->getExtras()->cac.offset_x) * cac.grid_step_x;
 			t.cac_grid_offset_y = (t.input_offset_y + config_->getExtras()->cac.offset_y) * cac.grid_step_y;
+		}
+		else if (config_->getGlobal().rgbEnables & RgbEnable::Dedistort)
+		{
+			const BeDedistortionConfig &dd = config_->getDedistort();
+			// XXX Dedistort currently "borrows" CAC grid offsets! Assume either they're never used together,
+			// or they have identical grid boundaries (though different grid sizes), which is typically true.
+			t.cac_grid_offset_x = (t.input_offset_x + dd.offset_x) * dd.grid_step_x;
+			t.cac_grid_offset_y = (t.input_offset_y + dd.offset_y) * dd.grid_step_y;
 		}
 
 		for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++)
