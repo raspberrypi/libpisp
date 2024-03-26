@@ -11,20 +11,6 @@
 #include "pisp_pwl.hpp"
 
 using namespace libpisp;
-using json = nlohmann::json;
-
-void Pwl::read(json const &params)
-{
-	for (auto it = params.begin(); it != params.end(); it++)
-	{
-		double x = it->get<double>();
-		assert(it == params.begin() || x > points_.back().x);
-		it++;
-		double y = it->get<double>();
-		points_.push_back(Point(x, y));
-	}
-	assert(points_.size() >= 2);
-}
 
 void Pwl::append(double x, double y, const double eps)
 {

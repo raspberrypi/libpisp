@@ -8,9 +8,8 @@
 #pragma once
 
 #include <cmath>
+#include <functional>
 #include <vector>
-
-#include <nlohmann/json.hpp>
 
 namespace libpisp
 {
@@ -41,7 +40,6 @@ public:
 	};
 	Pwl() {}
 	Pwl(std::vector<Point> const &points) : points_(points) {}
-	void read(nlohmann::json const &params);
 	void append(double x, double y, const double eps = 1e-6);
 	void prepend(double x, double y, const double eps = 1e-6);
 	Interval domain() const;

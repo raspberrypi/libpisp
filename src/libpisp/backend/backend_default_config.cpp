@@ -95,11 +95,23 @@ void initialiseGamma(libpisp::BeGammaConfig &gamma, const json &root)
 	constexpr unsigned int num_points = sizeof(gamma.lut) / sizeof(gamma.lut[0]);
 
 	libpisp::Pwl pwl;
-	pwl.read(root["gamma"]["lut"]);
 
+	// First read the config as a generic PWL
+	json const &params = root["gamma"]["lut"];
+	double lastX = 0.0;
+	for (auto it = params.begin(); it != params.end(); it++)
+	{
+		double x = it->get<double>();
+		assert(it == params.begin() || x > lastX);
+		it++;
+		double y = it->get<double>();
+		pwl.append(x, y);
+		lastX = x;
+	}
+
+	// Now resample the PWL at the hardware's X points
 	static constexpr unsigned int SlopeBits = 14;
 	static constexpr unsigned int PosBits = 16;
-
 	int lastY = 0;
 	for (unsigned int i = 0; i < num_points; i++)
 	{
