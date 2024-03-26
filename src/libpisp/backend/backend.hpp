@@ -23,6 +23,8 @@
 
 #include "backend_config_adapter.hpp"
 
+#include "pisp_be_config.h"
+
 // Definition of the PiSP Back End class.
 
 namespace libpisp
@@ -140,6 +142,8 @@ public:
 	BeDownscaleConfig getDownscale(unsigned int i) const;
 	void setDedistort(const BeDedistortionConfig &dedistort);
 	BeDedistortionConfig getDedistort() const;
+	void setOutputCompress(unsigned int i, const BeCompressConfig &compress);
+	BeCompressConfig getOutputCompress(unsigned int i) const;
 
 	void initialiseYcbcr(BeCcmConfig &ycbcr, const std::string &colourSpace);
 	void initialiseYcbcrInverse(BeCcmConfig &ycbcrInverse, const std::string &colourSpace);

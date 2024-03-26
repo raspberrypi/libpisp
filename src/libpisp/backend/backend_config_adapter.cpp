@@ -769,11 +769,12 @@ void BackendConfigAdapter::setDedistort(const BeDedistortionConfig &dedistort)
 			// Throw exception?
 		},
 
-		[&dedistort](pisp_be_config2 *cfg) {
+		[&dedistort, this](pisp_be_config2 *cfg) {
 			cfg->dedistort.grid_step_x = dedistort.grid_step_x;
 			cfg->dedistort.grid_step_y = dedistort.grid_step_y;
 			cfg->dedistort.pad = 0;
 			std::memcpy(cfg->dedistort.lut, dedistort.lut.data(), dedistort.lut.size());
+			extras_->dedistort = dedistort;
 		}
 	});
 }
@@ -781,4 +782,32 @@ void BackendConfigAdapter::setDedistort(const BeDedistortionConfig &dedistort)
 BeDedistortionConfig BackendConfigAdapter::getDedistort() const
 {
 	return extras_->dedistort;
+}
+
+void BackendConfigAdapter::setOutputCompress(unsigned int i, const BeCompressConfig &compress)
+{
+	visit(overloaded {
+		[]([[maybe_unused]] pisp_be_config *cfg) {
+			// Throw exception?
+		},
+
+		[&compress, i](pisp_be_config2 *cfg) {
+			cfg->compress[i] = compress;
+			cfg->compress[i].pad = 0;
+		}
+	});
+}
+
+BeCompressConfig BackendConfigAdapter::getOutputCompress(unsigned int i) const
+{
+	return visit(overloaded {
+		[]([[maybe_unused]] pisp_be_config *cfg) -> BeCompressConfig {
+			// Throw exception?
+			return {};
+		},
+
+		[i](pisp_be_config2 *cfg) {
+			return cfg->compress[i];
+		}
+	});
 }

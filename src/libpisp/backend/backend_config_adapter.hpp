@@ -190,6 +190,7 @@ using BeTdnConfig = struct pisp_be_tdn_config;
 using BeStitchConfig = struct pisp_be_stitch_config;
 using BeTonemapConfig = struct pisp_be_tonemap_config;
 using BeDemosaicConfig = struct pisp_be_demosaic_config;
+using BeCompressConfig = struct pisp_compress_config;
 
 struct BeConfigExtra
 {
@@ -335,6 +336,9 @@ public:
 
 	void setDedistort(const BeDedistortionConfig &dedistort);
 	BeDedistortionConfig getDedistort() const;
+
+	void setOutputCompress(unsigned int i, const BeCompressConfig &compress);
+	BeCompressConfig getOutputCompress(unsigned int i) const;
 
 	BeConfigExtra *getExtras()
 	{

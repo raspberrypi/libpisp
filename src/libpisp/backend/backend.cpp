@@ -511,6 +511,19 @@ void BackEnd::setDedistort(const BeDedistortionConfig &dedistort)
 	pipe_->retile = true;
 }
 
+void BackEnd::setOutputCompress(unsigned int i, const BeCompressConfig &compress)
+{
+	PISP_ASSERT(i < variant_.backEndNumBranches(0));
+	config_->setOutputCompress(i, compress);
+	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::Compress0, i);
+	// No need to retile, since outputs must in all cases meet min alignment of 16.
+}
+
+BeCompressConfig BackEnd::getOutputCompress(unsigned int i) const
+{
+	return config_->getOutputCompress(i);
+}
+
 unsigned int BackEnd::getMaxDownscale() const
 {
 	// Return an estimate of the largest horizontal downscale we can do.

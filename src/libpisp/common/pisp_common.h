@@ -167,17 +167,17 @@ struct pisp_compress_config {
 	/* value subtracted from incoming data */
 	__u16 offset;
 	__u8 pad;
-	/* 1 => Companding; 2 => Delta (recommended); 3 => Combined (for HDR) */
+	/* 1 => Delta (recommended); 2 => Companding; 3 => Combined (for HDR) */
 	__u8 mode;
-} __attribute__((packed));
+}  __attribute__((packed));
 
 struct pisp_decompress_config {
 	/* value added to reconstructed data */
 	__u16 offset;
 	__u8 pad;
-	/* 1 => Companding; 2 => Delta (recommended); 3 => Combined (for HDR) */
+	/* 1 => Delta (recommended); 2 => Companding; 3 => Combined (for HDR) */
 	__u8 mode;
-} __attribute__((packed));
+}  __attribute__((packed));
 
 enum pisp_axi_flags {
 	/*

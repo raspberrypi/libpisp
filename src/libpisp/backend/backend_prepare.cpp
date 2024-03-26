@@ -381,6 +381,7 @@ void BackEnd::finaliseStitch()
 void BackEnd::finaliseOutput(unsigned int index)
 {
 	BeOutputFormatConfig config = config_->getOutputFormat(index);
+	BeCompressConfig compress = config_->getOutputCompress(index);
 
 	// If the high clipping bound is zero assume it wasn't set and the intention is that no clipping occurs.
 	if (config.hi == 0)
@@ -398,7 +399,24 @@ void BackEnd::finaliseOutput(unsigned int index)
 	if ((PISP_IMAGE_FORMAT_SAMPLING_420(config.image.format) || PISP_IMAGE_FORMAT_SAMPLING_422(config.image.format)) &&
 		!PISP_IMAGE_FORMAT_INTERLEAVED(config.image.format) && (config.image.width & 1))
 		throw std::runtime_error("finaliseOutput: 420/422 image width should be even");
-	
+
+	if (PISP_IMAGE_FORMAT_COMPRESSED(config.image.format))
+	{
+		// If compression mode was not configured, assume it's the same as the image format
+		if (compress.mode == 0)
+			compress.mode = ((config.image.format & PISP_IMAGE_FORMAT_COMPRESSION_MODE_1) ? 1 : 0) +
+							((config.image.format & PISP_IMAGE_FORMAT_COMPRESSION_MODE_2) ? 2 : 0);
+
+		if (config.image.format & ~(PISP_IMAGE_FORMAT_COMPRESSION_MODE_1 | PISP_IMAGE_FORMAT_COMPRESSION_MODE_2))
+			throw std::runtime_error("finalise_output: compressed image must be simple 8bpp");
+		if (!(config_->getGlobal().rgbEnables & getFlagForBranch(RgbEnable::Compress0, index)))
+			throw std::runtime_error("finalise_output: compressed output does not enable compression");
+		
+		config_->setOutputCompress(index, compress);
+	}
+	else if (config_->getGlobal().rgbEnables & getFlagForBranch(RgbEnable::Compress0, index))
+		throw std::runtime_error("finalise_output: compression enabled for non-compressed output");
+
 	config_->setOutputFormat(index, config);
 
 	if (PISP_IMAGE_FORMAT_WALLPAPER(config.image.format))

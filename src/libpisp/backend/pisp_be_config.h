@@ -84,6 +84,7 @@ enum pisp_be_rgb_enable {
 #define PISP_BE_RGB_ENABLE_DOWNSCALE(i) (PISP_BE_RGB_ENABLE_DOWNSCALE0 << (i))
 #define PISP_BE_RGB_ENABLE_RESAMPLE(i) (PISP_BE_RGB_ENABLE_RESAMPLE0 << (i))
 #define PISP_BE_RGB_ENABLE_OUTPUT(i) (PISP_BE_RGB_ENABLE_OUTPUT0 << (i))
+#define PISP_BE_RGB_ENABLE_COMPRESS(i) (PISP_BE_RGB_ENABLE_COMPRESS0 << (i))
 
 /*
  * We use the enable flags to show when blocks are "dirty", but we need some
@@ -1118,7 +1119,7 @@ struct pisp_be_config2 {
 	pisp_be_resample2_config resample[PISP_BACK_END_NUM_OUTPUTS];
 	pisp_be_output_format_config2
 				output_format[PISP_BACK_END_NUM_OUTPUTS];
-	pisp_compress_config compress[PISP_BACK_END_NUM_OUTPUTS];
+	struct pisp_compress_config compress[PISP_BACK_END_NUM_OUTPUTS];
 	// Add padding here if necessary to make a multiple of 32 bytes.
 
 } __attribute__((packed));
