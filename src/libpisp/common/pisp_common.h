@@ -46,7 +46,8 @@ enum pisp_image_format {
 	PISP_IMAGE_FORMAT_BPS_10 = 0x00000001,
 	PISP_IMAGE_FORMAT_BPS_12 = 0x00000002,
 	PISP_IMAGE_FORMAT_BPS_16 = 0x00000003,
-	PISP_IMAGE_FORMAT_BPS_MASK = 0x00000003,
+	PISP_IMAGE_FORMAT_BPS_14 = 0x00000004, /* note this is out of order */
+	PISP_IMAGE_FORMAT_BPS_MASK = 0x00000007,
 
 	PISP_IMAGE_FORMAT_PLANARITY_INTERLEAVED = 0x00000000,
 	PISP_IMAGE_FORMAT_PLANARITY_SEMI_PLANAR = 0x00000010,
@@ -100,11 +101,12 @@ enum pisp_image_format {
 	(((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) == PISP_IMAGE_FORMAT_BPS_10)
 #define PISP_IMAGE_FORMAT_BPS_12(fmt)                                          \
 	(((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) == PISP_IMAGE_FORMAT_BPS_12)
+#define PISP_IMAGE_FORMAT_BPS_14(fmt)                                          \
+	(((fmt)&PISP_IMAGE_FORMAT_BPS_MASK) == PISP_IMAGE_FORMAT_BPS_14)
 #define PISP_IMAGE_FORMAT_BPS_16(fmt)                                          \
 	(((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) == PISP_IMAGE_FORMAT_BPS_16)
 #define PISP_IMAGE_FORMAT_BPS(fmt)                                             \
-	(((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) ?                                \
-	       8 + (2 << (((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) - 1)) : 8)
+	(0xe83148 >> (5*((fmt)&PISP_IMAGE_FORMAT_BPS_MASK)) & 0x1f)
 #define PISP_IMAGE_FORMAT_SHIFT(fmt)                                           \
 	(((fmt) & PISP_IMAGE_FORMAT_SHIFT_MASK) / PISP_IMAGE_FORMAT_SHIFT_1)
 #define PISP_IMAGE_FORMAT_THREE_CHANNEL(fmt)                                   \

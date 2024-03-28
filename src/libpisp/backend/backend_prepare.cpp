@@ -68,20 +68,36 @@ static void checkRawIoFormat(ImageFormatConfig &fmt, uint16_t w, uint16_t h)
 }
 unsigned int getPixelAlignment(uint32_t format, int byteAlignment)
 {
-	int alignmentPixels = byteAlignment; // for 8bpp formats
+	int alignmentPixels;
 
-	if (PISP_IMAGE_FORMAT_BPS_16(format))
-		alignmentPixels = byteAlignment / 2;
-	else if (PISP_IMAGE_FORMAT_BPS_10(format))
-		alignmentPixels = byteAlignment * 3 / 4;
-	else if (PISP_IMAGE_FORMAT_BPP_32(format))
+	if (PISP_IMAGE_FORMAT_BPP_32(format))
 		alignmentPixels = byteAlignment / 4;
+	else if (PISP_IMAGE_FORMAT_BPS_16(format))
+		alignmentPixels = byteAlignment / 2;
+	else if (PISP_IMAGE_FORMAT_BPS_8(format))
+		alignmentPixels = byteAlignment;
+	else
+	{
+		int p = 3, b = 4; // for 10-bit wallpaper, 3 pixels occupy 4 bytes
+		if (PISP_IMAGE_FORMAT_BPS_14(format))
+			p = 4, b = 7;
+		else if (PISP_IMAGE_FORMAT_BPS_12(format))
+			p = 2, b = 3;
+		else if (PISP_IMAGE_FORMAT_BPS_10(format) && PISP_IMAGE_FORMAT_SINGLE_CHANNEL(format))
+			p = 4, b = 5;
+		else if (!PISP_IMAGE_FORMAT_BPS_10(format) || !PISP_IMAGE_FORMAT_WALLPAPER(format) ||
+				 !PISP_IMAGE_FORMAT_SEMIPLANAR(format))
+			throw std::runtime_error("Undefined image format");
+
+		alignmentPixels = byteAlignment * p;
+		if (alignmentPixels % b == 0)
+			alignmentPixels /= b;
+	}
 
 	if (PISP_IMAGE_FORMAT_PLANAR(format) && !PISP_IMAGE_FORMAT_SAMPLING_444(format))
 		alignmentPixels *= 2; // the UV planes in fully planar 420/422 output will have half the width
-	else if (PISP_IMAGE_FORMAT_INTERLEAVED(format) &&
-			 (PISP_IMAGE_FORMAT_SAMPLING_422(format) || PISP_IMAGE_FORMAT_SAMPLING_420(format)))
-		alignmentPixels /= 2; // YUYV type outputs need only 8 pixels to make 16 bytes
+	else if (PISP_IMAGE_FORMAT_INTERLEAVED(format) && PISP_IMAGE_FORMAT_SAMPLING_422(format) && !(alignmentPixels & 1))
+		alignmentPixels >>= 1; // YUYV type outputs need only 8 pixels to make 16 bytes
 
 	return alignmentPixels;
 }
@@ -488,7 +504,6 @@ void BackEnd::checkTiles(const TilingConfig &tilingConfig)
 		tileNum++;
 	}
 }
-
 
 tiling::Length2 BackEnd::calculateInputAlignment() const
 {

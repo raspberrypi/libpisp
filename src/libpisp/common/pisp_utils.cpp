@@ -21,8 +21,9 @@ namespace libpisp
 uint32_t computeXOffset(uint32_t /* pisp_image_format */ format, int x)
 {
 	PISP_ASSERT(x >= 0 && x < 65536);
+	PISP_ASSERT(!PISP_IMAGE_FORMAT_HOG(format)); // HOG is deprecated everywhere
+
 	uint32_t xOffset = 0;
-	uint32_t bps = format & PISP_IMAGE_FORMAT_BPS_MASK;
 
 	// HoG features are slightly different from the rest.
 	if (PISP_IMAGE_FORMAT_HOG(format))
@@ -40,23 +41,36 @@ uint32_t computeXOffset(uint32_t /* pisp_image_format */ format, int x)
 	}
 	else
 	{
-		if (bps == PISP_IMAGE_FORMAT_BPS_16)
-			xOffset = x * 2;
-		else if (bps == PISP_IMAGE_FORMAT_BPS_12)
-			xOffset = (x * 3 + 1) / 2;
-		else if (bps == PISP_IMAGE_FORMAT_BPS_10)
-			xOffset = (x / 3) * 4;
-		else
-			xOffset = x;
+		// First, convert from columns to samples.
+		if (PISP_IMAGE_FORMAT_THREE_CHANNEL(format) && PISP_IMAGE_FORMAT_INTERLEAVED(format))
+			x *= (PISP_IMAGE_FORMAT_SAMPLING_422(format)) ? 2 : 3;
 
-		if ((format & PISP_IMAGE_FORMAT_THREE_CHANNEL) && PISP_IMAGE_FORMAT_INTERLEAVED(format))
+		// For the benefit of stride calculations, round up to the next byte-packing boundary.
+		switch (format & PISP_IMAGE_FORMAT_BPS_MASK)
 		{
-			if (PISP_IMAGE_FORMAT_SAMPLING_422(format))
-				xOffset *= 2;
-			else
-				xOffset *= 3;
+		case PISP_IMAGE_FORMAT_BPS_8:
+			xOffset = x;
+			break;
+		case PISP_IMAGE_FORMAT_BPS_10:
+			// NOTE: We don't currently define any 10bps multi-channel format that are NOT wallpaper,
+			// and this function is not currently called for wallpaper. It's conceivable that we might
+			// add 10bps multi-channel non-wallpaper formats in future, but we'd then need to specify
+			// which are tightly-packed (MIPI-style) and which are loosely-packed (wallpaper-style).
+			// Let's not pre-empt those decisions now. 10-bit raw Bayer is always tightly-packed.
+			PISP_ASSERT(PISP_IMAGE_FORMAT_SINGLE_CHANNEL(format));
+			xOffset = ((x + 3) >> 2) * 5;
+			break;
+		case PISP_IMAGE_FORMAT_BPS_12:
+			xOffset = ((x + 1) >> 1) * 3;
+			break;
+		case PISP_IMAGE_FORMAT_BPS_14:
+			xOffset = ((x + 3) >> 2) * 7;
+			break;
+		default:
+			xOffset = 2 * x;
 		}
 	}
+
 	return xOffset;
 }
 
@@ -79,31 +93,32 @@ void computeStrideAlign(pisp_image_format_config &config, int align, bool preser
 		config.stride = computedStride;
 	config.stride2 = 0;
 
-	if (!PISP_IMAGE_FORMAT_HOG(config.format))
+	switch (config.format & PISP_IMAGE_FORMAT_PLANARITY_MASK)
 	{
-		switch (config.format & PISP_IMAGE_FORMAT_PLANARITY_MASK)
-		{
-		case PISP_IMAGE_FORMAT_PLANARITY_PLANAR:
-			if (PISP_IMAGE_FORMAT_SAMPLING_422(config.format) || PISP_IMAGE_FORMAT_SAMPLING_420(config.format))
-				config.stride2 = config.stride >> 1;
-			else if (PISP_IMAGE_FORMAT_THREE_CHANNEL(config.format))
-				config.stride2 = config.stride;
-			break;
-		case PISP_IMAGE_FORMAT_PLANARITY_SEMI_PLANAR:
-			PISP_ASSERT(PISP_IMAGE_FORMAT_SAMPLING_422(config.format) || PISP_IMAGE_FORMAT_SAMPLING_420(config.format));
+	case PISP_IMAGE_FORMAT_PLANARITY_PLANAR:
+		if (PISP_IMAGE_FORMAT_SAMPLING_422(config.format) || PISP_IMAGE_FORMAT_SAMPLING_420(config.format))
+			config.stride2 = config.stride >> 1;
+		else if (PISP_IMAGE_FORMAT_THREE_CHANNEL(config.format))
 			config.stride2 = config.stride;
-			break;
-		}
-
-		// image in memory must be sufficiently aligned
-		config.stride = (config.stride + align - 1) & ~(align - 1);
-		config.stride2 = (config.stride2 + align - 1) & ~(align - 1);
-
-		// For YUV420/422 formats, ensure the stride ratio matches the subample ratio for the planes.
-		if (preserveSubsampleRatio && PISP_IMAGE_FORMAT_PLANAR(config.format) &&
-			(PISP_IMAGE_FORMAT_SAMPLING_422(config.format) || PISP_IMAGE_FORMAT_SAMPLING_420(config.format)))
-			config.stride = config.stride2 << 1;
+		break;
+	case PISP_IMAGE_FORMAT_PLANARITY_SEMI_PLANAR:
+		PISP_ASSERT(PISP_IMAGE_FORMAT_SAMPLING_422(config.format) || PISP_IMAGE_FORMAT_SAMPLING_420(config.format));
+		config.stride2 = config.stride;
+		break;
 	}
+
+	// image in memory must be sufficiently aligned
+	config.stride = (config.stride + align - 1) & ~(align - 1);
+	config.stride2 = (config.stride2 + align - 1) & ~(align - 1);
+
+	// For YUV420/422 formats, ensure the stride ratio matches the subample ratio for the planes.
+	if (preserveSubsampleRatio && PISP_IMAGE_FORMAT_PLANAR(config.format) &&
+		(PISP_IMAGE_FORMAT_SAMPLING_422(config.format) || PISP_IMAGE_FORMAT_SAMPLING_420(config.format)))
+		config.stride = config.stride2 << 1;
+
+	// image in memory must be sufficiently aligned
+	config.stride = (config.stride + align - 1) & ~(align - 1);
+	config.stride2 = (config.stride2 + align - 1) & ~(align - 1);
 }
 
 void computeStride(pisp_image_format_config &config, bool preserveSubsampleRatio)
