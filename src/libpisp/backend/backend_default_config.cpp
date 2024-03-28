@@ -20,6 +20,10 @@
 #include "common/pisp_pwl.hpp"
 #include "pisp_be_config.h"
 
+// musl doesn't declare _DYNAMIC in link.h, declare it manually, see:
+// https://github.com/raspberrypi/libpisp/issues/25
+extern ElfW(Dyn) _DYNAMIC[];
+
 using json = nlohmann::json;
 
 // Where it might be helpful we initialise some blocks with the "obvious" default parameters. This saves users the trouble,
