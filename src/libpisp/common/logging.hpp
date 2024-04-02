@@ -9,7 +9,7 @@
 #include <cassert>
 
 #ifndef PISP_LOGGING_ENABLE
-#define PISP_LOGGING_ENABLE 0
+#define PISP_LOGGING_ENABLE 1
 #endif
 
 #if PISP_LOGGING_ENABLE

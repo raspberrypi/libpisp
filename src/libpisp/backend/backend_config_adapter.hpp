@@ -73,6 +73,8 @@ enum class BayerEnable : uint32_t
 	Demosaic		= 0x00400000,
 	TonemapInput	= 0x00800000,
 	Transpose		= 0x01000000,
+	Tonemap2		= 0x02000000,
+	Tonemap2Input	= 0x04000000,
 };
 
 CREATE_BITFIELD(BayerEnables, BayerEnable);
@@ -191,6 +193,7 @@ using BeStitchConfig = struct pisp_be_stitch_config;
 using BeTonemapConfig = struct pisp_be_tonemap_config;
 using BeDemosaicConfig = struct pisp_be_demosaic_config;
 using BeCompressConfig = struct pisp_compress_config;
+using BeTonemap2Config = struct pisp_be_tonemap2_config;
 
 struct BeConfigExtra
 {
@@ -202,13 +205,63 @@ struct BeConfigExtra
 	std::array<BeCropConfig, PISP_BACK_END_NUM_OUTPUTS> crop {};
 };
 
+struct BeTile
+{
+	// 2712 only:
+	uint8_t edge = 0;
+
+	// Common:
+	uint32_t input_addr_offset = 0;
+	uint32_t input_addr_offset2 = 0;
+	uint16_t input_offset_x = 0;
+	uint16_t input_offset_y = 0;
+	uint16_t input_width = 0;
+	uint16_t input_height = 0;
+	uint32_t tdn_input_addr_offset = 0;
+	uint32_t tdn_output_addr_offset = 0;
+	uint32_t stitch_input_addr_offset = 0;
+	uint32_t stitch_output_addr_offset = 0;
+	uint32_t lsc_grid_offset_x = 0;
+	uint32_t lsc_grid_offset_y = 0;
+	uint32_t cac_grid_offset_x = 0;
+	uint32_t cac_grid_offset_y = 0;
+
+	std::array<uint16_t, PISP_BACK_END_NUM_OUTPUTS> crop_x_start {};
+	std::array<uint16_t, PISP_BACK_END_NUM_OUTPUTS> crop_x_end {};
+	std::array<uint16_t, PISP_BACK_END_NUM_OUTPUTS> crop_y_start {};
+	std::array<uint16_t, PISP_BACK_END_NUM_OUTPUTS> crop_y_end {};
+	// Downscale phase is per-component on 2712, and per-output on Beryl:
+	std::array<uint16_t, 3 * PISP_BACK_END_NUM_OUTPUTS> downscale_phase_x {};
+	std::array<uint16_t, 3 * PISP_BACK_END_NUM_OUTPUTS> downscale_phase_y {};
+	std::array<uint16_t, PISP_BACK_END_NUM_OUTPUTS> resample_in_width {};
+	std::array<uint16_t, PISP_BACK_END_NUM_OUTPUTS> resample_in_height {};
+	// Resample phase is per-component on 2712, and per-output on Beryl:	
+	std::array<uint16_t, 3 * PISP_BACK_END_NUM_OUTPUTS> resample_phase_x {};
+	std::array<uint16_t, 3 * PISP_BACK_END_NUM_OUTPUTS> resample_phase_y {};
+	std::array<uint16_t, PISP_BACK_END_NUM_OUTPUTS> output_offset_x {};
+	std::array<uint16_t, PISP_BACK_END_NUM_OUTPUTS> output_offset_y {};
+	std::array<uint16_t, PISP_BACK_END_NUM_OUTPUTS> output_width {};
+	std::array<uint16_t, PISP_BACK_END_NUM_OUTPUTS> output_height {};
+	std::array<uint32_t, PISP_BACK_END_NUM_OUTPUTS> output_addr_offset {};
+	std::array<uint32_t, PISP_BACK_END_NUM_OUTPUTS> output_addr_offset2 {};
+
+	// Beryl only:
+	uint32_t tonemap_grid_offset_x = 0;
+	uint32_t tonemap_grid_offset_y = 0;
+	uint32_t tonemap_lores_offset_x = 0;
+	uint32_t tonemap_lores_offset_y = 0;
+	uint32_t dedistort_grid_offset_x = 0;
+	uint32_t dedistort_grid_offset_y = 0;
+};
+
 class BackendConfigAdapter
 {
 public:
-	using HwConfigVariant = std::variant<pisp_be_config*,  pisp_be_config2*>;
+	using HwConfigVariant = std::variant<pisp_be_config *,  pisp_be_config2 *>;
+	using HwTileVariant = std::variant<pisp_tile *,  pisp_tile2 *>;
 
-	BackendConfigAdapter(HwConfigVariant config, BeConfigExtra *extras)
-		: config_(config), extras_(extras)
+	BackendConfigAdapter(HwConfigVariant config, HwTileVariant tile, BeConfigExtra *extras)
+		: config_(config), tile_(tile), extras_(extras)
 	{
 	}
 	
@@ -223,6 +276,9 @@ public:
 	{
 		return std::visit(std::forward<F>(f), config_);
 	}
+
+	void setTile(unsigned int i, const BeTile &tile);
+	BeTile getTile(unsigned int i) const;
 
 	void setGlobal(const BeGlobal &global);
 	BeGlobal getGlobal() const;
@@ -325,6 +381,12 @@ public:
 	void setTonemap(const BeTonemapConfig &tonemap);
 	BeTonemapConfig getTonemap() const;
 
+	void setTonemap2(const BeTonemap2Config &tonemap);
+	BeTonemap2Config getTonemap2() const;
+
+	void setTonemap2Format(const ImageFormatConfig &format);
+	ImageFormatConfig getTonemap2Format() const;
+
 	void setDemosaic(const BeDemosaicConfig &demosaic);
 	BeDemosaicConfig getDemosaic() const;
 
@@ -352,6 +414,7 @@ private:
 	BayerEnables hwToBayerEnables(uint32_t hwEnables) const;
 
 	HwConfigVariant config_;
+	HwTileVariant tile_;
 	BeConfigExtra *extras_;
 };
 

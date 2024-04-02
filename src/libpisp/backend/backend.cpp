@@ -28,7 +28,7 @@ BackEnd::BackEnd(SoftwareConfig const &swConfig, PiSPVariant const &variant, std
 	else
 		pipe_ = &internalPipelineConfig_;
 	
-	config_ = std::make_unique<BackendConfigAdapter>(&pipe_->hwConfig, &pipe_->configExtra);
+	config_ = std::make_unique<BackendConfigAdapter>(&pipe_->hwConfig, pipe_->tiles.data(), &pipe_->configExtra);
 
 	const char *env = std::getenv("LIBPISP_BE_CONFIG_FILE");
 	initialiseDefaultConfig(env ? std::string(env) : swConfig.defaultsFile);
@@ -316,6 +316,28 @@ void BackEnd::setTonemap(BeTonemapConfig const &tonemap)
 BeTonemapConfig BackEnd::getTonemap() const
 {
 	return config_->getTonemap();
+}
+
+void BackEnd::setTonemap2(BeTonemap2Config const &tonemap)
+{
+	config_->setTonemap2(tonemap);
+	pipe_->dirtyFlagsBayer |= BayerEnable::Tonemap2;
+}
+
+BeTonemap2Config BackEnd::getTonemap2() const
+{
+	return config_->getTonemap2();
+}
+
+void BackEnd::setTonemap2Format(ImageFormatConfig const &format)
+{
+	config_->setTonemap2Format(format);
+	pipe_->dirtyFlagsBayer |= BayerEnable::Tonemap2Input;
+}
+
+ImageFormatConfig BackEnd::getTonemap2Format() const
+{
+	return config_->getTonemap2Format();
 }
 
 void BackEnd::setDemosaic(BeDemosaicConfig const &demosaic)

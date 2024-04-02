@@ -181,6 +181,185 @@ BayerEnables BackendConfigAdapter::hwToBayerEnables(uint32_t hwEnables) const
 	return enables;
 }
 
+void BackendConfigAdapter::setTile(unsigned int i, const BeTile &tile)
+{
+	std::visit(overloaded {
+		[&tile, i](pisp_tile *tiles) {
+			// Common fields
+			tiles[i].input_addr_offset = tile.input_addr_offset;
+			tiles[i].input_addr_offset2 = tile.input_addr_offset2;
+			tiles[i].input_offset_x = tile.input_offset_x;
+			tiles[i].input_offset_y = tile.input_offset_y;
+			tiles[i].input_width = tile.input_width;
+			tiles[i].input_height = tile.input_height;
+			tiles[i].tdn_input_addr_offset = tile.tdn_input_addr_offset;
+			tiles[i].tdn_output_addr_offset = tile.tdn_output_addr_offset;
+			tiles[i].stitch_input_addr_offset = tile.stitch_input_addr_offset;
+			tiles[i].stitch_output_addr_offset = tile.stitch_output_addr_offset;
+			tiles[i].lsc_grid_offset_x = tile.lsc_grid_offset_x;
+			tiles[i].lsc_grid_offset_y = tile.lsc_grid_offset_y;
+			tiles[i].cac_grid_offset_x = tile.cac_grid_offset_x;
+			tiles[i].cac_grid_offset_y = tile.cac_grid_offset_y;
+			std::memcpy(tiles[i].crop_x_start, tile.crop_x_start.data(), sizeof(tile.crop_x_start));
+			std::memcpy(tiles[i].crop_x_end, tile.crop_x_end.data(), sizeof(tile.crop_x_end));
+			std::memcpy(tiles[i].crop_y_start, tile.crop_y_start.data(), sizeof(tile.crop_y_start));
+			std::memcpy(tiles[i].crop_y_end, tile.crop_y_end.data(), sizeof(tile.crop_y_end));
+			std::memcpy(tiles[i].resample_in_width, tile.resample_in_width.data(), sizeof(tile.resample_in_width));
+			std::memcpy(tiles[i].resample_in_height, tile.resample_in_height.data(), sizeof(tile.resample_in_height));
+			std::memcpy(tiles[i].output_offset_x, tile.output_offset_x.data(), sizeof(tile.output_offset_x));
+			std::memcpy(tiles[i].output_offset_y, tile.output_offset_y.data(), sizeof(tile.output_offset_y));
+			std::memcpy(tiles[i].output_width, tile.output_width.data(), sizeof(tile.output_width));
+			std::memcpy(tiles[i].output_height, tile.output_height.data(), sizeof(tile.output_height));
+			std::memcpy(tiles[i].output_addr_offset, tile.output_addr_offset.data(), sizeof(tile.output_addr_offset));
+			std::memcpy(tiles[i].output_addr_offset2, tile.output_addr_offset2.data(), sizeof(tile.output_addr_offset2));
+			
+			// v1 specific fields
+			tiles[i].edge = tile.edge;
+			std::memcpy(tiles[i].downscale_phase_x, tile.downscale_phase_x.data(), sizeof(tile.downscale_phase_x));
+			std::memcpy(tiles[i].downscale_phase_y, tile.downscale_phase_y.data(), sizeof(tile.downscale_phase_y));
+			std::memcpy(tiles[i].resample_phase_x, tile.resample_phase_x.data(), sizeof(tile.resample_phase_x));
+			std::memcpy(tiles[i].resample_phase_y, tile.resample_phase_y.data(), sizeof(tile.resample_phase_y));
+		},
+		[&tile, i](pisp_tile2 *tiles) {
+			// Common fields
+			tiles[i].input_addr_offset = tile.input_addr_offset;
+			tiles[i].input_addr_offset2 = tile.input_addr_offset2;
+			tiles[i].input_offset_x = tile.input_offset_x;
+			tiles[i].input_offset_y = tile.input_offset_y;
+			tiles[i].input_width = tile.input_width;
+			tiles[i].input_height = tile.input_height;
+			tiles[i].tdn_input_addr_offset = tile.tdn_input_addr_offset;
+			tiles[i].tdn_output_addr_offset = tile.tdn_output_addr_offset;
+			tiles[i].stitch_input_addr_offset = tile.stitch_input_addr_offset;
+			tiles[i].stitch_output_addr_offset = tile.stitch_output_addr_offset;
+			tiles[i].lsc_grid_offset_x = tile.lsc_grid_offset_x;
+			tiles[i].lsc_grid_offset_y = tile.lsc_grid_offset_y;
+			tiles[i].cac_grid_offset_x = tile.cac_grid_offset_x;
+			tiles[i].cac_grid_offset_y = tile.cac_grid_offset_y;
+			std::memcpy(tiles[i].crop_x_start, tile.crop_x_start.data(), sizeof(tile.crop_x_start));
+			std::memcpy(tiles[i].crop_x_end, tile.crop_x_end.data(), sizeof(tile.crop_x_end));
+			std::memcpy(tiles[i].crop_y_start, tile.crop_y_start.data(), sizeof(tile.crop_y_start));
+			std::memcpy(tiles[i].crop_y_end, tile.crop_y_end.data(), sizeof(tile.crop_y_end));
+			std::memcpy(tiles[i].resample_in_width, tile.resample_in_width.data(), sizeof(tile.resample_in_width));
+			std::memcpy(tiles[i].resample_in_height, tile.resample_in_height.data(), sizeof(tile.resample_in_height));
+			std::memcpy(tiles[i].output_offset_x, tile.output_offset_x.data(), sizeof(tile.output_offset_x));
+			std::memcpy(tiles[i].output_offset_y, tile.output_offset_y.data(), sizeof(tile.output_offset_y));
+			std::memcpy(tiles[i].output_width, tile.output_width.data(), sizeof(tile.output_width));
+			std::memcpy(tiles[i].output_height, tile.output_height.data(), sizeof(tile.output_height));
+			std::memcpy(tiles[i].output_addr_offset, tile.output_addr_offset.data(), sizeof(tile.output_addr_offset));
+			std::memcpy(tiles[i].output_addr_offset2, tile.output_addr_offset2.data(), sizeof(tile.output_addr_offset2));
+			
+			// v2 specific fields
+			tiles[i].tonemap_grid_offset_x = tile.tonemap_grid_offset_x;
+			tiles[i].tonemap_grid_offset_y = tile.tonemap_grid_offset_y;
+			tiles[i].tonemap_lores_offset_x = tile.tonemap_lores_offset_x;
+			tiles[i].tonemap_lores_offset_y = tile.tonemap_lores_offset_y;
+			tiles[i].dedistort_grid_offset_x = tile.dedistort_grid_offset_x;
+			tiles[i].dedistort_grid_offset_y = tile.dedistort_grid_offset_y;
+
+			// v2 has per-output downscale/resample phases, v1/BeTile has per-component
+			for (unsigned int j = 0; j < PISP_BACK_END_NUM_OUTPUTS; j++)
+			{
+				tiles[i].downscale_phase_x[j] = tile.downscale_phase_x[j];
+				tiles[i].downscale_phase_y[j] = tile.downscale_phase_y[j];
+				tiles[i].resample_phase_x[j] = tile.resample_phase_x[j];
+				tiles[i].resample_phase_y[j] = tile.resample_phase_y[j];
+			}
+		}
+	}, tile_);
+}
+
+
+BeTile BackendConfigAdapter::getTile(unsigned int i) const
+{
+	BeTile tile{};
+
+	std::visit(overloaded {
+		[&tile, i](pisp_tile *tiles) {
+			// Common fields
+			tile.input_addr_offset = tiles[i].input_addr_offset;
+			tile.input_addr_offset2 = tiles[i].input_addr_offset2;
+			tile.input_offset_x = tiles[i].input_offset_x;
+			tile.input_offset_y = tiles[i].input_offset_y;
+			tile.input_width = tiles[i].input_width;
+			tile.input_height = tiles[i].input_height;
+			tile.tdn_input_addr_offset = tiles[i].tdn_input_addr_offset;
+			tile.tdn_output_addr_offset = tiles[i].tdn_output_addr_offset;
+			tile.stitch_input_addr_offset = tiles[i].stitch_input_addr_offset;
+			tile.stitch_output_addr_offset = tiles[i].stitch_output_addr_offset;
+			tile.lsc_grid_offset_x = tiles[i].lsc_grid_offset_x;
+			tile.lsc_grid_offset_y = tiles[i].lsc_grid_offset_y;
+			tile.cac_grid_offset_x = tiles[i].cac_grid_offset_x;
+			tile.cac_grid_offset_y = tiles[i].cac_grid_offset_y;
+			std::memcpy(tile.crop_x_start.data(), tiles[i].crop_x_start, sizeof(tile.crop_x_start));
+			std::memcpy(tile.crop_x_end.data(), tiles[i].crop_x_end, sizeof(tile.crop_x_end));
+			std::memcpy(tile.crop_y_start.data(), tiles[i].crop_y_start, sizeof(tile.crop_y_start));
+			std::memcpy(tile.crop_y_end.data(), tiles[i].crop_y_end, sizeof(tile.crop_y_end));
+			std::memcpy(tile.resample_in_width.data(), tiles[i].resample_in_width, sizeof(tile.resample_in_width));
+			std::memcpy(tile.resample_in_height.data(), tiles[i].resample_in_height, sizeof(tile.resample_in_height));
+			std::memcpy(tile.output_offset_x.data(), tiles[i].output_offset_x, sizeof(tile.output_offset_x));
+			std::memcpy(tile.output_offset_y.data(), tiles[i].output_offset_y, sizeof(tile.output_offset_y));
+			std::memcpy(tile.output_width.data(), tiles[i].output_width, sizeof(tile.output_width));
+			std::memcpy(tile.output_height.data(), tiles[i].output_height, sizeof(tile.output_height));
+			std::memcpy(tile.output_addr_offset.data(), tiles[i].output_addr_offset, sizeof(tile.output_addr_offset));
+			std::memcpy(tile.output_addr_offset2.data(), tiles[i].output_addr_offset2, sizeof(tile.output_addr_offset2));
+			
+			// v1 specific fields
+			tile.edge = tiles[i].edge;
+			std::memcpy(tile.downscale_phase_x.data(), tiles[i].downscale_phase_x, sizeof(tile.downscale_phase_x));
+			std::memcpy(tile.downscale_phase_y.data(), tiles[i].downscale_phase_y, sizeof(tile.downscale_phase_y));
+			std::memcpy(tile.resample_phase_x.data(), tiles[i].resample_phase_x, sizeof(tile.resample_phase_x));
+			std::memcpy(tile.resample_phase_y.data(), tiles[i].resample_phase_y, sizeof(tile.resample_phase_y));
+		},
+		[&tile, i](pisp_tile2 *tiles) {
+			// Common fields
+			tile.input_addr_offset = tiles[i].input_addr_offset;
+			tile.input_addr_offset2 = tiles[i].input_addr_offset2;
+			tile.input_offset_x = tiles[i].input_offset_x;
+			tile.input_offset_y = tiles[i].input_offset_y;
+			tile.input_width = tiles[i].input_width;
+			tile.input_height = tiles[i].input_height;
+			tile.tdn_input_addr_offset = tiles[i].tdn_input_addr_offset;
+			tile.tdn_output_addr_offset = tiles[i].tdn_output_addr_offset;
+			tile.stitch_input_addr_offset = tiles[i].stitch_input_addr_offset;
+			tile.stitch_output_addr_offset = tiles[i].stitch_output_addr_offset;
+			tile.lsc_grid_offset_x = tiles[i].lsc_grid_offset_x;
+			tile.lsc_grid_offset_y = tiles[i].lsc_grid_offset_y;
+			tile.cac_grid_offset_x = tiles[i].cac_grid_offset_x;
+			tile.cac_grid_offset_y = tiles[i].cac_grid_offset_y;
+			std::memcpy(tile.crop_x_start.data(), tiles[i].crop_x_start, sizeof(tile.crop_x_start));
+			std::memcpy(tile.crop_x_end.data(), tiles[i].crop_x_end, sizeof(tile.crop_x_end));
+			std::memcpy(tile.crop_y_start.data(), tiles[i].crop_y_start, sizeof(tile.crop_y_start));
+			std::memcpy(tile.crop_y_end.data(), tiles[i].crop_y_end, sizeof(tile.crop_y_end));
+			std::memcpy(tile.resample_in_width.data(), tiles[i].resample_in_width, sizeof(tile.resample_in_width));
+			std::memcpy(tile.resample_in_height.data(), tiles[i].resample_in_height, sizeof(tile.resample_in_height));
+			std::memcpy(tile.output_offset_x.data(), tiles[i].output_offset_x, sizeof(tile.output_offset_x));
+			std::memcpy(tile.output_offset_y.data(), tiles[i].output_offset_y, sizeof(tile.output_offset_y));
+			std::memcpy(tile.output_width.data(), tiles[i].output_width, sizeof(tile.output_width));
+			std::memcpy(tile.output_height.data(), tiles[i].output_height, sizeof(tile.output_height));
+			std::memcpy(tile.output_addr_offset.data(), tiles[i].output_addr_offset, sizeof(tile.output_addr_offset));
+			std::memcpy(tile.output_addr_offset2.data(), tiles[i].output_addr_offset2, sizeof(tile.output_addr_offset2));
+			
+			// v2 specific fields
+			tile.tonemap_grid_offset_x = tiles[i].tonemap_grid_offset_x;
+			tile.tonemap_grid_offset_y = tiles[i].tonemap_grid_offset_y;
+			tile.tonemap_lores_offset_x = tiles[i].tonemap_lores_offset_x;
+			tile.tonemap_lores_offset_y = tiles[i].tonemap_lores_offset_y;
+			tile.dedistort_grid_offset_x = tiles[i].dedistort_grid_offset_x;
+			tile.dedistort_grid_offset_y = tiles[i].dedistort_grid_offset_y;
+			// v2 has per-output downscale/resample phases, v1/BeTile has per-component
+			for (unsigned int j = 0; j < PISP_BACK_END_NUM_OUTPUTS; j++) {
+				tile.downscale_phase_x[j] = tiles[i].downscale_phase_x[j];
+				tile.downscale_phase_y[j] = tiles[i].downscale_phase_y[j];
+				tile.resample_phase_x[j] = tiles[i].resample_phase_x[j];
+				tile.resample_phase_y[j] = tiles[i].resample_phase_y[j];
+			}
+		}
+	}, tile_);
+
+	return tile;
+}
+
 void BackendConfigAdapter::setGlobal(const BeGlobal &global)
 {
 	visit([&global, this](auto *cfg) {
@@ -654,7 +833,7 @@ void BackendConfigAdapter::setTonemap(const BeTonemapConfig &tonemap)
 			cfg->tonemap = tonemap;
 		},
 		[&tonemap]([[maybe_unused]] pisp_be_config2 *cfg) {
-			// v2 uses tonemap2 (pisp_be_tonemap2_config), conversion not implemented
+			// Throw exception?
 		}
 	});
 }
@@ -666,8 +845,62 @@ BeTonemapConfig BackendConfigAdapter::getTonemap() const
 			return cfg->tonemap;
 		},
 		[]([[maybe_unused]] pisp_be_config2 *cfg) -> BeTonemapConfig {
-			// v2 uses tonemap2, conversion not implemented
-			return BeTonemapConfig{};
+			// Throw exception?
+			return {};
+		}
+	});
+}
+
+void BackendConfigAdapter::setTonemap2(const BeTonemap2Config &tonemap)
+{
+	visit(overloaded {
+		[&tonemap]([[maybe_unused]] pisp_be_config *cfg) {
+			// Throw exception?
+		},
+		[&tonemap](pisp_be_config2 *cfg) {
+			cfg->tonemap2 = tonemap;
+			cfg->tonemap2.pad0[0] = cfg->tonemap2.pad0[1] = cfg->tonemap2.pad0[2] = 0;
+			cfg->tonemap2.pad1[0] = cfg->tonemap2.pad1[1] = 0;
+			cfg->tonemap2.pad2[0] = cfg->tonemap2.pad2[1] = cfg->tonemap2.pad2[2] = 0;
+			cfg->tonemap2.pad3 = 0;
+		}
+	});
+}
+
+BeTonemap2Config BackendConfigAdapter::getTonemap2() const
+{
+	return visit(overloaded {
+		[]([[maybe_unused]] pisp_be_config *cfg) -> BeTonemap2Config {
+			// Throw exception?
+			return {};
+		},
+		[](pisp_be_config2 *cfg) -> BeTonemap2Config {
+			return cfg->tonemap2;
+		}
+	});
+}
+
+void BackendConfigAdapter::setTonemap2Format(ImageFormatConfig const &format)
+{
+	visit(overloaded {
+		[&format]([[maybe_unused]] pisp_be_config *cfg) {
+			// Throw exception?
+		},
+		[&format](pisp_be_config2 *cfg) {
+			cfg->tonemap2_format = format;
+		}
+	});
+}
+
+ImageFormatConfig BackendConfigAdapter::getTonemap2Format() const
+{
+	return visit(overloaded {
+		[]([[maybe_unused]] pisp_be_config *cfg) -> ImageFormatConfig {
+			// Throw exception?
+			return {};
+		},
+		[](pisp_be_config2 *cfg) -> ImageFormatConfig {
+			return cfg->tonemap2_format;
 		}
 	});
 }

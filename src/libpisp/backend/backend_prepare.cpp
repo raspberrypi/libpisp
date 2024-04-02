@@ -222,6 +222,27 @@ void BackEnd::finaliseDedistort()
 	config_->setDedistort(dd);
 }
 
+void BackEnd::finaliseTonemap2()
+{
+	BeTonemap2Config tonemap = config_->getTonemap2();
+	uint16_t width = postTransposeWidth(), height = postTransposeHeight();
+
+	static const int P = PISP_BE_TONEMAP2_STEP_PRECISION;
+
+	if (tonemap.grid_step_x == 0)
+		tonemap.grid_step_x = (PISP_BE_TONEMAP2_GRID_SIZE << P) / width;
+	if (tonemap.grid_step_y == 0)
+		tonemap.grid_step_y = (PISP_BE_TONEMAP2_GRID_SIZE << P) / height;
+
+	if (tonemap.spatial_gain_slope == 0 && tonemap.spatial_gain_knee != 0) {
+		if (65535 - tonemap.spatial_gain_knee < 32768)
+			throw std::runtime_error("finaliseTonemap2: spatial_gain_knee too high");
+		tonemap.spatial_gain_slope = (1UL << 31) / (65535 - tonemap.spatial_gain_knee);
+	}
+
+	config_->setTonemap2(tonemap);
+}
+
 void BackEnd::finaliseResample(unsigned int index, uint16_t width, uint16_t height)
 {
 	BeResampleConfig resample = config_->getResample(index);
@@ -448,7 +469,7 @@ void BackEnd::checkTiles(const TilingConfig &tilingConfig)
 {
 	for (unsigned int tileNum = 0; tileNum < pipe_->numTilesX * pipe_->numTilesY; tileNum++)
 	{
-		const pisp_tile &tile = pipe_->tiles[tileNum];
+		const BeTile &tile = config_->getTile(tileNum);
 
 		PISP_ASSERT(tile.input_width && tile.input_height); // zero inputs shouldn't be possible
 
@@ -548,16 +569,16 @@ void BackEnd::finaliseConfig()
 	BayerEnables bayerEnables = config_->getGlobal().bayerEnables;
 	RgbEnables rgbEnables = config_->getGlobal().rgbEnables;
 
-	BayerEnables dirty_flags_bayer = pipe_->dirtyFlagsBayer & bayerEnables; // only finalise blocks that are dirty *and* enabled
-	RgbEnables dirty_flags_rgb = pipe_->dirtyFlagsRgb & rgbEnables; // only finalise blocks that are dirty *and* enabled
+	BayerEnables dirtyFlagsBayer = pipe_->dirtyFlagsBayer & bayerEnables; // only finalise blocks that are dirty *and* enabled
+	RgbEnables dirtyFlagsRgb = pipe_->dirtyFlagsRgb & rgbEnables; // only finalise blocks that are dirty *and* enabled
 
-	if ((dirty_flags_bayer & BayerEnable::Input) || (dirty_flags_rgb & RgbEnable::Input))
+	if ((dirtyFlagsBayer & BayerEnable::Input) || (dirtyFlagsRgb & RgbEnable::Input))
 		finaliseBayerRgbInputs();
 
-	if (dirty_flags_bayer & BayerEnable::Input)
+	if (dirtyFlagsBayer & BayerEnable::Input)
 		finaliseInputs();
 
-	if (dirty_flags_bayer & (BayerEnable::Input | BayerEnable::Decompress))
+	if (dirtyFlagsBayer & (BayerEnable::Input | BayerEnable::Decompress))
 		finaliseDecompression();
 
 	if ((pipe_->dirtyFlagsBayer &
@@ -574,14 +595,17 @@ void BackEnd::finaliseConfig()
 		finaliseStitch();
 	}
 
-	if (dirty_flags_bayer & BayerEnable::Lsc)
+	if (dirtyFlagsBayer & BayerEnable::Lsc)
 		finaliseLsc();
 
-	if (dirty_flags_bayer & BayerEnable::Cac)
+	if (dirtyFlagsBayer & BayerEnable::Cac)
 		finaliseCac();
 
-	if (dirty_flags_rgb & RgbEnable::Dedistort)
+	if (dirtyFlagsRgb & RgbEnable::Dedistort)
 		finaliseDedistort();
+		
+	if (dirtyFlagsBayer & BayerEnable::Tonemap2)
+		finaliseTonemap2();
 
 	for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++)
 	{
@@ -593,7 +617,7 @@ void BackEnd::finaliseConfig()
 			uint16_t w = config_->getExtras()->crop[j].width ? config_->getExtras()->crop[j].width : postTransposeWidth();
 			uint16_t h = config_->getExtras()->crop[j].width ? config_->getExtras()->crop[j].height : postTransposeHeight();
 
-			if (dirty_flags_rgb & getFlagForBranch(RgbEnable::Downscale0, j))
+			if (dirtyFlagsRgb & getFlagForBranch(RgbEnable::Downscale0, j))
 			{
 				if (variant_.backEndDownscalerAvailable(0, j))
 					finaliseDownscale(j, w, h);
@@ -608,10 +632,10 @@ void BackEnd::finaliseConfig()
 				h = config_->getExtras()->downscale[j].scaled_height;
 			}
 
-			if (dirty_flags_rgb & getFlagForBranch(RgbEnable::Resample0, j))
+			if (dirtyFlagsRgb & getFlagForBranch(RgbEnable::Resample0, j))
 				finaliseResample(j, w, h);
 
-			if (dirty_flags_rgb & getFlagForBranch(RgbEnable::Output0, j))
+			if (dirtyFlagsRgb & getFlagForBranch(RgbEnable::Output0, j))
 				finaliseOutput(j);
 		}
 	}
@@ -885,14 +909,13 @@ void BackEnd::retilePipeline(TilingConfig const &tilingConfig)
 	pipe_->numTilesX = grid.dx;
 	pipe_->numTilesY = grid.dy;
 
-	// Finally convert the Tiles into pisp_tiles.
+	// Finally convert the Tiles into BeTiles.
 	for (unsigned int i = 0; i < pipe_->numTilesX * pipe_->numTilesY; i++)
 	{
 		RgbEnables rgbEnables = config_->getGlobal().rgbEnables;
 
-		pisp_tile &t = pipe_->tiles[i];
+		BeTile t = config_->getTile(i);
 
-		memset(&t, 0, sizeof(pisp_tile));
 		t.edge = 0;
 		if (i < pipe_->numTilesX)
 			t.edge |= PISP_TOP_EDGE;
@@ -1029,6 +1052,8 @@ void BackEnd::retilePipeline(TilingConfig const &tilingConfig)
 				}
 			}
 		}
+
+		config_->setTile(i, t);
 	}
 }
 
@@ -1039,9 +1064,10 @@ void BackEnd::finaliseTiling()
 	{
 		const BeLscConfig &lsc = config_->getLsc();
 		const BeCacConfig &cac = config_->getCac();
+		const BeTonemap2Config &tonemap2 = config_->getTonemap2();
 		const BayerEnables bayerEnables = config_->getGlobal().bayerEnables;
 
-		pisp_tile &t = pipe_->tiles[tileNum];
+		BeTile t = config_->getTile(tileNum);
 
 		calculateInputAddrOffset((bayerEnables & BayerEnable::Transpose) ? t.input_offset_y : t.input_offset_x,
 								 (bayerEnables & BayerEnable::Transpose) ? t.input_offset_x : t.input_offset_y,
@@ -1077,6 +1103,12 @@ void BackEnd::finaliseTiling()
 			t.cac_grid_offset_y = (t.input_offset_y + dd.offset_y) * dd.grid_step_y;
 		}
 
+		if (bayerEnables & BayerEnable::Tonemap2)
+		{
+			t.tonemap_lores_offset_x = t.input_offset_x * tonemap2.lores_step_x;
+			t.tonemap_lores_offset_y = t.input_offset_y * tonemap2.lores_step_y;
+		}
+
 		for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++)
 		{
 			const BeOutputFormatConfig &outputFormat = config_->getOutputFormat(j);
@@ -1096,6 +1128,8 @@ void BackEnd::finaliseTiling()
 									  << " address offsets " << t.output_addr_offset[j] << " and "
 									  << t.output_addr_offset2[j]);
 		}
+
+		config_->setTile(tileNum, t);
 	}
 }
 

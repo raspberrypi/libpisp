@@ -110,6 +110,10 @@ public:
 	BeDebinConfig getDebin() const;
 	void setTonemap(BeTonemapConfig const &tonemap);
 	BeTonemapConfig getTonemap() const;
+	void setTonemap2(BeTonemap2Config const &tonemap);
+	BeTonemap2Config getTonemap2() const;
+	void setTonemap2Format(ImageFormatConfig const &format);
+	ImageFormatConfig getTonemap2Format() const;
 	void setDemosaic(BeDemosaicConfig const &demosaic);
 	BeDemosaicConfig getDemosaic() const;
 	void setCcm(BeCcmConfig const &ccm);
@@ -200,6 +204,7 @@ private:
 		uint32_t smartResizeDirty = 0;
 
 		std::array<pisp_tile, PISP_BACK_END_NUM_TILES> tiles {};
+		std::array<pisp_tile2, PISP_BACK_END_NUM_TILES> tiles2 {};
 		unsigned int numTilesX = 0;
 		unsigned int numTilesY = 0;
 	};
@@ -211,6 +216,7 @@ private:
 	void finaliseLsc();
 	void finaliseCac();
 	void finaliseDedistort();
+	void finaliseTonemap2();
 	void finaliseResample(unsigned int index, uint16_t width, uint16_t height);
 	void finaliseDownscale(unsigned int index, uint16_t width, uint16_t height);
 	void finaliseDecompression() const;

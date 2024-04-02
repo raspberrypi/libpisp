@@ -1078,6 +1078,66 @@ enum pisp_be_rgb_enable2 {
 	/* Third output compress would be at 0x10000000 */
 };
 
+struct pisp_tile2 {
+	// 0 bytes
+	uint32_t input_addr_offset;
+	uint32_t input_addr_offset2;
+	uint16_t input_offset_x;
+	uint16_t input_offset_y;
+	uint16_t input_width;
+	uint16_t input_height;
+	// 16 bytes
+	uint32_t tdn_input_addr_offset;
+	uint32_t tdn_output_addr_offset;
+	uint32_t stitch_input_addr_offset;
+	uint32_t stitch_output_addr_offset;
+	// 32 bytes
+	uint32_t lsc_grid_offset_x;
+	uint32_t lsc_grid_offset_y;
+	// 40 bytes
+	uint32_t cac_grid_offset_x;
+	uint32_t cac_grid_offset_y;
+	// 48 bytes
+	// at this point we insert Tonemap and Dedistort tile parameters for Beryl
+	uint32_t tonemap_grid_offset_x;
+	uint32_t tonemap_grid_offset_y;
+	uint32_t tonemap_lores_offset_x;
+	uint32_t tonemap_lores_offset_y;
+	// 64 bytes
+	uint32_t dedistort_grid_offset_x;
+	uint32_t dedistort_grid_offset_y;
+	// 72 bytes
+	uint16_t crop_x_start[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t crop_x_end[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t crop_y_start[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t crop_y_end[PISP_BACK_END_NUM_OUTPUTS];
+	// 88 bytes
+	// downscale phase is no longer per-component; only per-output
+	uint16_t downscale_phase_x[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t downscale_phase_y[PISP_BACK_END_NUM_OUTPUTS];
+	// 96 bytes
+	uint16_t resample_in_width[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t resample_in_height[PISP_BACK_END_NUM_OUTPUTS];
+	// 104 bytes
+	// resample phase is no longer per-component; only per-output
+	uint16_t resample_phase_x[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t resample_phase_y[PISP_BACK_END_NUM_OUTPUTS];
+	// 112 bytes
+	uint8_t resample_start_context_x[PISP_BACK_END_NUM_OUTPUTS];
+	uint8_t resample_start_context_y[PISP_BACK_END_NUM_OUTPUTS];
+	// 116 bytes
+	uint16_t output_offset_x[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t output_offset_y[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t output_width[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t output_height[PISP_BACK_END_NUM_OUTPUTS];
+	// 132 bytes
+	uint32_t output_addr_offset[PISP_BACK_END_NUM_OUTPUTS];
+	uint32_t output_addr_offset2[PISP_BACK_END_NUM_OUTPUTS];
+	// 148 bytes
+	uint8_t pad1[12];
+	// 160 bytes
+} __attribute__((packed));
+
 struct pisp_be_config2 {
 	pisp_be_global_config global;
 	pisp_image_format_config input_format;
@@ -1141,7 +1201,10 @@ struct pisp_be_tiles_config {
 		} __attribute__((packed));
 
 		// v2
-		struct pisp_be_config2 v2;
+		struct {
+			pisp_be_config2 config;
+			struct pisp_tile2 tiles[PISP_BACK_END_NUM_TILES];
+		} __attribute__((packed)) v2;
 	};
 } __attribute__((packed));
 
