@@ -207,20 +207,42 @@ typedef struct {
 	uint16_t height;
 } pisp_fe_crop_config;
 
+/*
+ * Downscale configuration can now be in one of two versions:
+ * the old-style "ratios" version where 1 <= xout <= xin <= 31,
+ * 1 <= yout <= yin <= 31; or (where supported) a new "general" version
+ * which infers the scaling factor from input and output image dimensions
+ * (where 2 <= output_width <= input_width <= 16382, output_width <= 8192,
+ * 2 <= output_height <= input_height <= 16382, all dimensions are even).
+ * In the general form only, the DOWNSCALE_GENERAL flag must be set, and
+ * the new "shift" and "recip" fields configured as specified below.
+ */
+
 typedef enum {
 	DOWNSCALE_BAYER =
 		1, /* downscale the four Bayer components independently... */
 	DOWNSCALE_BIN =
-		2 /* ...without trying to preserve their spatial relationship */
+		2, /* ...without trying to preserve their spatial relationship */
+	DOWNSCALE_GENERAL =
+		4 /* specify input size instead of ratios. Must set shift, recip. */
 } pisp_fe_downscale_flags;
 
 typedef struct {
-	uint8_t xin;
-	uint8_t xout;
-	uint8_t yin;
-	uint8_t yout;
+	union {
+		struct { /* when !(flags & DOWNSCALE_GENERAL) */
+			uint8_t xin;
+			uint8_t xout;
+			uint8_t yin;
+			uint8_t yout;
+		};
+		struct { /* when (flags & DOWNSCALE_GENERAL) */
+			uint16_t input_width;
+			uint16_t input_height;
+		};
+	};
 	uint8_t flags; /* enum pisp_fe_downscale_flags */
-	uint8_t pad[3];
+	uint8_t shift; /* ceil(log2(input_width >> 1)) */
+	uint16_t recip; /* ((16384 << shift) + (input_width >> 2)) / (input_width >> 1) */
 	uint16_t output_width;
 	uint16_t output_height;
 } pisp_fe_downscale_config;
