@@ -88,8 +88,23 @@ void finaliseCdaf(pisp_fe_cdaf_stats_config &cdaf, uint16_t width, uint16_t heig
 
 void finaliseDownscale(pisp_fe_downscale_config &downscale, uint16_t width, uint16_t height)
 {
-	downscale.output_width = (((width >> 1) * downscale.xout) / downscale.xin) * 2;
-	downscale.output_height = (((height >> 1) * downscale.yout) / downscale.yin) * 2;
+	if (!(downscale.flags & DOWNSCALE_GENERAL))
+	{
+		// Old style. We specified a ratio, from which output size is computed.
+		downscale.output_width = (((width >> 1) * downscale.xout) / downscale.xin) * 2;
+		downscale.output_height = (((height >> 1) * downscale.yout) / downscale.yin) * 2;
+	}
+	else
+	{
+		// New style. We specified an output size, from which scaling is derived.
+		int s, w = width >> 1;
+
+		for(s = 0; w > (1<<s); ++s) /* empty */ ;
+		downscale.shift = s;
+		downscale.recip = ((16384 << s) + (w >> 1)) / w;
+		downscale.input_width = width;
+		downscale.input_height = height;
+	}
 }
 
 void finaliseCompression(pisp_fe_config const &feConfig, int i)
