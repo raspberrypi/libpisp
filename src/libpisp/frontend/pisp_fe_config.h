@@ -208,14 +208,23 @@ typedef struct {
 } pisp_fe_crop_config;
 
 /*
- * Downscale configuration can now be in one of two versions:
- * the old-style "ratios" version where 1 <= xout <= xin <= 31,
- * 1 <= yout <= yin <= 31; or (where supported) a new "general" version
- * which infers the scaling factor from input and output image dimensions
- * (where 2 <= output_width <= input_width <= 16382, output_width <= 8192,
- * 2 <= output_height <= input_height <= 16382, all dimensions are even).
- * In the general form only, the DOWNSCALE_GENERAL flag must be set, and
- * the new "shift" and "recip" fields configured as specified below.
+ * Downscale configuration may now be in one of two forms:
+ *
+ * (a) the old-style "ratios" form where the GENERAL flag is clear
+ *     and ratios are specified using xin, xout, yin, yout fields, for
+ *     1 <= xout <= xin <= 255; 1 <= yout <= yin <= 255.
+ *
+ * (b) the new-style "general" form where the GENERAL flag is set
+ *     and ratios are inferred from input and output dimensions, for
+ *     2 <= output_width <= input_width <= 16382 (similarly for height)
+ *     and where all dimensions are even.
+ *
+ * In *both* cases, user must configure shift and recip fields:
+ *   wtmp  = (flags & DOWNSCALE_GENERAL) ? (input_width >> 1) : xin
+ *   shift = ceil(log2(wtmp))
+ *   recip = ((16384 << shift) + (wtmp >> 1)) / wtmp
+ *
+ * For RP1 compatibility, use only the old style with xin,yin <= 31.
  */
 
 typedef enum {
@@ -224,7 +233,7 @@ typedef enum {
 	DOWNSCALE_BIN =
 		2, /* ...without trying to preserve their spatial relationship */
 	DOWNSCALE_GENERAL =
-		4 /* specify input size instead of ratios. Must set shift, recip. */
+		4 /* specify input size instead of ratios. */
 } pisp_fe_downscale_flags;
 
 typedef struct {
@@ -241,8 +250,8 @@ typedef struct {
 		};
 	};
 	uint8_t flags; /* enum pisp_fe_downscale_flags */
-	uint8_t shift; /* ceil(log2(input_width >> 1)) */
-	uint16_t recip; /* ((16384 << shift) + (input_width >> 2)) / (input_width >> 1) */
+	uint8_t shift;
+	uint16_t recip;
 	uint16_t output_width;
 	uint16_t output_height;
 } pisp_fe_downscale_config;
