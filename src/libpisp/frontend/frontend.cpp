@@ -111,8 +111,6 @@ void finaliseDownscale(pisp_fe_downscale_config &downscale, uint16_t width, uint
 	for(s = 0; wrecip > (1<<s); ++s) /* empty */ ;
 	downscale.shift = s;
 	downscale.recip = ((16384 << s) + (wrecip >> 1)) / wrecip;
-	downscale.input_width = width;
-	downscale.input_height = height;
 }
 
 void finaliseCompression(pisp_fe_config const &feConfig, int i)
