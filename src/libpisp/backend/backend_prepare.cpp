@@ -1105,6 +1105,8 @@ void BackEnd::finaliseTiling()
 
 		if (bayerEnables & BayerEnable::Tonemap2)
 		{
+			t.tonemap_grid_offset_x = t.input_offset_x * tonemap2.grid_step_x;
+			t.tonemap_grid_offset_y = t.input_offset_y * tonemap2.grid_step_y;
 			t.tonemap_lores_offset_x = t.input_offset_x * tonemap2.lores_step_x;
 			t.tonemap_lores_offset_y = t.input_offset_y * tonemap2.lores_step_y;
 		}

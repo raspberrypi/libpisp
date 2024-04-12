@@ -977,7 +977,6 @@ struct pisp_be_tonemap2_config {
 	// 2348 bytes
 };
 
-
 #define PISP_BE_DDX_LOG_GRID_SIZE 5
 #define PISP_BE_DDX_GRID_SIZE (1 << PISP_BE_DDX_LOG_GRID_SIZE)
 #define PISP_BE_DDX_STEP_PRECISION 18
@@ -1082,10 +1081,10 @@ struct pisp_tile2 {
 	// 0 bytes
 	uint32_t input_addr_offset;
 	uint32_t input_addr_offset2;
-	uint16_t input_offset_x;
-	uint16_t input_offset_y;
-	uint16_t input_width;
-	uint16_t input_height;
+	__u16 input_offset_x;
+	__u16 input_offset_y;
+	__u16 input_width;
+	__u16 input_height;
 	// 16 bytes
 	uint32_t tdn_input_addr_offset;
 	uint32_t tdn_output_addr_offset;
@@ -1107,34 +1106,34 @@ struct pisp_tile2 {
 	uint32_t dedistort_grid_offset_x;
 	uint32_t dedistort_grid_offset_y;
 	// 72 bytes
-	uint16_t crop_x_start[PISP_BACK_END_NUM_OUTPUTS];
-	uint16_t crop_x_end[PISP_BACK_END_NUM_OUTPUTS];
-	uint16_t crop_y_start[PISP_BACK_END_NUM_OUTPUTS];
-	uint16_t crop_y_end[PISP_BACK_END_NUM_OUTPUTS];
+	__u16 crop_x_start[PISP_BACK_END_NUM_OUTPUTS];
+	__u16 crop_x_end[PISP_BACK_END_NUM_OUTPUTS];
+	__u16 crop_y_start[PISP_BACK_END_NUM_OUTPUTS];
+	__u16 crop_y_end[PISP_BACK_END_NUM_OUTPUTS];
 	// 88 bytes
 	// downscale phase is no longer per-component; only per-output
-	uint16_t downscale_phase_x[PISP_BACK_END_NUM_OUTPUTS];
-	uint16_t downscale_phase_y[PISP_BACK_END_NUM_OUTPUTS];
+	__u16 downscale_phase_x[PISP_BACK_END_NUM_OUTPUTS];
+	__u16 downscale_phase_y[PISP_BACK_END_NUM_OUTPUTS];
 	// 96 bytes
-	uint16_t resample_in_width[PISP_BACK_END_NUM_OUTPUTS];
-	uint16_t resample_in_height[PISP_BACK_END_NUM_OUTPUTS];
+	__u16 resample_in_width[PISP_BACK_END_NUM_OUTPUTS];
+	__u16 resample_in_height[PISP_BACK_END_NUM_OUTPUTS];
 	// 104 bytes
 	// resample phase is no longer per-component; only per-output
-	uint16_t resample_phase_x[PISP_BACK_END_NUM_OUTPUTS];
-	uint16_t resample_phase_y[PISP_BACK_END_NUM_OUTPUTS];
+	__u16 resample_phase_x[PISP_BACK_END_NUM_OUTPUTS];
+	__u16 resample_phase_y[PISP_BACK_END_NUM_OUTPUTS];
 	// 112 bytes
-	uint8_t resample_start_context_x[PISP_BACK_END_NUM_OUTPUTS];
-	uint8_t resample_start_context_y[PISP_BACK_END_NUM_OUTPUTS];
+	__u8 resample_start_context_x[PISP_BACK_END_NUM_OUTPUTS];
+	__u8 resample_start_context_y[PISP_BACK_END_NUM_OUTPUTS];
 	// 116 bytes
-	uint16_t output_offset_x[PISP_BACK_END_NUM_OUTPUTS];
-	uint16_t output_offset_y[PISP_BACK_END_NUM_OUTPUTS];
-	uint16_t output_width[PISP_BACK_END_NUM_OUTPUTS];
-	uint16_t output_height[PISP_BACK_END_NUM_OUTPUTS];
+	__u16 output_offset_x[PISP_BACK_END_NUM_OUTPUTS];
+	__u16 output_offset_y[PISP_BACK_END_NUM_OUTPUTS];
+	__u16 output_width[PISP_BACK_END_NUM_OUTPUTS];
+	__u16 output_height[PISP_BACK_END_NUM_OUTPUTS];
 	// 132 bytes
 	uint32_t output_addr_offset[PISP_BACK_END_NUM_OUTPUTS];
 	uint32_t output_addr_offset2[PISP_BACK_END_NUM_OUTPUTS];
 	// 148 bytes
-	uint8_t pad1[12];
+	__u8 pad1[12];
 	// 160 bytes
 } __attribute__((packed));
 
