@@ -26,6 +26,14 @@ jobs:
         run: |
           meson setup build
           meson dist --no-tests --include-subprojects -C build
+      - name: Check for output tarball
+        run: |
+          TARBALL="libpisp-$(echo "$GITHUB_REF_NAME" | sed 's/^v//').tar.xz"
+          if ! [ -f "build/meson-dist/$TARBALL" ]; then
+            echo "Expected tarball not found - $TARBALL"
+            echo "Does 'version' in meson.build match the tag?"
+            exit 1
+          fi
       - name: Release tarball
         uses: softprops/action-gh-release@v1
         with:
