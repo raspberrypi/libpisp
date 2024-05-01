@@ -148,6 +148,19 @@ public:
 	}
 
 private:
+	struct BeConfigExtra
+	{
+		// Non-register fields:
+		pisp_be_lsc_extra lsc;
+		pisp_be_cac_extra cac;
+		pisp_be_downscale_extra downscale[PISP_BACK_END_NUM_OUTPUTS];
+		pisp_be_resample_extra resample[PISP_BACK_END_NUM_OUTPUTS];
+		pisp_be_crop_config crop;
+		uint32_t dirty_flags_bayer; //these use pisp_be_bayer_enable
+		uint32_t dirty_flags_rgb; //use pisp_be_rgb_enable
+		uint32_t dirty_flags_extra; //these use pisp_be_dirty_t
+	};
+
 	void finaliseConfig();
 	void updateSmartResize();
 	void updateTiles();
@@ -160,6 +173,7 @@ private:
 	Config config_;
 	const PiSPVariant variant_;
 	pisp_be_config be_config_;
+	BeConfigExtra be_config_extra_;
 	pisp_image_format_config max_input_;
 	bool retile_;
 	bool finalise_tiling_;

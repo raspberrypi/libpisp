@@ -546,7 +546,7 @@ void BackEnd::SetJsonConfig(const std::string &json_str)
 	}
 
 	// Clear any dirty flags so no reconfiguration happens on the next Prepare() call.
-	be_config_.dirty_flags_bayer = be_config_.dirty_flags_rgb = be_config_.dirty_flags_extra = 0;
+	be_config_extra_.dirty_flags_bayer = be_config_extra_.dirty_flags_rgb = be_config_extra_.dirty_flags_extra = 0;
 	// But do retile the pipeline to get the tile structures setup correctly.
 	retile_ = true;
 }
