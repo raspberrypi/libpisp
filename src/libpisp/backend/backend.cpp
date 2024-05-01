@@ -65,11 +65,6 @@ void BackEnd::SetInputFormat(pisp_image_format_config const &input_format)
 	retile_ = true;
 }
 
-void BackEnd::SetInputBuffer(pisp_be_input_buffer_config const &input_buffer)
-{
-	be_config_.input_buffer = input_buffer;
-}
-
 void BackEnd::SetDecompress(pisp_decompress_config const &decompress)
 {
 	be_config_.decompress = decompress;

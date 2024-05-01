@@ -397,14 +397,8 @@ typedef struct {
 } pisp_be_hog_buffer_config;
 
 typedef struct {
-	/* I/O configuration: */
-	pisp_be_input_buffer_config input_buffer;
-	pisp_be_tdn_input_buffer_config tdn_input_buffer;
-	pisp_be_stitch_input_buffer_config stitch_input_buffer;
-	pisp_be_tdn_output_buffer_config tdn_output_buffer;
-	pisp_be_stitch_output_buffer_config stitch_output_buffer;
-	pisp_be_output_buffer_config output_buffer[PISP_BACK_END_NUM_OUTPUTS];
-	pisp_be_hog_buffer_config hog_buffer;
+	/* For backward compatibility */
+	uint8_t pad0[112];
 	/* Processing configuration: */
 	pisp_be_global_config global;
 	pisp_image_format_config input_format;
