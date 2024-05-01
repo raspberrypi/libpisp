@@ -22,7 +22,7 @@ struct Tile
 	tiling::Region input;
 	tiling::Region decompress;
 	tiling::Region context;
-	tiling::Region crop;
+	tiling::Region crop[NumOutputBranches];
 	tiling::Region downscale[NumOutputBranches];
 	tiling::Region resample[NumOutputBranches];
 	tiling::Region output[NumOutputBranches];
@@ -31,7 +31,7 @@ struct Tile
 struct TilingConfig
 {
 	tiling::Length2 input_image_size;
-	tiling::Interval2 crop;
+	tiling::Interval2 crop[NumOutputBranches];
 	tiling::Length2 downscale_image_size[NumOutputBranches];
 	tiling::Length2 output_image_size[NumOutputBranches];
 	tiling::Length2 max_tile_size;
@@ -51,9 +51,9 @@ inline std::ostream &operator<<(std::ostream &os, TilingConfig const &tc)
 {
 	os << "TilingConfig:" << std::endl;
 	os << "\tinput_image_size " << tc.input_image_size << " align " << tc.input_alignment << std::endl;
-	os << "\tcrop " << tc.crop << std::endl;
 	for (int i = 0; i < NumOutputBranches; i++)
 	{
+		os << "\tcrop[" << i << "] " << tc.crop[i] << std::endl;
 		os << "\toutput_image_size[" << i << "] " << tc.output_image_size[i] << " align max "
 		   << tc.output_max_alignment[i] << " min " << tc.output_min_alignment[i] << std::endl;
 		os << "\tdownscale_image_size " << tc.downscale_image_size[i] << " downscale_factor " << tc.downscale_factor[i]

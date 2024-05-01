@@ -103,6 +103,7 @@ public:
 	void SetGamma(pisp_be_gamma_config const &gamma);
 	void GetGamma(pisp_be_gamma_config &gamma);
 	void SetCrop(pisp_be_crop_config const &crop);
+	void SetCrop(unsigned int i, pisp_be_crop_config const &crop);
 	void SetCsc(unsigned int i, pisp_be_ccm_config const &csc);
 	void GetCsc(unsigned int i, pisp_be_ccm_config &csc);
 	void SetOutputFormat(unsigned int i, pisp_be_output_format_config const &output_format);
@@ -155,7 +156,7 @@ private:
 		pisp_be_cac_extra cac;
 		pisp_be_downscale_extra downscale[PISP_BACK_END_NUM_OUTPUTS];
 		pisp_be_resample_extra resample[PISP_BACK_END_NUM_OUTPUTS];
-		pisp_be_crop_config crop;
+		pisp_be_crop_config crop[PISP_BACK_END_NUM_OUTPUTS];
 		uint32_t dirty_flags_bayer; //these use pisp_be_bayer_enable
 		uint32_t dirty_flags_rgb; //use pisp_be_rgb_enable
 		uint32_t dirty_flags_extra; //these use pisp_be_dirty_t

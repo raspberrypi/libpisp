@@ -488,9 +488,9 @@ void BackEnd::finaliseConfig()
 		if (enabled)
 		{
 			// crop is enabled when it contains non-zero width/height
-			uint16_t w = be_config_extra_.crop.width ? be_config_extra_.crop.width
+			uint16_t w = be_config_extra_.crop[j].width ? be_config_extra_.crop[j].width
 														: be_config_.input_format.width;
-			uint16_t h = be_config_extra_.crop.width ? be_config_extra_.crop.height
+			uint16_t h = be_config_extra_.crop[j].width ? be_config_extra_.crop[j].height
 														: be_config_.input_format.height;
 
 			if (dirty_flags_rgb & PISP_BE_RGB_ENABLE_DOWNSCALE(j))
@@ -537,18 +537,18 @@ void BackEnd::updateSmartResize()
 {
 	std::string filter;
 
-	// First get the size of the input to the rescalers. The crops are zero when not in use.
-	uint16_t input_width = be_config_extra_.crop.width;
-	if (!input_width)
-		input_width = be_config_.input_format.width;
-	uint16_t input_height = be_config_extra_.crop.height;
-	if (!input_height)
-		input_height = be_config_.input_format.height;
-
 	// Look through the output branches adjusting the scaling blocks where "smart resizing"
 	// has been requested.
 	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
 	{
+		// First get the size of the input to the rescalers. The crops are zero when not in use.
+		uint16_t input_width = be_config_extra_.crop[i].width;
+		if (!input_width)
+			input_width = be_config_.input_format.width;
+		uint16_t input_height = be_config_extra_.crop[i].height;
+		if (!input_height)
+			input_height = be_config_.input_format.height;
+
 		if ((smart_resize_dirty_ & (1 << i)) || (be_config_extra_.dirty_flags_extra & PISP_BE_DIRTY_CROP))
 		{
 			if (smart_resize_[i].width && smart_resize_[i].height)
@@ -691,15 +691,16 @@ void BackEnd::updateTiles()
 		PISP_LOG(debug, "Input alignments are " << tiling_config.input_alignment << " pixels");
 
 		tiling_config.input_image_size = tiling::Length2(c.input_format.width, c.input_format.height);
-		tiling_config.crop = tiling::Interval2(tiling::Interval(ce.crop.offset_x, ce.crop.width),
-											   tiling::Interval(ce.crop.offset_y, ce.crop.height));
-
-		if (tiling_config.crop.x.length == 0 || tiling_config.crop.y.length == 0)
-			tiling_config.crop = tiling::Interval2(tiling::Interval(0, c.input_format.width),
-												   tiling::Interval(0, c.input_format.height));
 
 		for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
 		{
+			tiling_config.crop[i] = tiling::Interval2(tiling::Interval(ce.crop[i].offset_x, ce.crop[i].width),
+													  tiling::Interval(ce.crop[i].offset_y, ce.crop[i].height));
+
+			if (tiling_config.crop[i].x.length == 0 || tiling_config.crop[i].y.length == 0)
+				tiling_config.crop[i] = tiling::Interval2(tiling::Interval(0, c.input_format.width),
+														  tiling::Interval(0, c.input_format.height));
+
 			tiling_config.output_h_mirror[i] = be_config_.output_format[i].transform & PISP_BE_TRANSFORM_HFLIP;
 			tiling_config.downscale_factor[i] =
 				tiling::Length2(c.downscale[i].scale_factor_h, c.downscale[i].scale_factor_v);
@@ -794,7 +795,7 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 			}
 
 			tiling::Crop2 downscale_crop;
-			tiling::Interval2 resample_size = tiles[i].crop.output;
+			tiling::Interval2 resample_size = tiles[i].crop[j].output;
 			resample_size.x = resample_size.x - tiles[i].resample[j].crop.x;
 			resample_size.y = resample_size.y - tiles[i].resample[j].crop.y;
 
@@ -802,17 +803,17 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 			// next block. Also there will be no extra crop necessary for the resize operation.
 			if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_DOWNSCALE(j))
 			{
-				downscale_crop = tiles[i].downscale[j].crop + tiles[i].crop.crop;
+				downscale_crop = tiles[i].downscale[j].crop + tiles[i].crop[j].crop;
 				// Size of the tile going into the resample block needs to be set here.
 				resample_size = tiles[i].downscale[j].output;
 			}
 			else if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_RESAMPLE(j))
 			{
-				downscale_crop = tiles[i].resample[j].crop + tiles[i].crop.crop;
+				downscale_crop = tiles[i].resample[j].crop + tiles[i].crop[j].crop;
 			}
 			else
 			{
-				downscale_crop = tiles[i].output[j].crop + tiles[i].crop.crop;
+				downscale_crop = tiles[i].output[j].crop + tiles[i].crop[j].crop;
 			}
 
 			t.crop_x_start[j] = downscale_crop.x.start;
@@ -952,8 +953,8 @@ void BackEnd::getOutputSize(int i, uint16_t *width, uint16_t *height, pisp_image
 		*width = be_config_extra_.resample[i].scaled_width, *height = be_config_extra_.resample[i].scaled_height;
 	else if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_DOWNSCALE(i))
 		*width = be_config_extra_.downscale[i].scaled_width, *height = be_config_extra_.downscale[i].scaled_height;
-	else if (be_config_extra_.crop.width) // crop width and height will be zero when crop disabled
-		*width = be_config_extra_.crop.width, *height = be_config_extra_.crop.height;
+	else if (be_config_extra_.crop[i].width) // crop width and height will be zero when crop disabled
+		*width = be_config_extra_.crop[i].width, *height = be_config_extra_.crop[i].height;
 	else
 		*width = ifmt.width, *height = ifmt.height;
 }

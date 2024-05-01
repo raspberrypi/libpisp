@@ -333,7 +333,16 @@ void BackEnd::GetGamma(pisp_be_gamma_config &gamma)
 
 void BackEnd::SetCrop(pisp_be_crop_config const &crop)
 {
-	be_config_extra_.crop = crop;
+	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
+		be_config_extra_.crop[i] = crop;
+	be_config_extra_.dirty_flags_extra |= PISP_BE_DIRTY_CROP;
+	retile_ = true;
+}
+
+void BackEnd::SetCrop(unsigned int i, pisp_be_crop_config const &crop)
+{
+	PISP_ASSERT(i < variant_.BackEndNumBranches(0));
+	be_config_extra_.crop[i] = crop;
 	be_config_extra_.dirty_flags_extra |= PISP_BE_DIRTY_CROP;
 	retile_ = true;
 }

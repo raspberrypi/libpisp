@@ -56,11 +56,9 @@ void tile_pipeline(TilingConfig const &config, Tile *tiles, int num_tiles, Lengt
 										Length2(PipelineAlignX, PipelineAlignY));
 	ContextStage context_stage("context", &input_stage, context_config, offsetof(Tile, context));
 
-	CropStage::Config crop_config(config.crop);
-	CropStage crop_stage("crop", &context_stage, crop_config, offsetof(Tile, crop));
+	SplitStage split_stage("split", &context_stage);
 
-	SplitStage split_stage("split", &crop_stage);
-
+	std::unique_ptr<Stage> crop_stages[NumOutputBranches];
 	std::unique_ptr<Stage> downscale_stages[NumOutputBranches];
 	std::unique_ptr<Stage> resample_stages[NumOutputBranches];
 	std::unique_ptr<Stage> output_stages[NumOutputBranches];
@@ -73,6 +71,11 @@ void tile_pipeline(TilingConfig const &config, Tile *tiles, int num_tiles, Lengt
 			continue;
 		char name[32];
 		Stage *prev_stage = &split_stage;
+
+		sprintf(name, "crop%d", i);
+		crop_stages[i] = std::unique_ptr<Stage>(
+			new CropStage(name, prev_stage, config.crop[i], offsetof(Tile, crop) + i * sizeof(Region)));
+		prev_stage = crop_stages[i].get();
 
 		// There's a little awkwardness if the resize blocks (downscale and resample) are not enabled. Resize *does* change the output tile
 		// size, even if it's doing a 1-to-1 scaling (it loses context), so we must leave it out of the tiling
