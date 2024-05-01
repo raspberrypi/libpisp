@@ -445,9 +445,9 @@ void calculate_input_addr_offset(int x, int y, pisp_image_format_config const &i
 
 void BackEnd::finaliseConfig()
 {
-	uint32_t dirty_flags_bayer = be_config_.dirty_flags_bayer &
+	uint32_t dirty_flags_bayer = be_config_extra_.dirty_flags_bayer &
 								 be_config_.global.bayer_enables; // only finalise blocks that are dirty *and* enabled
-	uint32_t dirty_flags_rgb = be_config_.dirty_flags_rgb &
+	uint32_t dirty_flags_rgb = be_config_extra_.dirty_flags_rgb &
 							   be_config_.global.rgb_enables; // only finalise blocks that are dirty *and* enabled
 
 	if ((dirty_flags_bayer & PISP_BE_BAYER_ENABLE_INPUT) || (dirty_flags_rgb & PISP_BE_RGB_ENABLE_INPUT))
@@ -459,14 +459,14 @@ void BackEnd::finaliseConfig()
 	if (dirty_flags_bayer & (PISP_BE_BAYER_ENABLE_INPUT | PISP_BE_BAYER_ENABLE_DECOMPRESS))
 		finalise_decompression(be_config_);
 
-	if ((be_config_.dirty_flags_bayer &
+	if ((be_config_extra_.dirty_flags_bayer &
 		 (PISP_BE_BAYER_ENABLE_TDN | PISP_BE_BAYER_ENABLE_TDN_INPUT | PISP_BE_BAYER_ENABLE_TDN_DECOMPRESS |
 		  PISP_BE_BAYER_ENABLE_TDN_COMPRESS | PISP_BE_BAYER_ENABLE_TDN_OUTPUT)))
 	{
 		finalise_tdn(be_config_);
 	}
 
-	if (be_config_.dirty_flags_bayer &
+	if (be_config_extra_.dirty_flags_bayer &
 		(PISP_BE_BAYER_ENABLE_STITCH | PISP_BE_BAYER_ENABLE_STITCH_INPUT | PISP_BE_BAYER_ENABLE_STITCH_DECOMPRESS |
 		 PISP_BE_BAYER_ENABLE_STITCH_COMPRESS | PISP_BE_BAYER_ENABLE_STITCH_OUTPUT))
 	{
@@ -474,11 +474,11 @@ void BackEnd::finaliseConfig()
 	}
 
 	if (dirty_flags_bayer & PISP_BE_BAYER_ENABLE_LSC)
-		finalise_lsc(be_config_.lsc, be_config_.lsc_extra, be_config_.input_format.width,
+		finalise_lsc(be_config_.lsc, be_config_extra_.lsc, be_config_.input_format.width,
 					 be_config_.input_format.height);
 
 	if (dirty_flags_bayer & PISP_BE_BAYER_ENABLE_CAC)
-		finalise_cac(be_config_.cac, be_config_.cac_extra, be_config_.input_format.width,
+		finalise_cac(be_config_.cac, be_config_extra_.cac, be_config_.input_format.width,
 					 be_config_.input_format.height);
 
 	for (unsigned int j = 0; j < variant_.BackEndNumBranches(0); j++)
@@ -488,13 +488,15 @@ void BackEnd::finaliseConfig()
 		if (enabled)
 		{
 			// crop is enabled when it contains non-zero width/height
-			uint16_t w = be_config_.crop.width ? be_config_.crop.width : be_config_.input_format.width;
-			uint16_t h = be_config_.crop.width ? be_config_.crop.height : be_config_.input_format.height;
+			uint16_t w = be_config_extra_.crop.width ? be_config_extra_.crop.width
+														: be_config_.input_format.width;
+			uint16_t h = be_config_extra_.crop.width ? be_config_extra_.crop.height
+														: be_config_.input_format.height;
 
 			if (dirty_flags_rgb & PISP_BE_RGB_ENABLE_DOWNSCALE(j))
 			{
 				if (variant_.BackEndDownscalerAvailable(0, j))
-					finalise_downscale(be_config_.downscale[j], be_config_.downscale_extra[j], w, h);
+					finalise_downscale(be_config_.downscale[j], be_config_extra_.downscale[j], w, h);
 				else
 					throw std::runtime_error("Downscale is not available in output branch " + std::to_string(j));
 			}
@@ -502,12 +504,12 @@ void BackEnd::finaliseConfig()
 			if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_DOWNSCALE(j))
 			{
 				// If the downscale is enabled, we update the input width/height for the resample stage.
-				w = be_config_.downscale_extra[j].scaled_width;
-				h = be_config_.downscale_extra[j].scaled_height;
+				w = be_config_extra_.downscale[j].scaled_width;
+				h = be_config_extra_.downscale[j].scaled_height;
 			}
 
 			if (dirty_flags_rgb & PISP_BE_RGB_ENABLE_RESAMPLE(j))
-				finalise_resample(be_config_.resample[j], be_config_.resample_extra[j], w, h);
+				finalise_resample(be_config_.resample[j], be_config_extra_.resample[j], w, h);
 
 			if (dirty_flags_rgb & PISP_BE_RGB_ENABLE_OUTPUT(j))
 				finalise_output(be_config_.output_format[j]);
@@ -536,10 +538,10 @@ void BackEnd::updateSmartResize()
 	std::string filter;
 
 	// First get the size of the input to the rescalers. The crops are zero when not in use.
-	uint16_t input_width = be_config_.crop.width;
+	uint16_t input_width = be_config_extra_.crop.width;
 	if (!input_width)
 		input_width = be_config_.input_format.width;
-	uint16_t input_height = be_config_.crop.height;
+	uint16_t input_height = be_config_extra_.crop.height;
 	if (!input_height)
 		input_height = be_config_.input_format.height;
 
@@ -547,7 +549,7 @@ void BackEnd::updateSmartResize()
 	// has been requested.
 	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
 	{
-		if ((smart_resize_dirty_ & (1 << i)) || (be_config_.dirty_flags_extra & PISP_BE_DIRTY_CROP))
+		if ((smart_resize_dirty_ & (1 << i)) || (be_config_extra_.dirty_flags_extra & PISP_BE_DIRTY_CROP))
 		{
 			if (smart_resize_[i].width && smart_resize_[i].height)
 			{
@@ -681,6 +683,7 @@ void BackEnd::updateTiles()
 	{
 		TilingConfig tiling_config;
 		pisp_be_config const &c = be_config_;
+		BeConfigExtra const &ce = be_config_extra_;
 
 		retile_ = false;
 		tiling_config.input_alignment = calculate_input_alignment(c);
@@ -688,8 +691,8 @@ void BackEnd::updateTiles()
 		PISP_LOG(debug, "Input alignments are " << tiling_config.input_alignment << " pixels");
 
 		tiling_config.input_image_size = tiling::Length2(c.input_format.width, c.input_format.height);
-		tiling_config.crop = tiling::Interval2(tiling::Interval(c.crop.offset_x, c.crop.width),
-											   tiling::Interval(c.crop.offset_y, c.crop.height));
+		tiling_config.crop = tiling::Interval2(tiling::Interval(ce.crop.offset_x, ce.crop.width),
+											   tiling::Interval(ce.crop.offset_y, ce.crop.height));
 
 		if (tiling_config.crop.x.length == 0 || tiling_config.crop.y.length == 0)
 			tiling_config.crop = tiling::Interval2(tiling::Interval(0, c.input_format.width),
@@ -703,7 +706,7 @@ void BackEnd::updateTiles()
 			tiling_config.resample_factor[i] =
 				tiling::Length2(c.resample[i].scale_factor_h, c.resample[i].scale_factor_v);
 			tiling_config.downscale_image_size[i] =
-				tiling::Length2(c.downscale_extra[i].scaled_width, c.downscale_extra[i].scaled_height);
+				tiling::Length2(ce.downscale[i].scaled_width, ce.downscale[i].scaled_height);
 			tiling_config.output_image_size[i] =
 				tiling::Length2(c.output_format[i].image.width, c.output_format[i].image.height);
 			tiling_config.output_max_alignment[i] =
@@ -851,9 +854,9 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 						((interpolated_pix_y % NumPhases) << ScalePrecision) / NumPhases;
 					// Account for any user defined initial phase - this could be negative!
 					t.resample_phase_x[p * variant_.BackEndNumBranches(0) + j] +=
-						be_config_.resample_extra[j].initial_phase_h[p];
+						be_config_extra_.resample[j].initial_phase_h[p];
 					t.resample_phase_y[p * variant_.BackEndNumBranches(0) + j] +=
-						be_config_.resample_extra[j].initial_phase_v[p];
+						be_config_extra_.resample[j].initial_phase_v[p];
 					// Have to be within this range, else some calculation went wrong.
 					PISP_ASSERT(t.resample_phase_x[p * variant_.BackEndNumBranches(0) + j] <= 2 * (UnityScale - 1));
 					PISP_ASSERT(t.resample_phase_y[p * variant_.BackEndNumBranches(0) + j] <= 2 * (UnityScale - 1));
@@ -909,14 +912,14 @@ void BackEnd::finaliseTiling()
 
 		if (be_config_.global.bayer_enables & PISP_BE_BAYER_ENABLE_LSC)
 		{
-			t.lsc_grid_offset_x = (t.input_offset_x + be_config_.lsc_extra.offset_x) * be_config_.lsc.grid_step_x;
-			t.lsc_grid_offset_y = (t.input_offset_y + be_config_.lsc_extra.offset_y) * be_config_.lsc.grid_step_y;
+			t.lsc_grid_offset_x = (t.input_offset_x + be_config_extra_.lsc.offset_x) * be_config_.lsc.grid_step_x;
+			t.lsc_grid_offset_y = (t.input_offset_y + be_config_extra_.lsc.offset_y) * be_config_.lsc.grid_step_y;
 		}
 
 		if (be_config_.global.bayer_enables & PISP_BE_BAYER_ENABLE_CAC)
 		{
-			t.cac_grid_offset_x = (t.input_offset_x + be_config_.cac_extra.offset_x) * be_config_.cac.grid_step_x;
-			t.cac_grid_offset_y = (t.input_offset_y + be_config_.cac_extra.offset_y) * be_config_.cac.grid_step_y;
+			t.cac_grid_offset_x = (t.input_offset_x + be_config_extra_.cac.offset_x) * be_config_.cac.grid_step_x;
+			t.cac_grid_offset_y = (t.input_offset_y + be_config_extra_.cac.offset_y) * be_config_.cac.grid_step_y;
 		}
 
 		for (unsigned int j = 0; j < variant_.BackEndNumBranches(0); j++)
@@ -946,11 +949,11 @@ void BackEnd::getOutputSize(int i, uint16_t *width, uint16_t *height, pisp_image
 	if (smart_resize_[i].width && smart_resize_[i].height)
 		*width = smart_resize_[i].width, *height = smart_resize_[i].height;
 	else if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_RESAMPLE(i))
-		*width = be_config_.resample_extra[i].scaled_width, *height = be_config_.resample_extra[i].scaled_height;
+		*width = be_config_extra_.resample[i].scaled_width, *height = be_config_extra_.resample[i].scaled_height;
 	else if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_DOWNSCALE(i))
-		*width = be_config_.downscale_extra[i].scaled_width, *height = be_config_.downscale_extra[i].scaled_height;
-	else if (be_config_.crop.width) // crop width and height will be zero when crop disabled
-		*width = be_config_.crop.width, *height = be_config_.crop.height;
+		*width = be_config_extra_.downscale[i].scaled_width, *height = be_config_extra_.downscale[i].scaled_height;
+	else if (be_config_extra_.crop.width) // crop width and height will be zero when crop disabled
+		*width = be_config_extra_.crop.width, *height = be_config_extra_.crop.height;
 	else
 		*width = ifmt.width, *height = ifmt.height;
 }
@@ -1021,6 +1024,6 @@ void BackEnd::Prepare(pisp_be_tiles_config *config)
 		config->config = be_config_;
 
 		// 5. Clear any dirty flags for the next configuration update.
-		be_config_.dirty_flags_bayer = be_config_.dirty_flags_rgb = be_config_.dirty_flags_extra = 0;
+		be_config_extra_.dirty_flags_bayer = be_config_extra_.dirty_flags_rgb = be_config_extra_.dirty_flags_extra = 0;
 	}
 }
