@@ -60,7 +60,6 @@ public:
 	void SetGlobal(pisp_be_global_config const &global);
 	void GetGlobal(pisp_be_global_config &global) const;
 	void SetInputFormat(pisp_image_format_config const &input_format);
-	void SetInputBuffer(pisp_be_input_buffer_config const &input_buffer);
 	void SetDecompress(pisp_decompress_config const &decompress);
 	void SetDpc(pisp_be_dpc_config const &dpc);
 	void SetGeq(pisp_be_geq_config const &geq);
