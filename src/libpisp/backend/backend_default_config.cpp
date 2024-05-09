@@ -7,6 +7,7 @@
  */
 #include "backend.hpp"
 
+#include <algorithm>
 #include <dlfcn.h>
 #include <elf.h>
 #include <fstream>
@@ -132,7 +133,7 @@ void initialise_gamma(pisp_be_gamma_config &gamma, const json &root)
 	}
 }
 
-void read_resample(std::map<std::string, pisp_be_resample_config> &resample_filter_map,
+void read_resample(std::vector<std::pair<std::string, pisp_be_resample_config>> &resample_filter_map,
 				   std::vector<std::pair<double, std::string>> &resample_select_list, const json &root)
 {
 	auto &filters = root["resample"]["filters"];
@@ -147,7 +148,7 @@ void read_resample(std::map<std::string, pisp_be_resample_config> &resample_filt
 			throw std::runtime_error("read_resample: Incorrect number of filter coefficients");
 
 		memcpy(r.coef, coefs.data(), sizeof(r.coef));
-		resample_filter_map.emplace(name, r);
+		resample_filter_map.emplace_back(name, r);
 	}
 
 	auto &smart = root["resample"]["smart_selection"];
@@ -221,8 +222,8 @@ void read_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config 
 	shfc.y_factor = params["shfc_y_factor"].get<double>() * (1 << 8);
 }
 
-void read_ycbcr(std::map<std::string, pisp_be_ccm_config> &ycbcr_map,
-				std::map<std::string, pisp_be_ccm_config> &inverse_ycbcr_map, const json &root)
+void read_ycbcr(std::vector<std::pair<std::string, pisp_be_ccm_config>> &ycbcr_map,
+				std::vector<std::pair<std::string, pisp_be_ccm_config>> &inverse_ycbcr_map, const json &root)
 {
 	auto encoding = root["colour_encoding"];
 
@@ -246,20 +247,20 @@ void read_ycbcr(std::map<std::string, pisp_be_ccm_config> &ycbcr_map,
 			memcpy(ccm.offsets, offsets.data(), sizeof(ccm.offsets));
 
 			if (key == "ycbcr")
-				ycbcr_map.emplace(format, ccm);
+				ycbcr_map.emplace_back(format, ccm);
 			else
-				inverse_ycbcr_map.emplace(format, ccm);
+				inverse_ycbcr_map.emplace_back(format, ccm);
 		}
 	}
 }
 
-void get_matrix(pisp_be_ccm_config &matrix, const std::map<std::string, pisp_be_ccm_config> &map,
+void get_matrix(pisp_be_ccm_config &matrix, const std::vector<std::pair<std::string, pisp_be_ccm_config>> &map,
 				const std::string &colour_space)
 {
 	memset(matrix.coeffs, 0, sizeof(matrix.coeffs));
 	memset(matrix.offsets, 0, sizeof(matrix.offsets));
 
-	auto it = map.find(colour_space);
+	auto it = std::find_if(map.begin(), map.end(), [&colour_space](const auto &m) { return m.first == colour_space; });
 	if (it != map.end())
 	{
 		memcpy(matrix.coeffs, it->second.coeffs, sizeof(matrix.coeffs));
@@ -286,7 +287,8 @@ void BackEnd::InitialiseResample(pisp_be_resample_config &resample, const std::s
 {
 	memset(resample.coef, 0, sizeof(resample.coef));
 
-	auto it = resample_filter_map_.find(filter);
+	auto it = std::find_if(resample_filter_map_.begin(), resample_filter_map_.end(),
+						   [&filter](const auto &m) { return m.first == filter; });
 	if (it != resample_filter_map_.end())
 		memcpy(resample.coef, it->second.coef, sizeof(resample.coef));
 }
