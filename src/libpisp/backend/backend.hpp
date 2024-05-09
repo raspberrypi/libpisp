@@ -7,8 +7,9 @@
  */
 #pragma once
 
-#include <map>
 #include <string>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "common/shm_mutex.hpp"
@@ -157,7 +158,7 @@ private:
 	void initialiseDefaultConfig(const std::string &filename);
 
 	Config config_;
-	const PiSPVariant &variant_;
+	const PiSPVariant variant_;
 	pisp_be_config be_config_;
 	pisp_image_format_config max_input_;
 	bool retile_;
@@ -169,12 +170,16 @@ private:
 	uint32_t smart_resize_dirty_;
 
 	// Default config
-	std::map<std::string, pisp_be_ccm_config> ycbcr_map_;
-	std::map<std::string, pisp_be_ccm_config> inverse_ycbcr_map_;
-	std::map<std::string, pisp_be_resample_config> resample_filter_map_;
+	// We use std::vector<std::pair<.,.>> insead of std::map<.,.> to ensure this object provides a standard layout.
+	std::vector<std::pair<std::string, pisp_be_ccm_config>> ycbcr_map_;
+	std::vector<std::pair<std::string, pisp_be_ccm_config>> inverse_ycbcr_map_;
+	std::vector<std::pair<std::string, pisp_be_resample_config>> resample_filter_map_;
 	std::vector<std::pair<double, std::string>> resample_select_list_;
 	pisp_be_sharpen_config default_sharpen_;
 	pisp_be_sh_fc_combine_config default_shfc_;
 };
+
+// This is required to ensure we can safely share a BackEnd object across multiple processes.
+static_assert(std::is_standard_layout<BackEnd>::value, "BackEnd must be a standard layout type");
 
 } // namespace libpisp
