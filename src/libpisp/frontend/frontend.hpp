@@ -19,7 +19,7 @@
 namespace libpisp
 {
 
-class FrontEnd
+class FrontEnd final
 {
 public:
 	static constexpr uint32_t ScalePrecision = 10;
@@ -70,7 +70,7 @@ public:
 		return mutex_.try_lock();
 	}
 
-protected: // TODO: Should be private
+private:
 	void getOutputSize(unsigned int output_num, uint16_t &width, uint16_t &height) const;
 
 	const PiSPVariant &variant_;

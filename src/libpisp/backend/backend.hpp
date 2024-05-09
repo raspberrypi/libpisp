@@ -22,7 +22,7 @@
 namespace libpisp
 {
 
-class BackEnd
+class BackEnd final
 {
 public:
 	struct Config
@@ -146,7 +146,7 @@ public:
 		return mutex_.try_lock();
 	}
 
-protected:
+private:
 	void finaliseConfig();
 	void updateSmartResize();
 	void updateTiles();
@@ -168,7 +168,6 @@ protected:
 	std::vector<SmartResize> smart_resize_;
 	uint32_t smart_resize_dirty_;
 
-private:
 	// Default config
 	std::map<std::string, pisp_be_ccm_config> ycbcr_map_;
 	std::map<std::string, pisp_be_ccm_config> inverse_ycbcr_map_;
