@@ -27,7 +27,6 @@
 #define PISP_BACK_END_MIN_TILE_HEIGHT 16u
 
 #define PISP_BACK_END_NUM_OUTPUTS 2
-#define PISP_BACK_END_HOG_OUTPUT 1
 
 #define PISP_BACK_END_NUM_TILES 64
 
@@ -1026,7 +1025,6 @@ struct pisp_be_tdn2_config {
 };
 
 #define PISP_BE_GAMMA2_LUT_SIZE 65
-static_assert(PISP_BE_GAMMA2_LUT_SIZE == PISP_BE_TONEMAP2_LUT_SIZE, "Tonemap2 should match gamma block");
 
 struct pisp_be_gamma2_config {
 	__u16 lut[PISP_BE_GAMMA2_LUT_SIZE];
@@ -1180,7 +1178,6 @@ struct pisp_be_config2 {
 				output_format[PISP_BACK_END_NUM_OUTPUTS];
 	struct pisp_compress_config compress[PISP_BACK_END_NUM_OUTPUTS];
 	// Add padding here if necessary to make a multiple of 32 bytes.
-
 } __attribute__((packed));
 
 /**

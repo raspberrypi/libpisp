@@ -411,15 +411,8 @@ const std::vector<ConfigBlock> beConfig {
 			{ "lo2", offsetof(pisp_be_output_format_config, lo2), sizeof(uint8_t), 1 },
 			{ "hi2", offsetof(pisp_be_output_format_config, hi2), sizeof(uint8_t), 1 },
 		}
-	},
-	{
-		"hog", offsetof(pisp_be_config, hog),
-		{
-			{ "compute_signed", offsetof(pisp_be_hog_config, compute_signed), sizeof(uint8_t), 1 },
-			{ "channel_mix", offsetof(pisp_be_hog_config, channel_mix), sizeof(uint8_t), PISP_ARRAY_SIZE(pisp_be_hog_config, channel_mix) },
-			{ "stride", offsetof(pisp_be_hog_config, stride), sizeof(uint32_t), 1 },
-		}
 	}
+	/* HoG removed */
 	/* The "axi" field here is never configured or used; the real BE_AXI register is not part of the config */
 };
 
