@@ -80,7 +80,10 @@ int Pipeline::tileDirection(Dir dir, void *mem, size_t num_items, size_t item_si
 		if (num_tiles == num_items)
 			throw std::runtime_error("Too many tiles!");
 		for (auto s : outputs_)
-			s->PushStartUp(s->GetOutputInterval().End(), dir);
+		{
+			if (!s->BranchComplete())
+				s->PushStartUp(s->GetOutputInterval().End(), dir);
+		}
 		for (auto s : inputs_)
 			s->PushEndDown(s->GetInputInterval().offset + config_.max_tile_size[dir], dir);
 		for (auto s : inputs_)

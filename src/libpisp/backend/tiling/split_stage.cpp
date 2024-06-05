@@ -49,7 +49,13 @@ void SplitStage::PushStartUp(int output_start, Dir dir)
 		input_interval_ = Interval(output_start);
 	else
 		input_interval_ |= output_start;
-	if (count_ == downstream_.size())
+
+	unsigned int branch_incomplete_count = 0;
+	for (auto const &d : downstream_)
+		if (!d->BranchComplete())
+			branch_incomplete_count++;
+
+	if (count_ == branch_incomplete_count)
 	{
 		count_ = 0;
 		PISP_LOG(debug, "(" << name_ << ") Exit - call PushStartUp with " << input_interval_.offset);
@@ -67,6 +73,8 @@ int SplitStage::PushEndDown(int input_end, Dir dir)
 	input_interval_.SetEnd(0);
 	for (auto d : downstream_)
 	{
+		if (d->BranchComplete())
+			continue;
 		int branch_end = d->PushEndDown(input_end, dir);
 		// (It is OK for a branch to make no progress at all - so long as another branch does!)
 		if (branch_end > input_interval_.End())
@@ -82,7 +90,8 @@ int SplitStage::PushEndDown(int input_end, Dir dir)
 	}
 
 	for (auto d : downstream_)
-		d->PushEndDown(input_interval_.End(), dir);
+		if (!d->BranchComplete())
+			d->PushEndDown(input_interval_.End(), dir);
 
 	PushEndUp(input_interval_.End(), dir);
 	return input_interval_.End();
@@ -105,6 +114,8 @@ void SplitStage::PushCropDown(Interval interval, Dir dir)
 	input_interval_ = interval;
 	for (auto d : downstream_)
 	{
+		if (d->BranchComplete())
+			continue;
 		PISP_LOG(debug, "(" << name_ << ") Exit with interval " << interval);
 		d->PushCropDown(interval, dir);
 	}
@@ -112,4 +123,12 @@ void SplitStage::PushCropDown(Interval interval, Dir dir)
 
 void SplitStage::CopyOut([[maybe_unused]] void *dest, [[maybe_unused]] Dir dir)
 {
+}
+
+bool SplitStage::BranchComplete() const
+{
+	bool done = true;
+	for (auto d : downstream_)
+		done &= d->BranchComplete();
+	return done;
 }

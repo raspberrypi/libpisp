@@ -30,10 +30,13 @@ public:
 	virtual int PushEndDown(int input_end, Dir dir);
 	virtual void PushEndUp(int output_end, Dir dir);
 	virtual void PushCropDown(Interval interval, Dir dir);
-	bool Done(Dir dir) const;
+	virtual void Reset();
+	bool BranchComplete() const;
+	bool Done(Dir dir);
 
 private:
 	Config config_;
+	bool branch_complete_;
 };
 
 } // namespace tiling
