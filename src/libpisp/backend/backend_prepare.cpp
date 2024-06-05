@@ -234,9 +234,15 @@ void BackEnd::finaliseTonemap2()
 	if (tonemap.grid_step_y == 0)
 		tonemap.grid_step_y = (PISP_BE_TONEMAP2_GRID_SIZE << P) / height;
 
-	if (tonemap.spatial_gain_slope == 0 && tonemap.spatial_gain_knee != 0) {
+	if (tonemap.lores_step_x == 0 && width != 0)
+		tonemap.lores_step_x = std::max(1, (width << PISP_BE_TONEMAP2_LORES_PRECISION) / width);
+	if (tonemap.lores_step_y == 0 && height != 0)
+		tonemap.lores_step_y = std::max(1, (height << PISP_BE_TONEMAP2_LORES_PRECISION) / height);
+
+	if (tonemap.spatial_gain_slope == 0 && tonemap.spatial_gain_knee != 0)
+	{
 		if (65535 - tonemap.spatial_gain_knee < 32768)
-			throw std::runtime_error("finaliseTonemap2: spatial_gain_knee too high");
+			throw std::runtime_error("finalise_tonemap: spatial_gain_knee too high");
 		tonemap.spatial_gain_slope = (1UL << 31) / (65535 - tonemap.spatial_gain_knee);
 	}
 
