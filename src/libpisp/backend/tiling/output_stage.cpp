@@ -21,7 +21,7 @@ using namespace tiling;
 // the offset/length from the LH edge).
 
 OutputStage::OutputStage(char const *name, Stage *upstream, Config const &config, int struct_offset)
-	: BasicStage(name, upstream->GetPipeline(), upstream, struct_offset), config_(config)
+	: BasicStage(name, upstream->GetPipeline(), upstream, struct_offset), config_(config), branch_complete_(false)
 {
 	pipeline_->AddOutputStage(this);
 }
@@ -118,7 +118,21 @@ void OutputStage::PushCropDown(Interval interval, [[maybe_unused]] Dir dir)
 	PISP_LOG(debug, "(" << name_ << ") Exit with interval " << output_interval_);
 }
 
-bool OutputStage::Done(Dir dir) const
+void OutputStage::Reset()
 {
-	return output_interval_.End() >= GetOutputImageSize()[dir];
+	BasicStage::Reset();
+	branch_complete_ = false;
+}
+
+bool OutputStage::BranchComplete() const
+{
+	return branch_complete_;
+}
+
+bool OutputStage::Done(Dir dir)
+{
+	if (output_interval_.End() >= GetOutputImageSize()[dir])
+		branch_complete_ = true;
+
+	return branch_complete_;
 }
