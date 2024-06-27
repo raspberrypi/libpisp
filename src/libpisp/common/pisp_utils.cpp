@@ -4,6 +4,8 @@
  *
  * pisp_utils.cpp - PiSP buffer helper utilities
  */
+#include <cstdint>
+
 #include "backend/pisp_be_config.h"
 
 #include "pisp_common.h"
