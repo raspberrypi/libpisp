@@ -897,16 +897,33 @@ void BackEnd::finaliseTiling()
 	// Update tile parameters (offsets/strides) from on the BE pipeline configuration.
 	for (pisp_tile &t : tiles_)
 	{
-		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, be_config_.input_format, &t.input_addr_offset,
-									&t.input_addr_offset2);
-		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, be_config_.tdn_input_format,
-									&t.tdn_input_addr_offset);
-		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, be_config_.tdn_output_format,
-									&t.tdn_output_addr_offset);
-		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, be_config_.stitch_input_format,
-									&t.stitch_input_addr_offset);
-		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, be_config_.stitch_output_format,
-									&t.stitch_output_addr_offset);
+		int offset_x = t.input_offset_x;
+		int offset_y = t.input_offset_y;
+		uint32_t addr_offset = t.input_addr_offset;
+		uint32_t addr_offset2 = t.input_addr_offset2;
+		uint32_t tdn_input_addr_offset = t.tdn_input_addr_offset;
+		uint32_t tdn_output_addr_offset = t.tdn_output_addr_offset;
+		uint32_t stitch_input_addr_offset = t.stitch_input_addr_offset;
+		uint32_t stitch_output_addr_offset = t.stitch_output_addr_offset;
+
+		calculate_input_addr_offset(offset_x, offset_y, be_config_.input_format, &addr_offset,
+					                &addr_offset2);
+		calculate_input_addr_offset(offset_x, offset_y, be_config_.tdn_input_format,
+					                &tdn_input_addr_offset);
+		calculate_input_addr_offset(offset_x, offset_y, be_config_.tdn_output_format,
+					                &tdn_output_addr_offset);
+		calculate_input_addr_offset(offset_x, offset_y, be_config_.stitch_input_format,
+					                &stitch_input_addr_offset);
+		calculate_input_addr_offset(offset_x, offset_y, be_config_.stitch_output_format,
+							&stitch_output_addr_offset);
+
+		t.input_addr_offset = addr_offset;
+		t.input_addr_offset2 = addr_offset2;
+		t.tdn_input_addr_offset = tdn_input_addr_offset;
+		t.tdn_output_addr_offset = tdn_output_addr_offset;
+		t.stitch_input_addr_offset = stitch_input_addr_offset;
+		t.stitch_output_addr_offset = stitch_output_addr_offset;
+
 		PISP_LOG(debug, "Input offsets " << t.input_offset_x << "," << t.input_offset_y << " address offsets "
 										 << t.input_addr_offset << " and " << t.input_addr_offset2);
 
@@ -925,6 +942,8 @@ void BackEnd::finaliseTiling()
 		for (unsigned int j = 0; j < variant_.BackEndNumBranches(0); j++)
 		{
 			int output_offset_x_unflipped = t.output_offset_x[j], output_offset_y_unflipped = t.output_offset_y[j];
+			uint32_t output_addr_offset = t.output_addr_offset[j];
+			uint32_t output_addr_offset2 = t.output_addr_offset2[j];
 
 			if (be_config_.output_format[j].transform & PISP_BE_TRANSFORM_HFLIP)
 				t.output_offset_x[j] =
@@ -934,7 +953,10 @@ void BackEnd::finaliseTiling()
 				t.output_offset_y[j] = be_config_.output_format[j].image.height - output_offset_y_unflipped - 1;
 
 			compute_addr_offset(be_config_.output_format[j].image, t.output_offset_x[j], t.output_offset_y[j],
-								&t.output_addr_offset[j], &t.output_addr_offset2[j]);
+								&output_addr_offset, &output_addr_offset2);
+
+			t.output_addr_offset[j] = output_addr_offset;
+			t.output_addr_offset2[j] = output_addr_offset2;
 
 			PISP_LOG(debug, "Branch " << j << " output offsets " << t.output_offset_x[j] << "," << t.output_offset_y[j]
 									  << " address offsets " << t.output_addr_offset[j] << " and "
@@ -968,7 +990,13 @@ bool BackEnd::ComputeOutputImageFormat(unsigned int i, pisp_image_format_config 
 
 	if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(i))
 	{
-		getOutputSize(i, &fmt.width, &fmt.height, ifmt);
+		uint16_t width = fmt.width;
+		uint16_t height = fmt.height;
+
+		getOutputSize(i, &width, &height, ifmt);
+		fmt.width = width;
+		fmt.height = height;
+
 		if (!fmt.stride)
 			compute_stride(fmt);
 		else

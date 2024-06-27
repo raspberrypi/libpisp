@@ -399,7 +399,9 @@ void FrontEnd::Prepare(pisp_fe_config *config)
 		{
 			pisp_image_format_config &image_config = fe_config_.ch[i].output.format;
 
-			getOutputSize(i, image_config.width, image_config.height);
+			uint16_t width = image_config.width;
+			uint16_t height = image_config.height;
+			getOutputSize(i, width, height);
 			if (!image_config.stride)
 				compute_stride_align(image_config, align_);
 		}
