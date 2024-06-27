@@ -10,7 +10,7 @@
 #include <cstring>
 #include <type_traits>
 
-#include "common/pisp_types.h"
+#include "common/pisp_common.h"
 #include "common/shm_mutex.hpp"
 #include "variants/variant.hpp"
 
