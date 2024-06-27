@@ -4,6 +4,7 @@
  *
  * pisp_utils.cpp - PiSP buffer helper utilities
  */
+#include <cmath>
 #include <cstdint>
 
 #include "backend/pisp_be_config.h"
@@ -180,7 +181,7 @@ int num_planes(pisp_image_format format)
 
 std::size_t get_plane_size(const pisp_image_format_config &config, int plane)
 {
-	uint64_t stride = abs(plane ? config.stride2 : config.stride); // in case vflipped?
+	uint64_t stride = std::abs(plane ? config.stride2 : config.stride); // in case vflipped?
 	uint64_t plane_size = 0;
 
 	if (PISP_IMAGE_FORMAT_WALLPAPER(config.format))
