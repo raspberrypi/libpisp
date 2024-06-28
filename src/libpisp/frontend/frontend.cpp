@@ -97,13 +97,13 @@ void finalise_compression(pisp_fe_config const &fe_config, int i)
 	uint32_t fmt = fe_config.ch[i].output.format.format;
 	uint32_t enables = fe_config.global.enables;
 
-	if (PISP_IMAGE_FORMAT_compressed(fmt) && !(enables & block_enable(PISP_FE_ENABLE_COMPRESS0, i)))
+	if (PISP_IMAGE_FORMAT_COMPRESSED(fmt) && !(enables & block_enable(PISP_FE_ENABLE_COMPRESS0, i)))
 		PISP_LOG(fatal, "FrontEnd::finalise: output compressed but compression not enabled");
 
-	if (!PISP_IMAGE_FORMAT_compressed(fmt) && (enables & block_enable(PISP_FE_ENABLE_COMPRESS0, i)))
+	if (!PISP_IMAGE_FORMAT_COMPRESSED(fmt) && (enables & block_enable(PISP_FE_ENABLE_COMPRESS0, i)))
 		PISP_LOG(fatal, "FrontEnd::finalise: output uncompressed but compression enabled");
 
-	if ((enables & block_enable(PISP_FE_ENABLE_COMPRESS0, i)) && !PISP_IMAGE_FORMAT_bps_8(fmt))
+	if ((enables & block_enable(PISP_FE_ENABLE_COMPRESS0, i)) && !PISP_IMAGE_FORMAT_BPS_8(fmt))
 		PISP_LOG(fatal, "FrontEnd::finalise: compressed output is not 8 bit");
 }
 

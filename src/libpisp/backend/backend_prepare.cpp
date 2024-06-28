@@ -36,7 +36,7 @@ void check_stride(pisp_image_format_config const &config)
 	if (config.stride % PISP_BACK_END_OUTPUT_MIN_ALIGN || config.stride2 % PISP_BACK_END_OUTPUT_MIN_ALIGN)
 		throw std::runtime_error("Output stride values not sufficiently aligned");
 
-	if (PISP_IMAGE_FORMAT_wallpaper(config.format) && (config.stride % 128 || config.stride2 % 128))
+	if (PISP_IMAGE_FORMAT_WALLPAPER(config.format) && (config.stride % 128 || config.stride2 % 128))
 		throw std::runtime_error("Wallpaper format should have 128-byte aligned rolls");
 
 	pisp_image_format_config check = config;
@@ -66,13 +66,13 @@ void finalise_inputs(pisp_be_config &config)
 	}
 	else if (config.global.rgb_enables & PISP_BE_RGB_ENABLE_INPUT)
 	{
-		if (PISP_IMAGE_FORMAT_sampling_420(config.input_format.format) && (config.input_format.width & 1))
+		if (PISP_IMAGE_FORMAT_SAMPLING_420(config.input_format.format) && (config.input_format.width & 1))
 			throw std::runtime_error("finalise_inputs: 420 input height must be even");
-		else if ((PISP_IMAGE_FORMAT_sampling_420(config.input_format.format) ||
-				  PISP_IMAGE_FORMAT_sampling_422(config.input_format.format)) &&
+		else if ((PISP_IMAGE_FORMAT_SAMPLING_420(config.input_format.format) ||
+				  PISP_IMAGE_FORMAT_SAMPLING_422(config.input_format.format)) &&
 				 (config.input_format.width & 1))
 			throw std::runtime_error("finalise_inputs: 420/422 input width must be even");
-		if (PISP_IMAGE_FORMAT_wallpaper(config.input_format.format))
+		if (PISP_IMAGE_FORMAT_WALLPAPER(config.input_format.format))
 		{
 			if ((config.input_format.stride & 127) || (config.input_format.stride2 & 127))
 				throw std::runtime_error("finalise_inputs: wallpaper format strides must be at least 128-byte aligned");
@@ -150,13 +150,13 @@ void finalise_decompression(pisp_be_config const &be_config)
 {
 	uint32_t fmt = be_config.input_format.format, bayer_enables = be_config.global.bayer_enables;
 
-	if (PISP_IMAGE_FORMAT_compressed(fmt) && !(bayer_enables & PISP_BE_BAYER_ENABLE_DECOMPRESS))
+	if (PISP_IMAGE_FORMAT_COMPRESSED(fmt) && !(bayer_enables & PISP_BE_BAYER_ENABLE_DECOMPRESS))
 		throw std::runtime_error("BackEnd::finalise: input compressed but decompression not enabled");
 
-	if (!PISP_IMAGE_FORMAT_compressed(fmt) && (bayer_enables & PISP_BE_BAYER_ENABLE_DECOMPRESS))
+	if (!PISP_IMAGE_FORMAT_COMPRESSED(fmt) && (bayer_enables & PISP_BE_BAYER_ENABLE_DECOMPRESS))
 		throw std::runtime_error("BackEnd::finalise: input uncompressed but decompression enabled");
 
-	if ((bayer_enables & PISP_BE_BAYER_ENABLE_DECOMPRESS) && !PISP_IMAGE_FORMAT_bps_8(fmt))
+	if ((bayer_enables & PISP_BE_BAYER_ENABLE_DECOMPRESS) && !PISP_IMAGE_FORMAT_BPS_8(fmt))
 		throw std::runtime_error("BackEnd::finalise: compressed input is not 8bpp");
 }
 
@@ -189,13 +189,13 @@ void finalise_tdn(pisp_be_config &config)
 	if (tdn_enabled && !tdn_output_enabled)
 		throw std::runtime_error("BackEnd::finalise: TDN output not enabled when TDN enabled");
 
-	if (PISP_IMAGE_FORMAT_compressed(fmt) && !tdn_compress_enabled)
+	if (PISP_IMAGE_FORMAT_COMPRESSED(fmt) && !tdn_compress_enabled)
 		throw std::runtime_error("BackEnd::finalise: TDN output compressed but compression not enabled");
 
-	if (!PISP_IMAGE_FORMAT_compressed(fmt) && tdn_compress_enabled)
+	if (!PISP_IMAGE_FORMAT_COMPRESSED(fmt) && tdn_compress_enabled)
 		throw std::runtime_error("BackEnd::finalise: TDN output uncompressed but compression enabled");
 
-	if (tdn_compress_enabled && !PISP_IMAGE_FORMAT_bps_8(fmt))
+	if (tdn_compress_enabled && !PISP_IMAGE_FORMAT_BPS_8(fmt))
 		throw std::runtime_error("BackEnd::finalise: TDN output does not match compression mode");
 
 	if (tdn_output_enabled)
@@ -222,11 +222,11 @@ void finalise_tdn(pisp_be_config &config)
 		// Make the TDN input match the output if it's unset. Usually this will be the sensible thing to do.
 		if (config.tdn_input_format.width == 0 && config.tdn_input_format.height == 0)
 			config.tdn_input_format = config.tdn_output_format;
-		if (PISP_IMAGE_FORMAT_compressed(fmt) && !tdn_decompress_enabled)
+		if (PISP_IMAGE_FORMAT_COMPRESSED(fmt) && !tdn_decompress_enabled)
 			throw std::runtime_error("BackEnd::finalise: TDN input compressed but decompression not enabled");
-		if (!PISP_IMAGE_FORMAT_compressed(fmt) && tdn_decompress_enabled)
+		if (!PISP_IMAGE_FORMAT_COMPRESSED(fmt) && tdn_decompress_enabled)
 			throw std::runtime_error("BackEnd::finalise: TDN input uncompressed but decompression enabled");
-		if (tdn_compress_enabled && !PISP_IMAGE_FORMAT_bps_8(fmt))
+		if (tdn_compress_enabled && !PISP_IMAGE_FORMAT_BPS_8(fmt))
 			throw std::runtime_error("BackEnd::finalise: TDN output does not match compression mode");
 	}
 }
@@ -243,17 +243,17 @@ void finalise_stitch(pisp_be_config &config)
 
 	if (stitch_enabled != stitch_input_enabled)
 		throw std::runtime_error("BackEnd::finalise: stitch and stitch_input should be enabled/disabled together");
-	if (stitch_input_enabled && PISP_IMAGE_FORMAT_compressed(input_fmt) && !stitch_decompress_enabled)
+	if (stitch_input_enabled && PISP_IMAGE_FORMAT_COMPRESSED(input_fmt) && !stitch_decompress_enabled)
 		throw std::runtime_error("BackEnd::finalise: stitch output compressed but decompression not enabled");
-	if (stitch_input_enabled && !PISP_IMAGE_FORMAT_compressed(input_fmt) && stitch_decompress_enabled)
+	if (stitch_input_enabled && !PISP_IMAGE_FORMAT_COMPRESSED(input_fmt) && stitch_decompress_enabled)
 		throw std::runtime_error("BackEnd::finalise: stitch output uncompressed but decompression enabled");
-	if (stitch_output_enabled && PISP_IMAGE_FORMAT_compressed(output_fmt) && !stitch_compress_enabled)
+	if (stitch_output_enabled && PISP_IMAGE_FORMAT_COMPRESSED(output_fmt) && !stitch_compress_enabled)
 		throw std::runtime_error("BackEnd::finalise: stitch output compressed but compression not enabled");
-	if (stitch_output_enabled && !PISP_IMAGE_FORMAT_compressed(output_fmt) && stitch_compress_enabled)
+	if (stitch_output_enabled && !PISP_IMAGE_FORMAT_COMPRESSED(output_fmt) && stitch_compress_enabled)
 		throw std::runtime_error("BackEnd::finalise: stitch output uncompressed but compression enabled");
-	if (stitch_decompress_enabled && !PISP_IMAGE_FORMAT_bps_8(input_fmt))
+	if (stitch_decompress_enabled && !PISP_IMAGE_FORMAT_BPS_8(input_fmt))
 		throw std::runtime_error("BackEnd::finalise: stitch input does not match compression mode");
-	if (stitch_compress_enabled && !PISP_IMAGE_FORMAT_bps_8(output_fmt))
+	if (stitch_compress_enabled && !PISP_IMAGE_FORMAT_BPS_8(output_fmt))
 		throw std::runtime_error("BackEnd::finalise: stitch output does not match compression mode");
 
 	if (stitch_output_enabled)
@@ -286,14 +286,14 @@ void finalise_output(pisp_be_output_format_config &config)
 	if (config.image.width < PISP_BACK_END_MIN_TILE_WIDTH || config.image.height < PISP_BACK_END_MIN_TILE_HEIGHT)
 		throw std::runtime_error("finalise_output: output image too small");
 
-	if (PISP_IMAGE_FORMAT_sampling_420(config.image.format) && (config.image.height & 1))
+	if (PISP_IMAGE_FORMAT_SAMPLING_420(config.image.format) && (config.image.height & 1))
 		throw std::runtime_error("finalise_output: 420 image height should be even");
 
-	if ((PISP_IMAGE_FORMAT_sampling_420(config.image.format) || PISP_IMAGE_FORMAT_sampling_422(config.image.format)) &&
+	if ((PISP_IMAGE_FORMAT_SAMPLING_420(config.image.format) || PISP_IMAGE_FORMAT_SAMPLING_422(config.image.format)) &&
 		(config.image.width & 1))
 		throw std::runtime_error("finalise_output: 420/422 image width should be even");
 
-	if (PISP_IMAGE_FORMAT_wallpaper(config.image.format))
+	if (PISP_IMAGE_FORMAT_WALLPAPER(config.image.format))
 	{
 		if ((config.image.stride & 127) || (config.image.stride2 & 127))
 			throw std::runtime_error("finalise_output: wallpaper image stride should be at least 128-byte aligned");
@@ -367,17 +367,17 @@ unsigned int get_pixel_alignment(uint32_t format, int byte_alignment)
 {
 	int alignment_pixels = byte_alignment; // for 8bpp formats
 
-	if (PISP_IMAGE_FORMAT_bps_16(format))
+	if (PISP_IMAGE_FORMAT_BPS_16(format))
 		alignment_pixels = byte_alignment / 2;
-	else if (PISP_IMAGE_FORMAT_bps_10(format))
+	else if (PISP_IMAGE_FORMAT_BPS_10(format))
 		alignment_pixels = byte_alignment * 3 / 4;
-	else if (PISP_IMAGE_FORMAT_bpp_32(format))
+	else if (PISP_IMAGE_FORMAT_BPP_32(format))
 		alignment_pixels = byte_alignment / 4;
 
-	if (PISP_IMAGE_FORMAT_planar(format) && !PISP_IMAGE_FORMAT_sampling_444(format))
+	if (PISP_IMAGE_FORMAT_PLANAR(format) && !PISP_IMAGE_FORMAT_SAMPLING_444(format))
 		alignment_pixels *= 2; // the UV planes in fully planar 420/422 output will have half the width
-	else if (PISP_IMAGE_FORMAT_interleaved(format) &&
-			 (PISP_IMAGE_FORMAT_sampling_422(format) || PISP_IMAGE_FORMAT_sampling_420(format)))
+	else if (PISP_IMAGE_FORMAT_INTERLEAVED(format) &&
+			 (PISP_IMAGE_FORMAT_SAMPLING_422(format) || PISP_IMAGE_FORMAT_SAMPLING_420(format)))
 		alignment_pixels /= 2; // YUYV type outputs need only 8 pixels to make 16 bytes
 
 	return alignment_pixels;
@@ -398,7 +398,7 @@ static tiling::Length2 calculate_input_alignment(pisp_be_config const &config)
 		PISP_LOG(debug, "RGB input enabled");
 		// Need 4 byte alignment AND even number of pixels. Height must be 2 row aligned only for 420 input.
 		return tiling::Length2(lcm(get_pixel_alignment(config.input_format.format, PISP_BACK_END_INPUT_ALIGN), 2),
-							   PISP_IMAGE_FORMAT_sampling_420(config.input_format.format) ? 2 : 1);
+							   PISP_IMAGE_FORMAT_SAMPLING_420(config.input_format.format) ? 2 : 1);
 	}
 
 	uint32_t bayer_enables = config.global.bayer_enables;
@@ -406,11 +406,11 @@ static tiling::Length2 calculate_input_alignment(pisp_be_config const &config)
 	int pixel_alignment = get_pixel_alignment(config.input_format.format, PISP_BACK_END_INPUT_ALIGN);
 
 	// If any input is compressed, we need 8 *pixel* alignment.
-	if (PISP_IMAGE_FORMAT_compressed(config.input_format.format) ||
+	if (PISP_IMAGE_FORMAT_COMPRESSED(config.input_format.format) ||
 		((bayer_enables & PISP_BE_BAYER_ENABLE_TDN_INPUT) &&
-		 PISP_IMAGE_FORMAT_compressed(config.tdn_input_format.format)) ||
+		 PISP_IMAGE_FORMAT_COMPRESSED(config.tdn_input_format.format)) ||
 		((bayer_enables & PISP_BE_BAYER_ENABLE_STITCH_INPUT) &&
-		 PISP_IMAGE_FORMAT_compressed(config.stitch_input_format.format)))
+		 PISP_IMAGE_FORMAT_COMPRESSED(config.stitch_input_format.format)))
 		pixel_alignment = lcm(pixel_alignment, PISP_BACK_END_COMPRESSED_ALIGN);
 
 	// If any of the Bayer outputs are enabled, those need 16 *byte* alignment. (This already covers the outputs being compressed.)
@@ -426,7 +426,7 @@ static tiling::Length2 calculate_input_alignment(pisp_be_config const &config)
 
 static tiling::Length2 calculate_output_alignment(uint32_t format, int align = PISP_BACK_END_OUTPUT_MAX_ALIGN)
 {
-	int y_alignment = PISP_IMAGE_FORMAT_sampling_420(format) ? 2 : 1;
+	int y_alignment = PISP_IMAGE_FORMAT_SAMPLING_420(format) ? 2 : 1;
 
 	return tiling::Length2(get_pixel_alignment(format, align), y_alignment);
 }
