@@ -43,8 +43,8 @@ uint32_t compute_x_offset(uint32_t /* pisp_image_format */ format, int x)
 		else
 			x_offset = x;
 
-		if ((format & PISP_IMAGE_FORMAT_THREE_CHANNEL) && PISP_IMAGE_FORMAT_interleaved(format)) {
-			if (PISP_IMAGE_FORMAT_sampling_422(format))
+		if ((format & PISP_IMAGE_FORMAT_THREE_CHANNEL) && PISP_IMAGE_FORMAT_INTERLEAVED(format)) {
+			if (PISP_IMAGE_FORMAT_SAMPLING_422(format))
 				x_offset *= 2;
 			else
 				x_offset *= 3;
@@ -55,16 +55,16 @@ uint32_t compute_x_offset(uint32_t /* pisp_image_format */ format, int x)
 
 void compute_stride_align(pisp_image_format_config &config, int align)
 {
-	if (PISP_IMAGE_FORMAT_wallpaper(config.format))
+	if (PISP_IMAGE_FORMAT_WALLPAPER(config.format))
 	{
 		config.stride2 = config.stride = config.height * PISP_WALLPAPER_WIDTH;
-		if (PISP_IMAGE_FORMAT_sampling_420(config.format))
+		if (PISP_IMAGE_FORMAT_SAMPLING_420(config.format))
 			config.stride2 /= 2;
 		return;
 	}
 
 	uint16_t width = config.width;
-	if (PISP_IMAGE_FORMAT_compressed(config.format))
+	if (PISP_IMAGE_FORMAT_COMPRESSED(config.format))
 		width = (width + 7) & ~7; // compression uses blocks of 8 samples
 
 	int32_t computed_stride = compute_x_offset(config.format, width);
@@ -77,13 +77,13 @@ void compute_stride_align(pisp_image_format_config &config, int align)
 		switch (config.format & PISP_IMAGE_FORMAT_PLANARITY_MASK)
 		{
 		case PISP_IMAGE_FORMAT_PLANARITY_PLANAR:
-			if (PISP_IMAGE_FORMAT_sampling_422(config.format) || PISP_IMAGE_FORMAT_sampling_420(config.format))
+			if (PISP_IMAGE_FORMAT_SAMPLING_422(config.format) || PISP_IMAGE_FORMAT_SAMPLING_420(config.format))
 				config.stride2 = config.stride >> 1;
-			else if (PISP_IMAGE_FORMAT_three_channel(config.format))
+			else if (PISP_IMAGE_FORMAT_THREE_CHANNEL(config.format))
 				config.stride2 = config.stride;
 			break;
 		case PISP_IMAGE_FORMAT_PLANARITY_SEMI_PLANAR:
-			PISP_ASSERT(PISP_IMAGE_FORMAT_sampling_422(config.format) || PISP_IMAGE_FORMAT_sampling_420(config.format));
+			PISP_ASSERT(PISP_IMAGE_FORMAT_SAMPLING_422(config.format) || PISP_IMAGE_FORMAT_SAMPLING_420(config.format));
 			config.stride2 = config.stride;
 			break;
 		}
@@ -109,18 +109,18 @@ void compute_optimal_stride(pisp_image_format_config &config)
 void compute_addr_offset(const pisp_image_format_config &config, int x, int y, uint32_t *addr_offset,
 						 uint32_t *addr_offset2)
 {
-	if (PISP_IMAGE_FORMAT_wallpaper(config.format))
+	if (PISP_IMAGE_FORMAT_WALLPAPER(config.format))
 	{
 		int pixels_in_roll =
-			PISP_IMAGE_FORMAT_bps_8(config.format)
+			PISP_IMAGE_FORMAT_BPS_8(config.format)
 				? PISP_WALLPAPER_WIDTH
-				: (PISP_IMAGE_FORMAT_bps_16(config.format) ? PISP_WALLPAPER_WIDTH / 2 : PISP_WALLPAPER_WIDTH / 4 * 3);
+				: (PISP_IMAGE_FORMAT_BPS_16(config.format) ? PISP_WALLPAPER_WIDTH / 2 : PISP_WALLPAPER_WIDTH / 4 * 3);
 		int pixel_offset_in_roll = x % pixels_in_roll;
 		int pixel_offset_in_bytes;
 
-		if (PISP_IMAGE_FORMAT_bps_8(config.format))
+		if (PISP_IMAGE_FORMAT_BPS_8(config.format))
 			pixel_offset_in_bytes = pixel_offset_in_roll;
-		else if (PISP_IMAGE_FORMAT_bps_16(config.format))
+		else if (PISP_IMAGE_FORMAT_BPS_16(config.format))
 			pixel_offset_in_bytes = pixel_offset_in_roll * 2;
 		else
 		{
@@ -131,7 +131,7 @@ void compute_addr_offset(const pisp_image_format_config &config, int x, int y, u
 
 		int num_rolls = x / pixels_in_roll;
 		*addr_offset = num_rolls * config.stride + y * PISP_WALLPAPER_WIDTH + pixel_offset_in_bytes;
-		if (PISP_IMAGE_FORMAT_sampling_420(config.format))
+		if (PISP_IMAGE_FORMAT_SAMPLING_420(config.format))
 			*addr_offset2 = num_rolls * config.stride2 + y / 2 * PISP_WALLPAPER_WIDTH + pixel_offset_in_bytes;
 		else
 			*addr_offset2 = *addr_offset;
@@ -141,12 +141,12 @@ void compute_addr_offset(const pisp_image_format_config &config, int x, int y, u
 
 	uint32_t x_byte_offset = compute_x_offset(config.format, x);
 	*addr_offset = y * config.stride + x_byte_offset;
-	if (addr_offset2 && !PISP_IMAGE_FORMAT_interleaved(config.format))
+	if (addr_offset2 && !PISP_IMAGE_FORMAT_INTERLEAVED(config.format))
 	{
-		if (PISP_IMAGE_FORMAT_sampling_420(config.format))
+		if (PISP_IMAGE_FORMAT_SAMPLING_420(config.format))
 			y /= 2;
 
-		if (PISP_IMAGE_FORMAT_planar(config.format) && !PISP_IMAGE_FORMAT_sampling_444(config.format))
+		if (PISP_IMAGE_FORMAT_PLANAR(config.format) && !PISP_IMAGE_FORMAT_SAMPLING_444(config.format))
 			x_byte_offset /= 2;
 
 		*addr_offset2 = y * config.stride2 + x_byte_offset;
@@ -157,7 +157,7 @@ int num_planes(pisp_image_format format)
 {
 	int planes = 1;
 
-	if (PISP_IMAGE_FORMAT_three_channel(format))
+	if (PISP_IMAGE_FORMAT_THREE_CHANNEL(format))
 	{
 		switch (format & PISP_IMAGE_FORMAT_PLANARITY_MASK)
 		{
@@ -181,18 +181,18 @@ std::size_t get_plane_size(const pisp_image_format_config &config, int plane)
 	uint64_t stride = abs(plane ? config.stride2 : config.stride); // in case vflipped?
 	uint64_t plane_size = 0;
 
-	if (PISP_IMAGE_FORMAT_wallpaper(config.format))
+	if (PISP_IMAGE_FORMAT_WALLPAPER(config.format))
 	{
 		int pixels_in_roll =
-			PISP_IMAGE_FORMAT_bps_8(config.format)
+			PISP_IMAGE_FORMAT_BPS_8(config.format)
 				? PISP_WALLPAPER_WIDTH
-				: (PISP_IMAGE_FORMAT_bps_16(config.format) ? PISP_WALLPAPER_WIDTH / 2 : PISP_WALLPAPER_WIDTH / 4 * 3);
+				: (PISP_IMAGE_FORMAT_BPS_16(config.format) ? PISP_WALLPAPER_WIDTH / 2 : PISP_WALLPAPER_WIDTH / 4 * 3);
 		std::size_t num_rolls = (config.width + pixels_in_roll - 1) / pixels_in_roll;
 		plane_size = num_rolls * stride;
 	}
 	else
 	{
-		std::size_t height = plane && PISP_IMAGE_FORMAT_sampling_420(config.format) ? config.height >> 1
+		std::size_t height = plane && PISP_IMAGE_FORMAT_SAMPLING_420(config.format) ? config.height >> 1
 																					: config.height;
 		plane_size = height * stride;
 	}
