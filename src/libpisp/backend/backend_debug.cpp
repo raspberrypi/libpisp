@@ -501,7 +501,7 @@ std::string BackEnd::GetJsonConfig(pisp_be_tiles_config *config)
 		j["config"].push_back(b);
 	}
 
-	for (int t = 0; t < config->num_tiles; t++)
+	for (unsigned int t = 0; t < config->num_tiles; t++)
 	{
 		json b;
 		for (auto const &field : tiles_config.fields)

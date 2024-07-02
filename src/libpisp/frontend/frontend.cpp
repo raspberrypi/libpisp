@@ -97,13 +97,13 @@ void finalise_compression(pisp_fe_config const &fe_config, int i)
 	uint32_t fmt = fe_config.ch[i].output.format.format;
 	uint32_t enables = fe_config.global.enables;
 
-	if (PISP_IMAGE_FORMAT_compressed(fmt) && !(enables & block_enable(PISP_FE_ENABLE_COMPRESS0, i)))
+	if (PISP_IMAGE_FORMAT_COMPRESSED(fmt) && !(enables & block_enable(PISP_FE_ENABLE_COMPRESS0, i)))
 		PISP_LOG(fatal, "FrontEnd::finalise: output compressed but compression not enabled");
 
-	if (!PISP_IMAGE_FORMAT_compressed(fmt) && (enables & block_enable(PISP_FE_ENABLE_COMPRESS0, i)))
+	if (!PISP_IMAGE_FORMAT_COMPRESSED(fmt) && (enables & block_enable(PISP_FE_ENABLE_COMPRESS0, i)))
 		PISP_LOG(fatal, "FrontEnd::finalise: output uncompressed but compression enabled");
 
-	if ((enables & block_enable(PISP_FE_ENABLE_COMPRESS0, i)) && !PISP_IMAGE_FORMAT_bps_8(fmt))
+	if ((enables & block_enable(PISP_FE_ENABLE_COMPRESS0, i)) && !PISP_IMAGE_FORMAT_BPS_8(fmt))
 		PISP_LOG(fatal, "FrontEnd::finalise: compressed output is not 8 bit");
 }
 
@@ -399,7 +399,9 @@ void FrontEnd::Prepare(pisp_fe_config *config)
 		{
 			pisp_image_format_config &image_config = fe_config_.ch[i].output.format;
 
-			getOutputSize(i, image_config.width, image_config.height);
+			uint16_t width = image_config.width;
+			uint16_t height = image_config.height;
+			getOutputSize(i, width, height);
 			if (!image_config.stride)
 				compute_stride_align(image_config, align_);
 		}
