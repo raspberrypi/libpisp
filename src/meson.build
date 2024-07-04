@@ -30,6 +30,9 @@ endif
 
 add_project_arguments(logging_args, language : 'cpp')
 
+# Needed to avoid (erroneous) warnings on the use of addresses of fields in __attribute__((packed)) structs.
+add_project_arguments('-Wno-address-of-packed-member', language : 'cpp')
+
 meson.add_dist_script(meson.project_source_root() / 'utils' / 'gen-dist.sh')
 
 # Generate a version string:
