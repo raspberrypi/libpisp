@@ -72,7 +72,7 @@ public:
 	}
 
 private:
-	void getOutputSize(unsigned int output_num, uint16_t &width, uint16_t &height) const;
+	void fixOutputSize(unsigned int output_num);
 
 	const PiSPVariant variant_;
 	pisp_fe_config fe_config_;

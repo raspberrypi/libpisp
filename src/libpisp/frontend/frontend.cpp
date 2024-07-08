@@ -399,7 +399,7 @@ void FrontEnd::Prepare(pisp_fe_config *config)
 		{
 			pisp_image_format_config &image_config = fe_config_.ch[i].output.format;
 
-			getOutputSize(i, image_config.width, image_config.height);
+			fixOutputSize(i);
 			if (!image_config.stride)
 				compute_stride_align(image_config, align_);
 		}
@@ -414,27 +414,29 @@ void FrontEnd::Prepare(pisp_fe_config *config)
 	fe_config_.dirty_flags = fe_config_.dirty_flags_extra = 0;
 }
 
-void FrontEnd::getOutputSize(unsigned int output_num, uint16_t &width, uint16_t &height) const
+void FrontEnd::fixOutputSize(unsigned int output_num)
 {
 	PISP_ASSERT(output_num < variant_.FrontEndNumBranches(0));
 
-	width = height = 0;
+	pisp_image_format_config &image_config = fe_config_.ch[output_num].output.format;
+
+	image_config.width = image_config.height = 0;
 
 	if (fe_config_.global.enables & block_enable(PISP_FE_ENABLE_OUTPUT0, output_num))
 	{
-		width = fe_config_.input.format.width;
-		height = fe_config_.input.format.height;
+		image_config.width = fe_config_.input.format.width;
+		image_config.height = fe_config_.input.format.height;
 
 		if (fe_config_.global.enables & block_enable(PISP_FE_ENABLE_CROP0, output_num))
 		{
-			width = fe_config_.ch[output_num].crop.width;
-			height = fe_config_.ch[output_num].crop.height;
+			image_config.width = fe_config_.ch[output_num].crop.width;
+			image_config.width = fe_config_.ch[output_num].crop.height;
 		}
 
 		if (fe_config_.global.enables & block_enable(PISP_FE_ENABLE_DOWNSCALE0, output_num))
 		{
-			width = fe_config_.ch[output_num].downscale.output_width;
-			height = fe_config_.ch[output_num].downscale.output_height;
+			image_config.width = fe_config_.ch[output_num].downscale.output_width;
+			image_config.height = fe_config_.ch[output_num].downscale.output_height;
 		}
 	}
 }
