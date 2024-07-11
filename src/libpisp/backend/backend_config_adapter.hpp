@@ -161,6 +161,30 @@ using BeOutputFormatConfig = struct pisp_be_output_format_config2;
 // pisp_be_demosaic2_config is a superset of pisp_be_demosaic_config
 using BeDemosaicConfig = struct pisp_be_demosaic2_config;
 
+// pisp_be_tdn2_config is a superset of pisp_be_tdn_config
+using BeTdnConfig = struct pisp_be_tdn2_config;
+
+struct BeStitchConfig
+{
+	// v1
+	uint16_t threshold_lo = 0;
+	uint8_t threshold_diff_power = 0;
+	uint16_t exposure_ratio = 0;
+	uint8_t motion_threshold_256 = 0;
+	uint8_t motion_threshold_recip = 0;
+
+	// v2
+	uint16_t black_level = 0;
+	uint16_t ratio = 0;
+	uint16_t noise_constant = 0;
+	uint16_t noise_slope = 0;
+	uint16_t threshold = 0;
+	uint8_t reset = 0;
+	uint8_t apply_threshold = 0;
+	uint8_t swap_inputs = 0;
+	uint16_t saturation_threshold = 0;
+};
+
 struct BeGammaConfig
 {
 	std::array<uint32_t, std::max<size_t>(PISP_BE_GAMMA2_LUT_SIZE, PISP_BE_GAMMA_LUT_SIZE)> lut {};
@@ -191,8 +215,6 @@ using BeSatControlConfig = struct pisp_be_sat_control_config;
 using BeFalseColourConfig = struct pisp_be_false_colour_config;
 using BeSharpenConfig = struct pisp_be_sharpen_config;
 using BeShFcCombineConfig = struct pisp_be_sh_fc_combine_config;
-using BeTdnConfig = struct pisp_be_tdn_config;
-using BeStitchConfig = struct pisp_be_stitch_config;
 using BeTonemapConfig = struct pisp_be_tonemap_config;
 using BeCompressConfig = struct pisp_compress_config;
 using BeTonemap2Config = struct pisp_be_tonemap2_config;
@@ -373,7 +395,6 @@ public:
 	void setOutputFormat(unsigned int i, const BeOutputFormatConfig &outputFormat);
 	BeOutputFormatConfig getOutputFormat(unsigned int i) const;
 
-	// Variant-specific fields - use visit
 	void setTdn(const BeTdnConfig &tdn);
 	BeTdnConfig getTdn() const;
 

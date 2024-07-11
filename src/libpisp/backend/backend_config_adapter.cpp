@@ -779,11 +779,16 @@ void BackendConfigAdapter::setTdn(const BeTdnConfig &tdn)
 {
 	visit(overloaded {
 		[&tdn](pisp_be_config *cfg) {
-			cfg->tdn = tdn;
+			cfg->tdn.black_level = tdn.black_level;
+			cfg->tdn.ratio = tdn.ratio;
+			cfg->tdn.noise_constant = tdn.noise_constant;
+			cfg->tdn.noise_slope = tdn.threshold;
+			cfg->tdn.reset = tdn.reset;
+			cfg->tdn.threshold = tdn.threshold;
 			cfg->tdn.pad = 0;
 		},
-		[&tdn]([[maybe_unused]] pisp_be_config2 *cfg) {
-			// v2 uses pisp_be_tdn2_config, conversion not implemented
+		[&tdn](pisp_be_config2 *cfg) {
+			cfg->tdn = tdn;
 		}
 	});
 }
@@ -792,11 +797,17 @@ BeTdnConfig BackendConfigAdapter::getTdn() const
 {
 	return visit(overloaded {
 		[](pisp_be_config *cfg) -> BeTdnConfig {
-			return cfg->tdn;
+			BeTdnConfig tdn;
+			tdn.black_level = cfg->tdn.black_level;
+			tdn.ratio = cfg->tdn.ratio;
+			tdn.noise_constant = cfg->tdn.noise_constant;
+			tdn.threshold = cfg->tdn.noise_slope;
+			tdn.reset = cfg->tdn.reset;
+			tdn.threshold = cfg->tdn.threshold;
+			return tdn;
 		},
-		[]([[maybe_unused]] pisp_be_config2 *cfg) -> BeTdnConfig {
-			// v2 uses pisp_be_tdn2_config, conversion not implemented
-			return BeTdnConfig{};
+		[](pisp_be_config2 *cfg) -> BeTdnConfig {
+			return cfg->tdn;
 		}
 	});
 }
@@ -805,10 +816,24 @@ void BackendConfigAdapter::setStitch(const BeStitchConfig &stitch)
 {
 	visit(overloaded {
 		[&stitch](pisp_be_config *cfg) {
-			cfg->stitch = stitch;
+			cfg->stitch.threshold_lo = stitch.threshold_lo;
+			cfg->stitch.threshold_diff_power = stitch.threshold_diff_power;
+			cfg->stitch.exposure_ratio = stitch.exposure_ratio;
+			cfg->stitch.motion_threshold_256 = stitch.motion_threshold_256;
+			cfg->stitch.motion_threshold_recip = stitch.motion_threshold_recip;
+			cfg->stitch.pad = 0;
 		},
-		[&stitch]([[maybe_unused]] pisp_be_config2 *cfg) {
-			// v2 uses pisp_be_tdn2_config for stitch, conversion not implemented
+		[&stitch](pisp_be_config2 *cfg) {
+			cfg->stitch.black_level = stitch.black_level;
+			cfg->stitch.ratio = stitch.ratio;
+			cfg->stitch.noise_constant = stitch.noise_constant;
+			cfg->stitch.noise_slope = stitch.threshold;
+			cfg->stitch.reset = stitch.reset;
+			cfg->stitch.apply_threshold = stitch.apply_threshold;
+			cfg->stitch.swap_inputs = stitch.swap_inputs;
+			cfg->stitch.saturation_threshold = stitch.saturation_threshold;
+			cfg->stitch.threshold = stitch.threshold;
+			cfg->stitch.pad = 0;
 		}
 	});
 }
@@ -817,11 +842,25 @@ BeStitchConfig BackendConfigAdapter::getStitch() const
 {
 	return visit(overloaded {
 		[](pisp_be_config *cfg) -> BeStitchConfig {
-			return cfg->stitch;
+			BeStitchConfig stitch;
+			stitch.threshold_lo = cfg->stitch.threshold_lo;
+			stitch.threshold_diff_power = cfg->stitch.threshold_diff_power;
+			stitch.exposure_ratio = cfg->stitch.exposure_ratio;
+			stitch.motion_threshold_256 = cfg->stitch.motion_threshold_256;
+			stitch.motion_threshold_recip = cfg->stitch.motion_threshold_recip;
+			return stitch;
 		},
-		[]([[maybe_unused]] pisp_be_config2 *cfg) -> BeStitchConfig {
-			// v2 uses pisp_be_tdn2_config, conversion not implemented
-			return BeStitchConfig{};
+		[](pisp_be_config2 *cfg) -> BeStitchConfig {
+			BeStitchConfig stitch;
+			stitch.black_level = cfg->stitch.black_level;
+			stitch.ratio = cfg->stitch.ratio;
+			stitch.noise_constant = cfg->stitch.noise_constant;
+			stitch.threshold = cfg->stitch.threshold;
+			stitch.reset = cfg->stitch.reset;
+			stitch.apply_threshold = cfg->stitch.apply_threshold;
+			stitch.swap_inputs = cfg->stitch.swap_inputs;
+			stitch.saturation_threshold = cfg->stitch.saturation_threshold;
+			return stitch;
 		}
 	});
 }
