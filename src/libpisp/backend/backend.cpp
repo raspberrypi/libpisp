@@ -430,13 +430,18 @@ BeCcmConfig BackEnd::getYcbcrInverse() const
 
 void BackEnd::setGamma(BeGammaConfig const &gamma)
 {
-	config_->setGamma(gamma);
-	pipe_->dirtyFlagsRgb |= RgbEnable::Gamma0;
+	setGamma(0, gamma);
 }
 
-BeGammaConfig BackEnd::getGamma() const
+void BackEnd::setGamma(unsigned int i, BeGammaConfig const &gamma)
 {
-	return config_->getGamma();
+	config_->setGamma(i, gamma);
+	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::Gamma0, i);
+}
+
+BeGammaConfig BackEnd::getGamma(unsigned int i) const
+{
+	return config_->getGamma(i);
 }
 
 void BackEnd::setCrop(BeCropConfig const &crop)
@@ -466,15 +471,26 @@ BeCropConfig BackEnd::getCrop(unsigned int i) const
 	return pipe_->configExtra.crop[i];
 }
 
-void BackEnd::setCsc(unsigned int i, BeCcmConfig const &csc)
+void BackEnd::setPreCsc(unsigned int i, BeCcmConfig const &csc)
 {
-	config_->setCsc(i, csc);
+	config_->setPreCsc(i, csc);
 	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::PostCsc0, i);
 }
 
-BeCcmConfig BackEnd::getCsc(unsigned int i) const
+BeCcmConfig BackEnd::getPreCsc(unsigned int i) const
 {
-	return config_->getCsc(i);
+	return config_->getPreCsc(i);
+}
+
+void BackEnd::setPostCsc(unsigned int i, BeCcmConfig const &csc)
+{
+	config_->setPostCsc(i, csc);
+	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::PostCsc0, i);
+}
+
+BeCcmConfig BackEnd::getPostCsc(unsigned int i) const
+{
+	return config_->getPostCsc(i);
 }
 
 void BackEnd::setDownscale(unsigned int i, BeDownscaleConfig const &downscale)

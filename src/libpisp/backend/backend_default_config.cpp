@@ -360,7 +360,8 @@ void BackEnd::initialiseDefaultConfig(const std::string &filename)
 
 	libpisp::BeGammaConfig gamma;
 	initialiseGamma(gamma, root);
-	setGamma(gamma);
+	setGamma(0, gamma);
+	setGamma(1, gamma);
 
 	readYCbCr(ycbcrMap_, inverseYcbcrMap_, root);
 	readResample(resampleFilterMap_, resampleSelectList_, root);

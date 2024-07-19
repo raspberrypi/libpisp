@@ -445,15 +445,15 @@ BeCropConfig BackEnd::getCrop(unsigned int i) const
 	return pipe_->configExtra.crop[i];
 }
 
-void BackEnd::setCsc(unsigned int i, BeCcmConfig const &csc)
+void BackEnd::setPostCsc(unsigned int i, BeCcmConfig const &csc)
 {
-	config_->setCsc(i, csc);
+	config_->setPostCsc(i, csc);
 	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::PostCsc0, i);
 }
 
-BeCcmConfig BackEnd::getCsc(unsigned int i) const
+BeCcmConfig BackEnd::getPostCsc(unsigned int i) const
 {
-	return config_->getCsc(i);
+	return config_->getPostCsc(i);
 }
 
 void BackEnd::setDownscale(unsigned int i, BeDownscaleConfig const &downscale)

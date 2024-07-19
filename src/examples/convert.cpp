@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
 		csc.offsets[0] = 131072; // round to nearest after Resample, for 8-bit output
 		csc.offsets[1] = 131072;
 		csc.offsets[2] = 131072;
-		be->setCsc(0, csc);
+		be->setPostCsc(0, csc);
 		global.rgbEnables |= libpisp::RgbEnable::PostCsc0;
 	}
 	else
@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
 	{
 		libpisp::BeCcmConfig csc;
 		be->initialiseYcbcr(csc, "jpeg");
-		be->setCsc(0, csc);
+		be->setPostCsc(0, csc);
 		global.rgbEnables |= libpisp::RgbEnable::PostCsc0;
 	}
 

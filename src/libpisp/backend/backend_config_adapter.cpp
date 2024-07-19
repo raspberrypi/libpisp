@@ -699,7 +699,32 @@ BeCcmConfig BackendConfigAdapter::getYcbcrInverse() const
 	return visit([](auto *cfg) -> BeCcmConfig { return cfg->ycbcr_inverse; });
 }
 
-void BackendConfigAdapter::setCsc(unsigned int i, const BeCcmConfig &csc)
+void BackendConfigAdapter::setPreCsc(unsigned int i, const BeCcmConfig &csc)
+{
+	visit(overloaded {
+		[]([[maybe_unused]] pisp_be_config *cfg) {
+			// Throw error? 
+		},
+		[&csc, i](pisp_be_config2 *cfg) {
+			cfg->pre_csc[i] = csc;
+			cfg->pre_csc[i].pad[0] = cfg->pre_csc[i].pad[1] = 0;
+		}
+	});
+}
+
+BeCcmConfig BackendConfigAdapter::getPreCsc(unsigned int i) const
+{
+	return visit(overloaded {
+		[]([[maybe_unused]] pisp_be_config *cfg) -> BeCcmConfig {
+			// Throw error? 
+			return {};
+		},
+
+		[i](pisp_be_config2 *cfg) -> BeCcmConfig { return cfg->pre_csc[i]; }
+	});
+}
+
+void BackendConfigAdapter::setPostCsc(unsigned int i, const BeCcmConfig &csc)
 {
 	visit(overloaded {
 		[&csc, i](pisp_be_config *cfg) {
@@ -713,7 +738,7 @@ void BackendConfigAdapter::setCsc(unsigned int i, const BeCcmConfig &csc)
 	});
 }
 
-BeCcmConfig BackendConfigAdapter::getCsc(unsigned int i) const
+BeCcmConfig BackendConfigAdapter::getPostCsc(unsigned int i) const
 {
 	return visit(overloaded {
 		[i](pisp_be_config *cfg) -> BeCcmConfig { return cfg->csc[i]; },
@@ -974,21 +999,20 @@ BeDemosaicConfig BackendConfigAdapter::getDemosaic() const
 	});
 }
 
-void BackendConfigAdapter::setGamma(const BeGammaConfig &gamma)
+void BackendConfigAdapter::setGamma(unsigned int i, const BeGammaConfig &gamma)
 {
 	visit(overloaded {
 		[&gamma](pisp_be_config *cfg) {
 			std::memcpy(cfg->gamma.lut, gamma.lut.data(), sizeof(cfg->gamma.lut));
 		},
-		[&gamma](pisp_be_config2 *cfg) {
-			std::memcpy(cfg->gamma[0].lut, gamma.lut.data(), sizeof(cfg->gamma[0].lut));
-			std::memcpy(cfg->gamma[1].lut, gamma.lut.data(), sizeof(cfg->gamma[1].lut));
-			cfg->gamma[0].pad = cfg->gamma[1].pad = 0;
+		[i, &gamma](pisp_be_config2 *cfg) {
+			std::memcpy(cfg->gamma[i].lut, gamma.lut.data(), sizeof(cfg->gamma[0].lut));
+			cfg->gamma[i].pad = cfg->gamma[1].pad = 0;
 		}
 	});
 }
 
-BeGammaConfig BackendConfigAdapter::getGamma() const
+BeGammaConfig BackendConfigAdapter::getGamma(unsigned int i) const
 {
 	BeGammaConfig gamma;
 
@@ -997,8 +1021,8 @@ BeGammaConfig BackendConfigAdapter::getGamma() const
 			std::memcpy(gamma.lut.data(), cfg->gamma.lut, sizeof(cfg->gamma.lut));
 			return gamma;
 		},
-		[&gamma](pisp_be_config2 *cfg) -> BeGammaConfig {
-			std::memcpy(gamma.lut.data(), cfg->gamma[0].lut, sizeof(cfg->gamma[0].lut));
+		[i, &gamma](pisp_be_config2 *cfg) -> BeGammaConfig {
+			std::memcpy(gamma.lut.data(), cfg->gamma[i].lut, sizeof(cfg->gamma[i].lut));
 			return gamma;
 		}
 	});

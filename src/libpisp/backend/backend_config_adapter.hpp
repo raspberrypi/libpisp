@@ -385,9 +385,11 @@ public:
 	void setYcbcrInverse(const BeCcmConfig &ycbcrInverse);
 	BeCcmConfig getYcbcrInverse() const;
 
-	// Array fields
-	void setCsc(unsigned int i, const BeCcmConfig &csc);
-	BeCcmConfig getCsc(unsigned int i) const;
+	void setPreCsc(unsigned int i, const BeCcmConfig &csc);
+	BeCcmConfig getPreCsc(unsigned int i) const;
+
+	void setPostCsc(unsigned int i, const BeCcmConfig &csc);
+	BeCcmConfig getPostCsc(unsigned int i) const;
 
 	void setDownscale(unsigned int i, const BeDownscaleConfig &downscale);
 	BeDownscaleConfig getDownscale(unsigned int i) const;
@@ -413,8 +415,8 @@ public:
 	void setDemosaic(const BeDemosaicConfig &demosaic);
 	BeDemosaicConfig getDemosaic() const;
 
-	void setGamma(const BeGammaConfig &gamma);
-	BeGammaConfig getGamma() const;
+	void setGamma(unsigned int i, const BeGammaConfig &gamma);
+	BeGammaConfig getGamma(unsigned int i) const;
 
 	void setResample(unsigned int i, const BeResampleConfig &resample);
 	BeResampleConfig getResample(unsigned int i) const;
