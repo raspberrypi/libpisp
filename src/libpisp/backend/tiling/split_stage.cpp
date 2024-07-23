@@ -132,3 +132,10 @@ bool SplitStage::BranchComplete() const
 		done &= d->BranchComplete();
 	return done;
 }
+
+bool SplitStage::BranchInactive() const
+{
+	if (!upstream_)
+		return false;
+	return upstream_->BranchInactive();
+}

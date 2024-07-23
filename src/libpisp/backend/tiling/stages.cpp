@@ -6,6 +6,7 @@
  */
 #include "stages.hpp"
 
+#include "common/logging.hpp"
 #include "pipeline.hpp"
 
 #include <cstdint>
@@ -74,22 +75,25 @@ void BasicStage::CopyOut(void *dest, Dir dir)
 	if (struct_offset_ >= 0)
 	{
 		Region *region = (Region *)((uint8_t *)dest + struct_offset_);
-		if (!BranchComplete())
-		{
-			region->input[dir] = input_interval_;
-			region->crop[dir] = crop_;
-			region->output[dir] = output_interval_;
-		}
-		else
-		{
-			region->input[dir] = {};
-			region->crop[dir] = {};
-			region->output[dir] = {};
-		}
+
+		PISP_LOG(debug, "(" << name_ << ") complete: " << BranchComplete() << " inactive: " << BranchInactive());
+		if (BranchComplete() || BranchInactive())
+			BasicStage::Reset();
+
+		region->input[dir] = input_interval_;
+		region->crop[dir] = crop_;
+		region->output[dir] = output_interval_;
 	}
 }
 
 bool BasicStage::BranchComplete() const
 {
 	return downstream_->BranchComplete();
+}
+
+bool BasicStage::BranchInactive() const
+{
+	if (!upstream_)
+		return false;
+	return upstream_->BranchInactive();
 }

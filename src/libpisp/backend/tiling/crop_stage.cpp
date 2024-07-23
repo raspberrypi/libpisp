@@ -12,8 +12,18 @@
 
 using namespace tiling;
 
+namespace
+{
+
+inline bool interval_valid(const Interval &interval, const int min_tile_size)
+{
+	return interval.End() >= min_tile_size && interval.length >= min_tile_size;
+}
+
+} // namespace
+
 CropStage::CropStage(char const *name, Stage *upstream, Config const &config, int struct_offset)
-	: BasicStage(name, upstream->GetPipeline(), upstream, struct_offset), config_(config), started_(false)
+	: BasicStage(name, upstream->GetPipeline(), upstream, struct_offset), config_(config)
 {
 }
 
@@ -45,20 +55,24 @@ int CropStage::PushEndDown(int input_end, Dir dir)
 
 	int output_end = input_end - config_.crop[dir].offset;
 
-	// If negative, no output will be generated for this tile. Terminate the
-	// iteration here and don't go futher downstream.
-	if (output_end < 0)
+	if (output_end > config_.crop[dir].length)
+		output_end = config_.crop[dir].length;
+
+	output_interval_.SetEnd(output_end);
+
+	// If this is the first tile to generate output, ensure we can make at least
+	// min_tile_size of output pixels. If not, terminate iteration here and don't
+	// go futher downstream. Defer the output for the next tile.
+	//
+	// output_end may also be negative if no output will be generated for this tile.
+	if (!interval_valid(output_interval_, GetPipeline()->GetConfig().min_tile_size[dir]))
 	{
-		PISP_LOG(debug, "(" << name_ << ") Output branch not started, terminating ");
+		PISP_LOG(debug, "(" << name_ << ") Output branch not started or output too small, terminating");
+		BasicStage::Reset();
 		return 0;
 	}
 
-	started_ = true;
-
-	if (output_end > config_.crop[dir].length)
-		output_end = config_.crop[dir].length;
 	input_interval_.SetEnd(input_end);
-	output_interval_.SetEnd(output_end);
 
 	PISP_LOG(debug, "(" << name_ << ") Exit with output_end " << output_end);
 	PushEndUp(downstream_->PushEndDown(output_end, dir), dir);
@@ -73,6 +87,14 @@ void CropStage::PushEndUp(int output_end, Dir dir)
 	input_interval_.SetEnd(input_end);
 	output_interval_.SetEnd(output_end);
 
+	// Same check as we do in PushEndDown().
+	if (!interval_valid(output_interval_, GetPipeline()->GetConfig().min_tile_size[dir]))
+	{
+		PISP_LOG(debug, "(" << name_ << ") Output branch not started or output too small, terminating");
+		BasicStage::Reset();
+		return;
+	}
+
 	PISP_LOG(debug, "(" << name_ << ") Exit with input_end " << input_end);
 }
 
@@ -82,9 +104,10 @@ void CropStage::PushCropDown(Interval interval, Dir dir)
 
 	// Branch has not started producing output.  Terminate the iteration here
 	// and don't go futher downstream.
-	if (!started_)
+	if (!interval_valid(output_interval_, GetPipeline()->GetConfig().min_tile_size[dir]))
 	{
-		PISP_LOG(debug, "(" << name_ << ") Output branch not started, terminating ");
+		PISP_LOG(debug, "(" << name_ << ") Output branch not started or output too small, terminating");
+		BasicStage::Reset();
 		return;
 	}
 
@@ -98,7 +121,7 @@ void CropStage::PushCropDown(Interval interval, Dir dir)
 	downstream_->PushCropDown(output_interval_, dir);
 }
 
-void CropStage::Reset()
+bool CropStage::BranchInactive() const
 {
-	started_ = false;
+	return !output_interval_.length;
 }

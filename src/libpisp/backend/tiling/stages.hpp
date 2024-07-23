@@ -37,6 +37,7 @@ public:
 	virtual void PushCropDown(Interval interval, Dir dir) = 0;
 	virtual void CopyOut(void *dest, Dir dir) = 0;
 	virtual bool BranchComplete() const = 0;
+	virtual bool BranchInactive() const = 0;
 	void MergeRegions(void *dest, void *x_src, void *y_src) const;
 
 protected:
@@ -57,6 +58,7 @@ public:
 	virtual void Reset();
 	virtual void CopyOut(void *dest, Dir dir);
 	virtual bool BranchComplete() const;
+	virtual bool BranchInactive() const;
 
 protected:
 	Stage *upstream_;
