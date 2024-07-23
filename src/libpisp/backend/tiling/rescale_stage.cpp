@@ -34,8 +34,11 @@ void RescaleStage::PushStartUp(int output_start, Dir dir)
 	int input_start_P = output_start * config_.scale[dir];
 	int input_start = input_start_P >> config_.precision;
 	int input_start_w_context = input_start - config_.start_context[dir];
-
-	if (input_start_w_context < 0)
+	// input_start_w_context is allowed to go negative here if, for example, the branch starts producing output
+	// on the second tile in a row/column and the resampler requires left context pixels. In such cases, the left/top
+	// edge flag will not be set on the tile and the hardware cannot remove the left/top context pixels. So allow
+	// negative values on all but the left/top edge tile.
+	if (GetPipeline()->FirstTile() && input_start_w_context < 0)
 		input_start_w_context = 0;
 	output_interval_.offset = output_start;
 	input_interval_.offset = input_start_w_context;

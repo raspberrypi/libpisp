@@ -37,6 +37,7 @@ public:
 	void AddInputStage(InputStage *input_stage);
 	void AddOutputStage(OutputStage *output_stage);
 	void Tile(void *mem, size_t num_items, size_t item_size, Length2 *grid);
+	bool FirstTile() const { return first_tile_; }
 
 private:
 	int tileDirection(Dir dir, void *mem, size_t num_items, size_t item_size);
@@ -46,6 +47,7 @@ private:
 	std::vector<Stage *> stages_;
 	std::vector<InputStage *> inputs_;
 	std::vector<OutputStage *> outputs_;
+	bool first_tile_;
 };
 
 } // namespace tiling
