@@ -25,9 +25,11 @@ public:
 	virtual int PushEndDown(int input_end, Dir dir);
 	virtual void PushEndUp(int output_end, Dir dir);
 	virtual void PushCropDown(Interval interval, Dir dir);
+	void Reset() override;
 
 private:
 	Config config_;
+	bool started_;
 };
 
 } // namespace tiling

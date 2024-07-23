@@ -13,7 +13,7 @@
 using namespace tiling;
 
 CropStage::CropStage(char const *name, Stage *upstream, Config const &config, int struct_offset)
-	: BasicStage(name, upstream->GetPipeline(), upstream, struct_offset), config_(config)
+	: BasicStage(name, upstream->GetPipeline(), upstream, struct_offset), config_(config), started_(false)
 {
 }
 
@@ -27,6 +27,11 @@ void CropStage::PushStartUp(int output_start, Dir dir)
 	PISP_LOG(debug, "(" << name_ << ") Enter with output_start " << output_start);
 
 	int input_start = output_start + config_.crop[dir].offset;
+	// input_start can never be negative here, but it is possible to have output_start
+	// negative if, for example, a branch starts producing output on the second
+	// tile in a row (or column) and the resampler requires left (or top) context pixels.
+	if (input_start < 0)
+		throw std::runtime_error("input start is negative: " + std::to_string(input_start));
 	output_interval_.offset = output_start;
 	input_interval_.offset = input_start;
 
@@ -39,6 +44,17 @@ int CropStage::PushEndDown(int input_end, Dir dir)
 	PISP_LOG(debug, "(" << name_ << ") Enter with input_end " << input_end);
 
 	int output_end = input_end - config_.crop[dir].offset;
+
+	// If negative, no output will be generated for this tile. Terminate the
+	// iteration here and don't go futher downstream.
+	if (output_end < 0)
+	{
+		PISP_LOG(debug, "(" << name_ << ") Output branch not started, terminating ");
+		return 0;
+	}
+
+	started_ = true;
+
 	if (output_end > config_.crop[dir].length)
 		output_end = config_.crop[dir].length;
 	input_interval_.SetEnd(input_end);
@@ -63,6 +79,15 @@ void CropStage::PushEndUp(int output_end, Dir dir)
 void CropStage::PushCropDown(Interval interval, Dir dir)
 {
 	PISP_LOG(debug, "(" << name_ << ") Enter with interval " << interval);
+
+	// Branch has not started producing output.  Terminate the iteration here
+	// and don't go futher downstream.
+	if (!started_)
+	{
+		PISP_LOG(debug, "(" << name_ << ") Output branch not started, terminating ");
+		return;
+	}
+
 	PISP_ASSERT(interval > input_interval_);
 
 	input_interval_ = interval;
@@ -71,4 +96,9 @@ void CropStage::PushCropDown(Interval interval, Dir dir)
 
 	PISP_LOG(debug, "(" << name_ << ") Exit with interval " << output_interval_);
 	downstream_->PushCropDown(output_interval_, dir);
+}
+
+void CropStage::Reset()
+{
+	started_ = false;
 }

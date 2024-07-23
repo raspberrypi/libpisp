@@ -16,7 +16,7 @@
 
 using namespace tiling;
 
-Pipeline::Pipeline(char const *name, Config const &config) : name_(name), config_(config)
+Pipeline::Pipeline(char const *name, Config const &config) : name_(name), config_(config), first_tile_(false)
 {
 }
 
@@ -74,6 +74,7 @@ int Pipeline::tileDirection(Dir dir, void *mem, size_t num_items, size_t item_si
 	reset();
 	bool done = false;
 	unsigned int num_tiles = 0;
+	first_tile_ = true;
 	for (; !done; num_tiles++)
 	{
 		PISP_LOG(debug, "----------------------------------------------------------------");
@@ -94,6 +95,7 @@ int Pipeline::tileDirection(Dir dir, void *mem, size_t num_items, size_t item_si
 		done = true;
 		for (auto s : outputs_)
 			done &= s->Done(dir);
+		first_tile_ = false;
 	}
 
 	PISP_LOG(debug, "Made " << num_tiles << " tiles in direction " << dir);
