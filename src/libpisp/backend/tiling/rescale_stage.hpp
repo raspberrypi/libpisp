@@ -46,7 +46,7 @@ public:
 
 private:
 	Config config_;
-	uint32_t round_up;
+	int round_up;
 };
 
 } // namespace tiling
