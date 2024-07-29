@@ -1036,15 +1036,12 @@ void BackendConfigAdapter::setResample(unsigned int i, const BeResampleConfig &r
 			cfg->resample[i].scale_factor_v = resample.scale_factor_v;
 			std::memcpy(cfg->resample[i].coef, resample.coef.data(), sizeof(cfg->resample[i].coef));
 		},
+
 		[&resample, i](pisp_be_config2 *cfg) {
-			// v2 uses pisp_be_resample2_config
 			cfg->resample[i].scale_factor_h = resample.scale_factor_h;
 			cfg->resample[i].scale_factor_v = resample.scale_factor_v;
-			// Copy coefficients - v1 has single coef array, v2 has separate coef_h and coef_v
-			for (unsigned int j = 0; j < PISP_BE_RESAMPLE_FILTER_SIZE; j++) {
-				cfg->resample[i].coef_h[j] = resample.coef[j];
-				cfg->resample[i].coef_v[j] = resample.coef[j];
-			}
+			std::memcpy(cfg->resample[i].coef_h, resample.coef_h.data(), sizeof(cfg->resample[i].coef_h));
+			std::memcpy(cfg->resample[i].coef_v, resample.coef_h.data(), sizeof(cfg->resample[i].coef_v));
 		}
 	});
 

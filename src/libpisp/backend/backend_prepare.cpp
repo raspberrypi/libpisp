@@ -775,16 +775,18 @@ void BackEnd::updateSmartResize()
 					{
 						// Initial phase for the current pixel (offset 2 in the filter)
 						// is calculated as 1 - p / NumPhases
-						resample.coef[p * NumTaps + 0] =
+						resample.coef_h[p * NumTaps + 0] =
 							(1 << ResamplePrecision) - (p << ResamplePrecision) / NumPhases;
 
-						resample.coef[p * NumTaps + 0] /= scaleFactorX;
-
+						resample.coef_h[p * NumTaps + 0] /= scaleFactorX;
+						// Copy the same value to the vertical filter for now.
+						resample.coef_v[p * NumTaps + 0] = resample.coef_h[p * NumTaps + 0];
 						double scale = scaleFactorX - (1.0 - (double)p / NumPhases);
 						for (unsigned int t = 1; t < 1 + std::ceil(scaleFactorX); t++)
 						{
 							double s = std::min(1.0, scale);
-							resample.coef[p * NumTaps + t] = s * (1 << ResamplePrecision) / scaleFactorX;
+							resample.coef_h[p * NumTaps + t] = s * (1 << ResamplePrecision) / scaleFactorX;
+							resample.coef_v[p * NumTaps + t] = resample.coef_h[p * NumTaps + t];
 							scale -= s;
 						}
 					}
@@ -793,7 +795,15 @@ void BackEnd::updateSmartResize()
 				{
 					// Let's choose a resampling filter based on the scaling factor.
 					// The selection mapping is defined in the config json file.
-					initialiseResample(resample, scaleFactorX);
+					if (variant_ <= BCM2712_D0)
+					{
+						initialiseResample(resample, scaleFactorX);
+					}
+					else
+					{
+						initialiseResampleH(resample, scaleFactorX);
+						initialiseResampleV(resample, scaleFactorY);
+					}
 				}
 
 				// Last thing is to set the output dimensions.
@@ -1032,7 +1042,7 @@ void BackEnd::retilePipeline(TilingConfig const &tilingConfig)
 				}
 			}
 
-			// Phase difference between planes cannot be > 0.5 pixels on the output dimenstions.
+			// Phase difference between planes cannot be > 0.5 pixels on the output dimensions.
 			if (rgbEnables & getFlagForBranch(RgbEnable::Resample0, j))
 			{
 				const BeResampleConfig &resample = config_->getResample(j);

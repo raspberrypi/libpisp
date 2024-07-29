@@ -156,6 +156,10 @@ public:
 	void initialiseYcbcrInverse(BeCcmConfig &ycbcrInverse, const std::string &colourSpace);
 	void initialiseResample(BeResampleConfig &resample, const std::string &filter);
 	void initialiseResample(BeResampleConfig &resample, double downscale);
+	void initialiseResampleH(BeResampleConfig &resample, const std::string &filter);
+	void initialiseResampleV(BeResampleConfig &resample, const std::string &filter);
+	void initialiseResampleH(BeResampleConfig &resample, double downscale);
+	void initialiseResampleV(BeResampleConfig &resample, double downscale);	
 	void initialiseSharpen(BeSharpenConfig &sharpen, BeShFcCombineConfig &shfc);
 
 	void prepare(pisp_be_tiles_config *config);

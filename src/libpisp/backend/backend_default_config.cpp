@@ -151,13 +151,15 @@ void readResample(std::map<std::string, libpisp::BeResampleConfig> &resampleFilt
 	for (auto const &[name, filter] : filters.items())
 	{
 		libpisp::BeResampleConfig r;
-		constexpr unsigned int num_coefs = r.coef.size();
+		constexpr unsigned int num_coefs = r.coef_h.size();
 		auto coefs = filter.get<std::vector<int16_t>>();
 
 		if (coefs.size() != num_coefs)
 			throw std::runtime_error("readResample: Incorrect number of filter coefficients");
 
-		memcpy(r.coef.data(), coefs.data(), sizeof(r.coef));
+		// Copy to both H and V dimensions for simplicity
+		memcpy(r.coef_h.data(), coefs.data(), sizeof(r.coef_h));
+		memcpy(r.coef_v.data(), coefs.data(), sizeof(r.coef_v));
 		resampleFilterMap.emplace(name, r);
 	}
 
@@ -295,22 +297,54 @@ void BackEnd::initialiseYcbcrInverse(libpisp::BeCcmConfig &ycbcr_inverse, const 
 
 void BackEnd::initialiseResample(BeResampleConfig &resample, const std::string &filter)
 {
-	memset(resample.coef.data(), 0, sizeof(resample.coef));
-
-	auto it = resampleFilterMap_.find(filter);
-	if (it != resampleFilterMap_.end())
-		memcpy(resample.coef.data(), it->second.coef.data(), sizeof(resample.coef));
+	initialiseResampleH(resample, filter);
+	initialiseResampleV(resample, filter);
 }
 
 void BackEnd::initialiseResample(BeResampleConfig &resample, double downscale)
+{
+	initialiseResampleH(resample, downscale);
+	initialiseResampleV(resample, downscale);
+}
+
+void BackEnd::initialiseResampleH(BeResampleConfig &resample, const std::string &filter)
+{
+	memset(resample.coef_h.data(), 0, sizeof(resample.coef_h));
+
+	auto it = resampleFilterMap_.find(filter);
+	if (it != resampleFilterMap_.end())
+		memcpy(resample.coef_h.data(), it->second.coef_v.data(), sizeof(resample.coef_h));
+}
+
+void BackEnd::initialiseResampleV(BeResampleConfig &resample, const std::string &filter)
+{
+	memset(resample.coef_v.data(), 0, sizeof(resample.coef_v));
+
+	auto it = resampleFilterMap_.find(filter);
+	if (it != resampleFilterMap_.end())
+		memcpy(resample.coef_v.data(), it->second.coef_v.data(), sizeof(resample.coef_v));
+}
+
+void BackEnd::initialiseResampleH(BeResampleConfig &resample, double downscale)
 {
 	auto it = std::find_if(resampleSelectList_.begin(), resampleSelectList_.end(),
 						   [downscale](const auto &item) { return item.first >= downscale; });
 
 	if (it != resampleSelectList_.end())
-		initialiseResample(resample, it->second);
+		initialiseResampleH(resample, it->second);
 	else
-		initialiseResample(resample, resampleSelectList_.back().second);
+		initialiseResampleH(resample, resampleSelectList_.back().second);
+}
+
+void BackEnd::initialiseResampleV(BeResampleConfig &resample, double downscale)
+{
+	auto it = std::find_if(resampleSelectList_.begin(), resampleSelectList_.end(),
+						   [downscale](const auto &item) { return item.first >= downscale; });
+
+	if (it != resampleSelectList_.end())
+		initialiseResampleV(resample, it->second);
+	else
+		initialiseResampleV(resample, resampleSelectList_.back().second);
 }
 
 void BackEnd::initialiseSharpen(libpisp::BeSharpenConfig &sharpen, libpisp::BeShFcCombineConfig &shfc)
