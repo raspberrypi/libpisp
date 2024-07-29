@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <optional>
 #include <type_traits>
 #include <variant>
 
@@ -139,10 +140,8 @@ struct BeResampleConfig
 {
 	uint16_t scale_factor_h = 0;
 	uint16_t scale_factor_v = 0;
-	// TODO make this a union??
-	std::array<int16_t, PISP_BE_RESAMPLE_FILTER_SIZE> coef_h {};
-	std::array<int16_t, PISP_BE_RESAMPLE_FILTER_SIZE> coef_v {};
-	std::array<int16_t, PISP_BE_RESAMPLE_FILTER_SIZE> coef {}; 
+	// TODO make this a union with H/V coeffs?
+	std::optional<std::array<int16_t, PISP_BE_RESAMPLE_FILTER_SIZE>> coef {};
 	uint16_t scaled_width = 0; // Non-register field
 	uint16_t scaled_height = 0; // Non-register field
 	std::array<int16_t, 3> initial_phase_h {}; // Non-register field

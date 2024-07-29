@@ -495,8 +495,7 @@ BeCcmConfig BackEnd::getPostCsc(unsigned int i) const
 
 void BackEnd::setDownscale(unsigned int i, BeDownscaleConfig const &downscale)
 {
-	BeDownscaleConfig config = downscale;
-	config_->setDownscale(i, config);
+	config_->setDownscale(i, downscale);
 	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::Downscale0, i);
 	pipe_->retile = true;
 }
@@ -508,8 +507,7 @@ BeDownscaleConfig BackEnd::getDownscale(unsigned int i) const
 
 void BackEnd::setResample(unsigned int i, BeResampleConfig const &resample)
 {
-	BeResampleConfig config = resample;
-	config_->setResample(i, config);
+	config_->setResample(i, resample);
 	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::Resample0, i);
 	pipe_->retile = true;
 }

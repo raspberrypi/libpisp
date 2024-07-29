@@ -154,6 +154,7 @@ public:
 
 	void initialiseYcbcr(BeCcmConfig &ycbcr, const std::string &colourSpace);
 	void initialiseYcbcrInverse(BeCcmConfig &ycbcrInverse, const std::string &colourSpace);
+	// TODO Add H/V variants?
 	void initialiseResample(BeResampleConfig &resample, const std::string &filter);
 	void initialiseResample(BeResampleConfig &resample, double downscale);
 	void initialiseResampleH(BeResampleConfig &resample, const std::string &filter);
@@ -255,7 +256,7 @@ private:
 	// Default config
 	std::map<std::string, BeCcmConfig> ycbcrMap_;
 	std::map<std::string, BeCcmConfig> inverseYcbcrMap_;
-	std::map<std::string, BeResampleConfig> resampleFilterMap_;
+	std::map<std::string, std::vector<int16_t>> resampleFilterMap_;
 	std::vector<std::pair<double, std::string>> resampleSelectList_;
 	BeSharpenConfig defaultSharpen_;
 	BeShFcCombineConfig defaultShfc_;
