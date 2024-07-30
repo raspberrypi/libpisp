@@ -25,7 +25,9 @@ namespace
 constexpr unsigned int MaxStripeHeight = 3072;
 // Precision for the scaler blocks
 constexpr unsigned int ScalePrecision = 12;
-constexpr unsigned int UnityScale = 1 << 12;
+constexpr unsigned int PhasePrecision = 12;
+constexpr unsigned int UnityScale = 1 << ScalePrecision;
+constexpr unsigned int UnityPhase = 1 << PhasePrecision;
 // PPF properties
 constexpr unsigned int ResamplePrecision = 10;
 constexpr unsigned int NumPhases = 16;
@@ -836,8 +838,8 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 					unsigned int frac_y = (resample_size.y.offset * be_config_.downscale[j].scale_factor_v) &
 										  ((1 << ScalePrecision) - 1);
 					// Fractional component of the input required to generate the output pixel.
-					t.downscale_phase_x[p * variant_.BackEndNumBranches(0) + j] = (UnityScale - frac_x);
-					t.downscale_phase_y[p * variant_.BackEndNumBranches(0) + j] = (UnityScale - frac_y);
+					t.downscale_phase_x[p * variant_.BackEndNumBranches(0) + j] = (UnityPhase - frac_x);
+					t.downscale_phase_y[p * variant_.BackEndNumBranches(0) + j] = (UnityPhase - frac_y);
 				}
 
 				if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_RESAMPLE(j))
@@ -858,15 +860,15 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 					t.resample_phase_y[p * variant_.BackEndNumBranches(0) + j] +=
 						be_config_extra_.resample[j].initial_phase_v[p];
 					// Have to be within this range, else some calculation went wrong.
-					PISP_ASSERT(t.resample_phase_x[p * variant_.BackEndNumBranches(0) + j] <= 2 * (UnityScale - 1));
-					PISP_ASSERT(t.resample_phase_y[p * variant_.BackEndNumBranches(0) + j] <= 2 * (UnityScale - 1));
+					PISP_ASSERT(t.resample_phase_x[p * variant_.BackEndNumBranches(0) + j] <= (2 * UnityPhase - 1));
+					PISP_ASSERT(t.resample_phase_y[p * variant_.BackEndNumBranches(0) + j] <= (2 * UnityPhase - 1));
 				}
 			}
 
 			// Phase difference between planes cannot be > 0.5 pixels on the output dimenstions.
 			if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_RESAMPLE(j))
 			{
-				int phase_max = (be_config_.resample[j].scale_factor_h * UnityScale / 2) >> ScalePrecision;
+				int phase_max = (be_config_.resample[j].scale_factor_h * UnityPhase / 2) >> ScalePrecision;
 				if (std::abs(t.resample_phase_x[0 * variant_.BackEndNumBranches(0) + j] -
 							 t.resample_phase_x[1 * variant_.BackEndNumBranches(0) + j]) > phase_max ||
 					std::abs(t.resample_phase_x[1 * variant_.BackEndNumBranches(0) + j] -
@@ -876,7 +878,7 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 				{
 					throw std::runtime_error("Resample phase x for tile is > 0.5 pixels on the output dimensions.");
 				}
-				phase_max = (be_config_.resample[j].scale_factor_v * UnityScale / 2) >> ScalePrecision;
+				phase_max = (be_config_.resample[j].scale_factor_v * UnityPhase / 2) >> ScalePrecision;
 				if (std::abs(t.resample_phase_y[0 * variant_.BackEndNumBranches(0) + j] -
 							 t.resample_phase_y[1 * variant_.BackEndNumBranches(0) + j]) > phase_max ||
 					std::abs(t.resample_phase_y[1 * variant_.BackEndNumBranches(0) + j] -
