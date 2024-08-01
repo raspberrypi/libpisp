@@ -31,8 +31,8 @@ public:
 	virtual void PushEndUp(int output_end, Dir dir);
 	virtual void PushCropDown(Interval interval, Dir dir);
 	virtual void Reset();
-	bool BranchComplete() const;
-	bool Done(Dir dir);
+	bool GetBranchComplete() const;
+	void SetBranchComplete();
 
 private:
 	Config config_;
