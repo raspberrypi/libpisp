@@ -124,15 +124,13 @@ void OutputStage::Reset()
 	branch_complete_ = false;
 }
 
-bool OutputStage::BranchComplete() const
+bool OutputStage::GetBranchComplete() const
 {
 	return branch_complete_;
 }
 
-bool OutputStage::Done(Dir dir)
+void OutputStage::SetBranchComplete()
 {
-	if (output_interval_.End() >= GetOutputImageSize()[dir])
-		branch_complete_ = true;
-
-	return branch_complete_;
+	branch_complete_ = true;
+	PISP_LOG(debug, "(" << name_ << ") Setting branch complete");
 }

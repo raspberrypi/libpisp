@@ -94,7 +94,14 @@ int Pipeline::tileDirection(Dir dir, void *mem, size_t num_items, size_t item_si
 			s->CopyOut(dest, dir);
 		done = true;
 		for (auto s : outputs_)
-			done &= s->Done(dir);
+		{
+			if (s->GetBranchComplete())
+				continue;
+			else if (s->GetOutputInterval().End() >= s->GetOutputImageSize()[dir])
+				s->SetBranchComplete();
+			else
+				done = false;
+		}
 		first_tile_ = false;
 	}
 
