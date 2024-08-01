@@ -76,8 +76,8 @@ void BasicStage::CopyOut(void *dest, Dir dir)
 	{
 		Region *region = (Region *)((uint8_t *)dest + struct_offset_);
 
-		PISP_LOG(debug, "(" << name_ << ") complete: " << BranchComplete() << " inactive: " << BranchInactive());
-		if (BranchComplete() || BranchInactive())
+		PISP_LOG(debug, "(" << name_ << ") complete: " << GetBranchComplete() << " inactive: " << GetBranchInactive());
+		if (GetBranchComplete() || GetBranchInactive())
 			BasicStage::Reset();
 
 		region->input[dir] = input_interval_;
@@ -86,14 +86,14 @@ void BasicStage::CopyOut(void *dest, Dir dir)
 	}
 }
 
-bool BasicStage::BranchComplete() const
+bool BasicStage::GetBranchComplete() const
 {
-	return downstream_->BranchComplete();
+	return downstream_->GetBranchComplete();
 }
 
-bool BasicStage::BranchInactive() const
+bool BasicStage::GetBranchInactive() const
 {
 	if (!upstream_)
 		return false;
-	return upstream_->BranchInactive();
+	return upstream_->GetBranchInactive();
 }

@@ -121,7 +121,7 @@ void CropStage::PushCropDown(Interval interval, Dir dir)
 	downstream_->PushCropDown(output_interval_, dir);
 }
 
-bool CropStage::BranchInactive() const
+bool CropStage::GetBranchInactive() const
 {
 	return !output_interval_.length;
 }

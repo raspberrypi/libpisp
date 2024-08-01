@@ -26,8 +26,8 @@ public:
 	virtual void PushEndUp(int output_end, Dir dir);
 	virtual void PushCropDown(Interval interval, Dir dir);
 	virtual void CopyOut(void *dest, Dir dir);
-	virtual bool BranchComplete() const;
-	virtual bool BranchInactive() const;
+	virtual bool GetBranchComplete() const;
+	virtual bool GetBranchInactive() const;
 
 private:
 	Stage *upstream_;

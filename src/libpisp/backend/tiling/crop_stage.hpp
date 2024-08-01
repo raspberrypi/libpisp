@@ -25,7 +25,7 @@ public:
 	virtual int PushEndDown(int input_end, Dir dir) override;
 	virtual void PushEndUp(int output_end, Dir dir) override;
 	virtual void PushCropDown(Interval interval, Dir dir) override;
-	bool BranchInactive() const override;
+	bool GetBranchInactive() const override;
 
 private:
 	Config config_;
