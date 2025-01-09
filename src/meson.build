@@ -54,6 +54,8 @@ version_cpp = vcs_tag(command : version_cmd,
 
 pisp_sources += version_cpp
 
+subdir('helpers')
+
 libpisp = library(
     meson.project_name(),
     pisp_sources,
@@ -75,3 +77,7 @@ pkg_mod = import('pkgconfig')
 pkg_mod.generate(libpisp,
                  description : 'PiSP Library',
                  subdirs : 'libpisp')
+
+if get_option('examples')
+    subdir('examples')
+endif

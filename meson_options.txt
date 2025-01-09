@@ -2,3 +2,4 @@
 # Copyright (C) 2023, Raspberry Pi Ltd
 
 option('logging', type : 'feature', value : 'auto')
+option('examples', type : 'boolean', value : false)
