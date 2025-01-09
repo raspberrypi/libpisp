@@ -6,6 +6,8 @@
  */
 #pragma once
 
+#include <string>
+
 #include "pisp_common.h"
 
 namespace libpisp
@@ -18,5 +20,7 @@ void compute_addr_offset(const pisp_image_format_config &config, int x, int y, u
 						 uint32_t *addr_offset2);
 int num_planes(pisp_image_format format);
 std::size_t get_plane_size(const pisp_image_format_config &config, int plane);
+uint32_t get_pisp_image_format(const std::string &format);
+std::string get_pisp_image_format(uint32_t format);
 
 } // namespace libpisp
