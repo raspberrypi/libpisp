@@ -4,8 +4,10 @@
  *
  * pisp_utils.cpp - PiSP buffer helper utilities
  */
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <map>
 
 #include "backend/pisp_be_config.h"
 
@@ -207,6 +209,58 @@ std::size_t get_plane_size(const pisp_image_format_config &config, int plane)
 	}
 
 	return plane_size >= (1ULL << 32) ? 0 : plane_size;
+}
+
+static const std::map<std::string, uint32_t> &formats_table()
+{
+	// Note that alternate names and plane orderings are not defined to keep a 1:1 mapping.
+	static const std::map<std::string, uint32_t> formats = {
+		{ "YUV444", PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 + PISP_IMAGE_FORMAT_SAMPLING_444 +
+						PISP_IMAGE_FORMAT_PLANARITY_PLANAR },
+		{ "YUV422", PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 + PISP_IMAGE_FORMAT_SAMPLING_422 +
+						PISP_IMAGE_FORMAT_PLANARITY_PLANAR },
+		{ "YUV420", PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 + PISP_IMAGE_FORMAT_SAMPLING_420 +
+						PISP_IMAGE_FORMAT_PLANARITY_PLANAR },
+		{ "NV12", PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 + PISP_IMAGE_FORMAT_SAMPLING_420 +
+					  PISP_IMAGE_FORMAT_PLANARITY_SEMI_PLANAR },
+		{ "NV21", PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 + PISP_IMAGE_FORMAT_SAMPLING_420 +
+					  PISP_IMAGE_FORMAT_PLANARITY_SEMI_PLANAR + PISP_IMAGE_FORMAT_ORDER_SWAPPED },
+		{ "YUYV", PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 + PISP_IMAGE_FORMAT_SAMPLING_422 +
+					  PISP_IMAGE_FORMAT_PLANARITY_INTERLEAVED },
+		{ "UYVY", PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 + PISP_IMAGE_FORMAT_SAMPLING_422 +
+					  PISP_IMAGE_FORMAT_PLANARITY_INTERLEAVED + PISP_IMAGE_FORMAT_ORDER_SWAPPED },
+		{ "NV16", PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 + PISP_IMAGE_FORMAT_SAMPLING_422 +
+					  PISP_IMAGE_FORMAT_PLANARITY_SEMI_PLANAR },
+		{ "NV61", PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 + PISP_IMAGE_FORMAT_SAMPLING_422 +
+					  PISP_IMAGE_FORMAT_PLANARITY_SEMI_PLANAR + PISP_IMAGE_FORMAT_ORDER_SWAPPED },
+		{ "RGB888", PISP_IMAGE_FORMAT_THREE_CHANNEL },
+		{ "RGBX8888", PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPP_32 + PISP_IMAGE_FORMAT_ORDER_SWAPPED },
+		{ "RGB161616", PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_16 },
+		{ "BAYER", PISP_IMAGE_FORMAT_BPS_16 + PISP_IMAGE_FORMAT_UNCOMPRESSED },
+		{ "PISP_COMP1", PISP_IMAGE_FORMAT_COMPRESSION_MODE_1 },
+		{ "PISP_COMP2", PISP_IMAGE_FORMAT_COMPRESSION_MODE_2 },
+	};
+
+	return formats;
+}
+
+unsigned int get_pisp_image_format(const std::string &format)
+{
+	auto it = formats_table().find(format);
+	if (it == formats_table().end())
+		return 0;
+
+	return it->second;
+}
+
+std::string get_pisp_image_format(uint32_t format)
+{
+	const auto &fmts = formats_table();
+	auto it = std::find_if(fmts.begin(), fmts.end(), [format](const auto &f) { return f.second == format; });
+	if (it == fmts.end())
+		return {};
+
+	return it->first;
 }
 
 } // namespace libpisp
