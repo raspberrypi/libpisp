@@ -11,6 +11,7 @@
 #include <cstring>
 
 #include "common/logging.hpp"
+#include "common/pisp_common.h"
 
 using namespace libpisp;
 
@@ -61,7 +62,10 @@ void BackEnd::GetGlobal(pisp_be_global_config &global) const
 void BackEnd::SetInputFormat(pisp_image_format_config const &input_format)
 {
 	be_config_.input_format = input_format;
-	be_config_extra_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_INPUT;
+	if (PISP_IMAGE_FORMAT_THREE_CHANNEL(input_format.format))
+		be_config_extra_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_INPUT;
+	else
+		be_config_extra_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_INPUT;
 	retile_ = true;
 }
 
