@@ -57,7 +57,7 @@ uint32_t compute_x_offset(uint32_t /* pisp_image_format */ format, int x)
 	return x_offset;
 }
 
-void compute_stride_align(pisp_image_format_config &config, int align)
+void compute_stride_align(pisp_image_format_config &config, int align, bool preserve_subsample_ratio)
 {
 	if (PISP_IMAGE_FORMAT_WALLPAPER(config.format))
 	{
@@ -95,19 +95,24 @@ void compute_stride_align(pisp_image_format_config &config, int align)
 		// image in memory must be sufficiently aligned
 		config.stride = (config.stride + align - 1) & ~(align - 1);
 		config.stride2 = (config.stride2 + align - 1) & ~(align - 1);
+
+		// For YUV420/422 formats, ensure the stride ratio matches the subample ratio for the planes.
+		if (preserve_subsample_ratio && PISP_IMAGE_FORMAT_PLANAR(config.format) &&
+			(PISP_IMAGE_FORMAT_SAMPLING_422(config.format) || PISP_IMAGE_FORMAT_SAMPLING_420(config.format)))
+			config.stride = config.stride2 << 1;
 	}
 }
 
-void compute_stride(pisp_image_format_config &config)
+void compute_stride(pisp_image_format_config &config, bool preserve_subsample_ratio)
 {
 	// Our preferred alignment is really 64 bytes, though 16 should work too. Use 16 for now, as it gives better test coverage.
-	compute_stride_align(config, PISP_BACK_END_OUTPUT_MIN_ALIGN);
+	compute_stride_align(config, PISP_BACK_END_OUTPUT_MIN_ALIGN, preserve_subsample_ratio);
 }
 
-void compute_optimal_stride(pisp_image_format_config &config)
+void compute_optimal_stride(pisp_image_format_config &config, bool preserve_subsample_ratio)
 {
 	// Use our preferred alignment of 64 bytes.
-	compute_stride_align(config, PISP_BACK_END_OUTPUT_MAX_ALIGN);
+	compute_stride_align(config, PISP_BACK_END_OUTPUT_MAX_ALIGN, preserve_subsample_ratio);
 }
 
 void compute_addr_offset(const pisp_image_format_config &config, int x, int y, uint32_t *addr_offset,
