@@ -25,6 +25,15 @@ jobs:
         fetch-depth: 1
         clean: true
 
+    - name: Debug - List test directories
+      run: |
+        echo "Workspace location: ${{github.workspace}}"
+        ls -la ${{github.workspace}}/../
+        ls -la /home/pi/
+        pwd
+        ls -R
+
+    # Original build steps continue...
     - name: Configure meson
       run: meson setup build -Dbuildtype=debug
       timeout-minutes: 5
@@ -39,6 +48,11 @@ jobs:
     needs: build-test
 
     steps:
+    - name: Debug - Test environment
+      run: |
+        ls -la ${{env.BE_TEST_DIR}} || echo "Directory not found"
+        ls -la ${{env.TESTS_DIR}} || echo "Directory not found"
+
     - name: Run verification tests
       run: LD_LIBRARY_PATH=${{github.workspace}}/build/src LIBPISP_BE_CONFIG_FILE="${{github.workspace}}/src/libpisp/backend/backend_default_config.json" ${{env.BE_TEST_DIR}}/run_be_tests.py --hw --logall --test ${{env.BE_TEST_DIR}}/be_test ${{env.TESTS_DIR}}/back_end
-      timeout-minutes: 20
+      timeout-minutes: 2
