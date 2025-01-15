@@ -32,7 +32,7 @@ jobs:
       run: sudo apt install -y libboost-log-dev libboost-thread-dev
 
     - name: Configure meson
-      run: CXX=${{matrix.compiler}} meson setup build_${{matrix.compiler}}_${{matrix.build_type}} -Dbuildtype=${{matrix.build_type}}
+      run: CXX=${{matrix.compiler}} meson setup build_${{matrix.compiler}}_${{matrix.build_type}} -Dbuildtype=${{matrix.build_type}} -Dexamples=true
       timeout-minutes: 5
 
     - name: Build
