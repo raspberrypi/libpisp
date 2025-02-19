@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdint>
 #include <map>
+#include <string>
 
 #include "backend/pisp_be_config.h"
 
