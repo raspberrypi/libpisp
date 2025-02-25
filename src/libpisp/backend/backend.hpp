@@ -12,7 +12,6 @@
 #include <string>
 #include <type_traits>
 #include <utility>
-#include <vector>
 
 #include "common/shm_mutex.hpp"
 #include "tiling/pisp_tiling.hpp"
@@ -26,6 +25,11 @@ namespace libpisp
 {
 
 using TileArray = std::array<pisp_tile, PISP_BACK_END_NUM_TILES>;
+
+// We use std::array<std::pair<.,.>> insead of std::map<.,.> to ensure this object provides a standard layout.
+using YcbcrMap = std::array<std::pair<std::string, pisp_be_ccm_config>, 16>;
+using ResampleMap = std::array<std::pair<std::string, pisp_be_resample_config>, 16>;
+using ResampleList = std::array<std::pair<double, std::string>, 16>;
 
 class BackEnd final
 {
@@ -188,11 +192,10 @@ private:
 	uint32_t smart_resize_dirty_;
 
 	// Default config
-	// We use std::vector<std::pair<.,.>> insead of std::map<.,.> to ensure this object provides a standard layout.
-	std::vector<std::pair<std::string, pisp_be_ccm_config>> ycbcr_map_;
-	std::vector<std::pair<std::string, pisp_be_ccm_config>> inverse_ycbcr_map_;
-	std::vector<std::pair<std::string, pisp_be_resample_config>> resample_filter_map_;
-	std::vector<std::pair<double, std::string>> resample_select_list_;
+	YcbcrMap ycbcr_map_;
+	YcbcrMap inverse_ycbcr_map_;
+	ResampleMap resample_filter_map_;
+	ResampleList resample_select_list_;
 	pisp_be_sharpen_config default_sharpen_;
 	pisp_be_sh_fc_combine_config default_shfc_;
 };
