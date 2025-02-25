@@ -133,10 +133,11 @@ void initialise_gamma(pisp_be_gamma_config &gamma, const json &root)
 	}
 }
 
-void read_resample(std::vector<std::pair<std::string, pisp_be_resample_config>> &resample_filter_map,
-				   std::vector<std::pair<double, std::string>> &resample_select_list, const json &root)
+void read_resample(libpisp::ResampleMap &resample_filter_map, libpisp::ResampleList &resample_select_list,
+				   const json &root)
 {
 	auto &filters = root["resample"]["filters"];
+	unsigned int i = 0, j = 0;
 
 	for (auto const &[name, filter] : filters.items())
 	{
@@ -148,22 +149,28 @@ void read_resample(std::vector<std::pair<std::string, pisp_be_resample_config>> 
 			throw std::runtime_error("read_resample: Incorrect number of filter coefficients");
 
 		memcpy(r.coef, coefs.data(), sizeof(r.coef));
-		resample_filter_map.emplace_back(name, r);
-	}
-
-	auto &smart = root["resample"]["smart_selection"];
-	for (auto &scale : smart["downscale"])
-		resample_select_list.emplace_back(scale.get<double>(), std::string {});
-
-	unsigned int i = 0;
-	for (auto &filter : smart["filter"])
-	{
-		resample_select_list[i].second = filter.get<std::string>();
-		if (++i == resample_select_list.size())
+		resample_filter_map[i++] = { name, r };
+		if (i == resample_filter_map.size())
 			break;
 	}
-	if (i != resample_select_list.size())
-		throw std::runtime_error("read_resample: Incorrect number of filters");
+
+	i = 0;
+	auto &smart = root["resample"]["smart_selection"];
+	for (auto &scale : smart["downscale"])
+	{
+		resample_select_list[i++] = { scale.get<double>(), std::string {} };
+		if (i == resample_select_list.size())
+			break;
+	}
+
+	for (auto &filter : smart["filter"])
+	{
+		resample_select_list[j++].second = filter.get<std::string>();
+		if (j == resample_select_list.size())
+			break;
+	}
+	if (j != i)
+		throw std::runtime_error("read_resample: Incorrect number of smart filters/downscale factors");
 }
 
 // Macros for the sharpening filters, to avoid repeating the same code 5 times
@@ -222,10 +229,10 @@ void read_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config 
 	shfc.y_factor = params["shfc_y_factor"].get<double>() * (1 << 8);
 }
 
-void read_ycbcr(std::vector<std::pair<std::string, pisp_be_ccm_config>> &ycbcr_map,
-				std::vector<std::pair<std::string, pisp_be_ccm_config>> &inverse_ycbcr_map, const json &root)
+void read_ycbcr(libpisp::YcbcrMap &ycbcr_map, libpisp::YcbcrMap &inverse_ycbcr_map, const json &root)
 {
 	auto encoding = root["colour_encoding"];
+	unsigned int i = 0;
 
 	for (auto const &[format, enc] : encoding.items())
 	{
@@ -247,15 +254,17 @@ void read_ycbcr(std::vector<std::pair<std::string, pisp_be_ccm_config>> &ycbcr_m
 			memcpy(ccm.offsets, offsets.data(), sizeof(ccm.offsets));
 
 			if (key == "ycbcr")
-				ycbcr_map.emplace_back(format, ccm);
+				ycbcr_map[i] = { format, ccm };
 			else
-				inverse_ycbcr_map.emplace_back(format, ccm);
+				inverse_ycbcr_map[i] = { format, ccm };
 		}
+
+		if (++i == ycbcr_map.size())
+			break;
 	}
 }
 
-void get_matrix(pisp_be_ccm_config &matrix, const std::vector<std::pair<std::string, pisp_be_ccm_config>> &map,
-				const std::string &colour_space)
+void get_matrix(pisp_be_ccm_config &matrix, const libpisp::YcbcrMap &map, const std::string &colour_space)
 {
 	memset(matrix.coeffs, 0, sizeof(matrix.coeffs));
 	memset(matrix.offsets, 0, sizeof(matrix.offsets));
