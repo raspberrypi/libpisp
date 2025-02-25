@@ -25,6 +25,8 @@
 namespace libpisp
 {
 
+using TileArray = std::array<pisp_tile, PISP_BACK_END_NUM_TILES>;
+
 class BackEnd final
 {
 public:
@@ -166,7 +168,7 @@ private:
 	void finaliseConfig();
 	void updateSmartResize();
 	void updateTiles();
-	std::vector<pisp_tile> retilePipeline(TilingConfig const &tiling_config);
+	TileArray retilePipeline(TilingConfig const &tiling_config);
 	void finaliseTiling();
 	void getOutputSize(int output_num, uint16_t *width, uint16_t *height, pisp_image_format_config const &ifmt) const;
 
@@ -179,7 +181,7 @@ private:
 	pisp_image_format_config max_input_;
 	bool retile_;
 	bool finalise_tiling_;
-	std::vector<pisp_tile> tiles_;
+	TileArray tiles_;
 	int num_tiles_x_, num_tiles_y_;
 	mutable ShmMutex mutex_;
 	std::array<SmartResize, PISP_BACK_END_NUM_OUTPUTS> smart_resize_;

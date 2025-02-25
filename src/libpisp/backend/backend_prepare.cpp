@@ -304,12 +304,13 @@ void finalise_output(pisp_be_output_format_config &config)
 		throw std::runtime_error("finalise_output: image stride should be at least 16-byte aligned");
 }
 
-void check_tiles(std::vector<pisp_tile> const &tiles, uint32_t rgb_enables, unsigned int numBranches,
-		 TilingConfig const &tiling_config)
+void check_tiles(TileArray const &tiles, uint32_t rgb_enables, unsigned int numBranches, unsigned int num_tiles,
+				 TilingConfig const &tiling_config)
 {
-	int tile_num = 0;
-	for (auto &tile : tiles)
+	for (unsigned int tile_num = 0; tile_num < num_tiles; tile_num++)
 	{
+		const pisp_tile &tile = tiles[tile_num];
+
 		PISP_ASSERT(tile.input_width && tile.input_height); // zero inputs shouldn't be possible
 
 		if (tile.input_width < PISP_BACK_END_MIN_TILE_WIDTH || tile.input_height < PISP_BACK_END_MIN_TILE_HEIGHT)
@@ -361,7 +362,6 @@ void check_tiles(std::vector<pisp_tile> const &tiles, uint32_t rgb_enables, unsi
 					throw std::runtime_error("Tile height too small at output");
 			}
 		}
-		tile_num++;
 	}
 }
 
@@ -729,7 +729,8 @@ void BackEnd::updateTiles()
 		// outside the actual image width (and we've chosen not to handle compression like that).
 		tiling_config.compressed_input = false;
 		tiles_ = retilePipeline(tiling_config);
-		check_tiles(tiles_, c.global.rgb_enables, variant_.BackEndNumBranches(0), tiling_config);
+		check_tiles(tiles_, c.global.rgb_enables, variant_.BackEndNumBranches(0), num_tiles_x_ * num_tiles_y_,
+					tiling_config);
 		finalise_tiling_ = true;
 	}
 
@@ -740,7 +741,7 @@ void BackEnd::updateTiles()
 	}
 }
 
-std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config)
+TileArray BackEnd::retilePipeline(TilingConfig const &tiling_config)
 {
 	// The tiling library provides tiles in a SW Tile structure.
 	Tile tiles[PISP_BACK_END_NUM_TILES];
@@ -750,11 +751,11 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 	num_tiles_x_ = grid.dx;
 	num_tiles_y_ = grid.dy;
 
-	std::vector<pisp_tile> tile_vector(num_tiles_x_ * num_tiles_y_);
+	TileArray tile_array;
 	// Finally convert the Tiles into pisp_tiles.
 	for (int i = 0; i < num_tiles_x_ * num_tiles_y_; i++)
 	{
-		pisp_tile &t = tile_vector[i];
+		pisp_tile &t = tile_array[i];
 
 		memset(&t, 0, sizeof(pisp_tile));
 		t.edge = 0;
@@ -892,14 +893,16 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 			}
 		}
 	}
-	return tile_vector;
+	return tile_array;
 }
 
 void BackEnd::finaliseTiling()
 {
 	// Update tile parameters (offsets/strides) from on the BE pipeline configuration.
-	for (pisp_tile &t : tiles_)
+	for (int i = 0; i < num_tiles_x_ * num_tiles_y_; i++)
 	{
+		pisp_tile &t = tiles_[i];
+
 		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, be_config_.input_format, &t.input_addr_offset,
 									&t.input_addr_offset2);
 		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, be_config_.tdn_input_format,
