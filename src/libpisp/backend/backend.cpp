@@ -23,7 +23,6 @@ BackEnd::BackEnd(Config const &config, PiSPVariant const &variant)
 	if (config_.max_tile_width > max_tile_width)
 		PISP_LOG(fatal, "Configured max tile width " << config_.max_tile_width << " exceeds " << max_tile_width);
 
-	smart_resize_.resize(2, { 0, 0 });
 	smart_resize_dirty_ = 0;
 
 	const char *env = std::getenv("LIBPISP_BE_CONFIG_FILE");
