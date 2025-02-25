@@ -7,6 +7,7 @@
  */
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <type_traits>
@@ -51,8 +52,8 @@ public:
 
 	struct SmartResize
 	{
-		uint16_t width;
-		uint16_t height;
+		uint16_t width = 0;
+		uint16_t height = 0;
 	};
 
 	BackEnd(Config const &user_config, PiSPVariant const &variant);
@@ -181,7 +182,7 @@ private:
 	std::vector<pisp_tile> tiles_;
 	int num_tiles_x_, num_tiles_y_;
 	mutable ShmMutex mutex_;
-	std::vector<SmartResize> smart_resize_;
+	std::array<SmartResize, PISP_BACK_END_NUM_OUTPUTS> smart_resize_;
 	uint32_t smart_resize_dirty_;
 
 	// Default config
