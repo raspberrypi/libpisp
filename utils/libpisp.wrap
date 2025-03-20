@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: CC0-1.0
+# Copyright (C) 2023, Raspberry Pi Ltd
+
+[wrap-git]
+url = https://github.com/raspberrypi/libpisp.git
+revision = v1.0.6
+depth = 1
