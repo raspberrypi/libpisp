@@ -1,0 +1,60 @@
+Source: libpisp
+Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
+Uploaders: Dylan Aïssi <daissi@debian.org>
+Section: libs
+Priority: optional
+Rules-Requires-Root: no
+Build-Depends: debhelper-compat (= 13),
+               libboost-log-dev,
+               libboost-thread-dev,
+               meson,
+               nlohmann-json3-dev,
+               pkgconf
+Standards-Version: 4.7.2
+Homepage: https://github.com/raspberrypi/libpisp
+Vcs-Browser: https://salsa.debian.org/multimedia-team/libpisp
+Vcs-Git: https://salsa.debian.org/multimedia-team/libpisp.git
+
+Package: libpisp-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends: libpisp1 (= ${binary:Version}),
+         nlohmann-json3-dev,
+         ${misc:Depends}
+Description: Helper library for the PiSP hardware block (development files)
+ This library provides helper functions to generate hardware
+ configuration for the PiSP hardware blocks.  The configuration
+ includes a hardware register specification together with image tiling
+ data to be programmed into the PiSP hardware to fully process a given
+ Bayer or RGB/YUV image with a set of user defined configuration.
+ .
+ This package contains the development files.
+
+Package: libpisp1
+Architecture: any
+Multi-Arch: same
+Depends: libpisp-common (= ${source:Version}),
+         ${misc:Depends},
+         ${shlibs:Depends}
+Description: Helper library for the PiSP hardware block (runtime)
+ This library provides helper functions to generate hardware
+ configuration for the PiSP hardware blocks.  The configuration
+ includes a hardware register specification together with image tiling
+ data to be programmed into the PiSP hardware to fully process a given
+ Bayer or RGB/YUV image with a set of user defined configuration.
+ .
+ This package contains the runtime library.
+
+Package: libpisp-common
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}
+Description: Helper library for the PiSP hardware block (data files)
+ This library provides helper functions to generate hardware
+ configuration for the PiSP hardware blocks.  The configuration
+ includes a hardware register specification together with image tiling
+ data to be programmed into the PiSP hardware to fully process a given
+ Bayer or RGB/YUV image with a set of user defined configuration.
+ .
+ This package contains the architecture-independent data files.
