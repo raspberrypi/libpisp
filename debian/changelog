@@ -1,6 +1,6 @@
-libpisp (1.2.0-1) UNRELEASED; urgency=medium
+libpisp (1.2.0-1) experimental; urgency=medium
 
   * Initial packaging. (Closes: #1100897)
     Based on the packages from Raspberry Pi OS and Ubuntu.
 
- -- Dylan Aïssi <daissi@debian.org>  Sat, 22 Mar 2025 10:11:58 +0100
+ -- Dylan Aïssi <daissi@debian.org>  Sat, 22 Mar 2025 10:18:38 +0100
