@@ -1,0 +1,21 @@
+Description: v1.2.0 has been retagged upstream.
+ This patch is to align our package to the new upstream tag to avoid confusion.
+Forwarded: not-needed
+Author: Dylan Aïssi <daissi@debian.org>
+Last-Update: 2025-03-22
+
+--- a/src/libpisp/common/pisp_utils.cpp
++++ b/src/libpisp/common/pisp_utils.cpp
+@@ -8,6 +8,7 @@
+ #include <cmath>
+ #include <cstdint>
+ #include <map>
++#include <string>
+ 
+ #include "backend/pisp_be_config.h"
+ 
+--- a/version.gen
++++ b/version.gen
+@@ -1 +1 @@
+-b16ebf888b5f525506d13417e6cd8808015653f6
++50426319aa1a9ba4672f91977429365ad4e335a2
