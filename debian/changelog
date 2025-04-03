@@ -1,3 +1,10 @@
+libpisp (1.2.0-2) unstable; urgency=medium
+
+  * Add retagged-v1.2.0.patch due to v1.2.0 which has been upstream retagged.
+  * Upload to unstable.
+
+ -- Dylan Aïssi <daissi@debian.org>  Thu, 03 Apr 2025 21:44:41 +0200
+
 libpisp (1.2.0-1) experimental; urgency=medium
 
   * Initial packaging. (Closes: #1100897)
