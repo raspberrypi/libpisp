@@ -84,7 +84,8 @@ void finalise_inputs(pisp_be_config &config)
 	}
 }
 
-void finalise_lsc(pisp_be_lsc_config &lsc, pisp_be_lsc_extra &lsc_extra, uint16_t width, uint16_t height)
+void finalise_lsc(pisp_be_lsc_config &lsc, [[maybe_unused]] pisp_be_lsc_extra &lsc_extra, uint16_t width,
+				  uint16_t height)
 {
 	// Just a warning that ACLS algorithms might want the grid calculations here to match the AWB/ACLS stats.
 	static const int P = PISP_BE_LSC_STEP_PRECISION;
@@ -98,7 +99,8 @@ void finalise_lsc(pisp_be_lsc_config &lsc, pisp_be_lsc_extra &lsc_extra, uint16_
 	PISP_ASSERT(lsc.grid_step_y * (height + lsc_extra.offset_y - 1) < (PISP_BE_LSC_GRID_SIZE << P));
 }
 
-void finalise_cac(pisp_be_cac_config &cac, pisp_be_cac_extra &cac_extra, uint16_t width, uint16_t height)
+void finalise_cac(pisp_be_cac_config &cac, [[maybe_unused]] pisp_be_cac_extra &cac_extra, uint16_t width,
+				  uint16_t height)
 {
 	static const int P = PISP_BE_CAC_STEP_PRECISION;
 
