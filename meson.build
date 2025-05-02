@@ -3,7 +3,7 @@
 
 project('libpisp', 'c', 'cpp',
         meson_version : '>= 0.58.0',
-        version : '1.2.0',
+        version : '1.2.1',
         default_options : [
             'werror=true',
             'warning_level=2',
