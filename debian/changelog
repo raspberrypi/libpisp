@@ -1,3 +1,9 @@
+libpisp (1.2.1-1) UNRELEASED; urgency=medium
+
+  * New upstream version 1.2.1
+
+ -- Dylan Aïssi <daissi@debian.org>  Fri, 02 May 2025 18:07:13 +0200
+
 libpisp (1.2.0-2) unstable; urgency=medium
 
   * Add retagged-v1.2.0.patch due to v1.2.0 which has been upstream retagged.
