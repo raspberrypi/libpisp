@@ -1,9 +1,9 @@
-libpisp (1.2.1-1) UNRELEASED; urgency=medium
+libpisp (1.2.1-1) unstable; urgency=medium
 
   * New upstream version 1.2.1
   * Drop patch included in upstream release.
 
- -- Dylan Aïssi <daissi@debian.org>  Fri, 02 May 2025 18:07:13 +0200
+ -- Dylan Aïssi <daissi@debian.org>  Fri, 02 May 2025 18:15:31 +0200
 
 libpisp (1.2.0-2) unstable; urgency=medium
 
