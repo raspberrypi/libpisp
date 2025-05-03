@@ -1,3 +1,9 @@
+libpisp (1.2.1-2) UNRELEASED; urgency=medium
+
+  * Add patch to make the build reproducible (Closes: #1104546)
+
+ -- Dylan Aïssi <daissi@debian.org>  Sat, 03 May 2025 09:11:30 +0200
+
 libpisp (1.2.1-1) unstable; urgency=medium
 
   * New upstream version 1.2.1
