@@ -2,6 +2,7 @@ Description: Make builds reproducible by using SOURCE_DATE_EPOCH for build date.
  Don't embed the current date which make the builds unreproducible.
  See: https://reproducible-builds.org/docs/source-date-epoch/
 Bug-Debian: https://bugs.debian.org/1104546
+Author: Dylan Aïssi <daissi@debian.org>
 
 --- a/utils/version.py
 +++ b/utils/version.py
