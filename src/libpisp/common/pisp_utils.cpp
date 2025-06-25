@@ -118,6 +118,11 @@ void compute_optimal_stride(pisp_image_format_config &config, bool preserve_subs
 	compute_stride_align(config, PISP_BACK_END_OUTPUT_MAX_ALIGN, preserve_subsample_ratio);
 }
 
+void compute_optimal_stride(pisp_image_format_config &config)
+{
+	compute_optimal_stride(config, false);
+}
+
 void compute_addr_offset(const pisp_image_format_config &config, int x, int y, uint32_t *addr_offset,
 						 uint32_t *addr_offset2)
 {
