@@ -617,10 +617,13 @@ void BackEnd::updateSmartResize()
 					be_config_.global.rgb_enables &= ~PISP_BE_RGB_ENABLE_DOWNSCALE(i);
 				}
 
-				pisp_be_resample_config resample;
-				pisp_be_resample_extra resample_extra;
-				memset(&resample, 0, sizeof(resample));
-				memset(&resample_extra, 0, sizeof(resample_extra));
+				// Don't resample by unity: it needlessly reduces bit-depth, and can over-sharpen
+				if (resampler_input_width == resampler_output_width &&
+					resampler_input_height == resampler_output_height)
+				{
+					be_config_.global.rgb_enables &= ~PISP_BE_RGB_ENABLE_RESAMPLE(i);
+					continue;
+				}
 
 				// Finally program up the resampler block.
 				// If the following conditions are met:
@@ -634,6 +637,9 @@ void BackEnd::updateSmartResize()
 				// on image quality for larger downscale factors.
 				double scale_factor_x = (double)(resampler_input_width - 1) / (resampler_output_width - 1);
 				double scale_factor_y = (double)(resampler_input_height - 1) / (resampler_output_height - 1);
+				pisp_be_resample_config resample = {};
+				pisp_be_resample_extra resample_extra = {};
+
 				if (scale_factor_x > 2.1 &&
 					scale_factor_x < scale_factor_y * 1.1 && scale_factor_y < scale_factor_x * 1.1)
 				{
