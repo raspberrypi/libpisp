@@ -31,6 +31,7 @@ static FormatInfo get_v4l2_format(const std::string &format)
 {
 	std::map<std::string, FormatInfo> formats {
 		{ "RGB888", { V4L2_PIX_FMT_RGB24, 1 } },
+		{ "RGBX8888", { V4L2_PIX_FMT_RGBX32, 1 } },
 		{ "YUV420P", { V4L2_PIX_FMT_YUV420, 1 } },
 		{ "YUV422P", { V4L2_PIX_FMT_YUV422P, 1 } },
 		{ "YUV444P", { V4L2_PIX_FMT_YUV444M, 3 } },
