@@ -65,6 +65,18 @@ void write_rgb888(std::ofstream &out, std::array<uint8_t *, 3> &mem, unsigned in
 	write_plane(out, (uint8_t *)mem[0], width * 3, height, file_stride, buffer_stride);
 }
 
+void read_32(std::array<uint8_t *, 3> &mem, std::ifstream &in, unsigned int width, unsigned int height,
+			 unsigned int file_stride, unsigned int buffer_stride)
+{
+	read_plane((uint8_t *)mem[0], in, width * 4, height, file_stride, buffer_stride);
+}
+
+void write_32(std::ofstream &out, std::array<uint8_t *, 3> &mem, unsigned int width, unsigned int height,
+			  unsigned int file_stride, unsigned int buffer_stride)
+{
+	write_plane(out, (uint8_t *)mem[0], width * 4, height, file_stride, buffer_stride);
+}
+
 void read_yuv(std::array<uint8_t *, 3> &mem, std::ifstream &in, unsigned int width, unsigned int height,
 			  unsigned int file_stride, unsigned int buffer_stride, unsigned int ss_x, unsigned int ss_y)
 {
@@ -152,6 +164,7 @@ struct FormatFuncs
 const std::map<std::string, FormatFuncs> Formats =
 {
 	{ "RGB888", { read_rgb888, write_rgb888 } },
+	{ "RGBX8888", { read_32, write_32 } },
 	{ "YUV420P", { read_yuv420, write_yuv420 } },
 	{ "YUV422P", { read_yuv422p, write_yuv422p } },
 	{ "YUV444P", { read_yuv444p, write_yuv444p } },
@@ -280,6 +293,11 @@ int main(int argc, char *argv[])
 	global.bayer_enables = 0;
 	global.rgb_enables = PISP_BE_RGB_ENABLE_INPUT + PISP_BE_RGB_ENABLE_OUTPUT0;
 
+	if (in_file.format == "RGBX8888" && !variant->BackendRGB32Supported(0))
+	{
+		std::cerr << "Backend hardware does not support RGBX input" << std::endl;
+		exit(-1);
+	}
 	pisp_image_format_config i = {};
 	i.width = in_file.width;
 	i.height = in_file.height;
@@ -289,9 +307,32 @@ int main(int argc, char *argv[])
 	be.SetInputFormat(i);
 
 	pisp_be_output_format_config o = {};
-	o.image.width = out_file.width;
-	o.image.height = out_file.height;
-	o.image.format = libpisp::get_pisp_image_format(out_file.format);
+	if (out_file.format == "RGBX8888" && !variant->BackendRGB32Supported(0))
+	{
+		// Hack to generate RGBX even when BE_MINOR_VERSION < 1 using Resample
+		if (out_file.width < i.width)
+			std::cerr << "Backend hardware has limited RGBX support; resize artifacts may be present" << std::endl;
+
+		o.image.width = out_file.width * 2 - 1;
+		o.image.height = out_file.height;
+		o.image.format = libpisp::get_pisp_image_format("UYVY");
+
+		pisp_be_ccm_config csc = {}; // Define a matrix to swap components [0] and [1]
+		csc.coeffs[1] = 1024;
+		csc.coeffs[3] = 1024;
+		csc.coeffs[8] = 1024;
+		csc.offsets[0] = 131072; // round to nearest after Resample, for 8-bit output
+		csc.offsets[1] = 131072;
+		csc.offsets[2] = 131072;
+		be.SetCsc(0, csc);
+		global.rgb_enables |= PISP_BE_RGB_ENABLE_CSC0;
+	}
+	else
+	{
+		o.image.width = out_file.width;
+		o.image.height = out_file.height;
+		o.image.format = libpisp::get_pisp_image_format(out_file.format);
+	}
 	assert(o.image.format);
 	libpisp::compute_optimal_stride(o.image, true);
 	be.SetOutputFormat(0, o);
@@ -299,20 +340,20 @@ int main(int argc, char *argv[])
 	if (!out_file.stride)
 		out_file.stride = o.image.stride;
 
-	if (in_file.format != "RGB888")
+	if (in_file.format >= "U")
 	{
 		pisp_be_ccm_config csc;
 		be.InitialiseYcbcrInverse(csc, "jpeg");
 		be.SetCcm(csc);
-		global.rgb_enables += PISP_BE_RGB_ENABLE_CCM;
+		global.rgb_enables |= PISP_BE_RGB_ENABLE_CCM;
 	}
 
-	if (out_file.format != "RGB888")
+	if (out_file.format >= "U")
 	{
 		pisp_be_ccm_config csc;
 		be.InitialiseYcbcr(csc, "jpeg");
 		be.SetCsc(0, csc);
-		global.rgb_enables += PISP_BE_RGB_ENABLE_CSC0;
+		global.rgb_enables |= PISP_BE_RGB_ENABLE_CSC0;
 	}
 
 	be.SetGlobal(global);

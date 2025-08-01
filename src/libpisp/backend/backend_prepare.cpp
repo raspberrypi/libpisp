@@ -294,7 +294,7 @@ void finalise_output(pisp_be_output_format_config &config)
 		throw std::runtime_error("finalise_output: 420 image height should be even");
 
 	if ((PISP_IMAGE_FORMAT_SAMPLING_420(config.image.format) || PISP_IMAGE_FORMAT_SAMPLING_422(config.image.format)) &&
-		(config.image.width & 1))
+		!PISP_IMAGE_FORMAT_INTERLEAVED(config.image.format) && (config.image.width & 1))
 		throw std::runtime_error("finalise_output: 420/422 image width should be even");
 
 	if (PISP_IMAGE_FORMAT_WALLPAPER(config.image.format))
