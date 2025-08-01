@@ -293,9 +293,9 @@ int main(int argc, char *argv[])
 	global.bayer_enables = 0;
 	global.rgb_enables = PISP_BE_RGB_ENABLE_INPUT + PISP_BE_RGB_ENABLE_OUTPUT0;
 
-	if ((in_file.format == "RGBX8888" || out_file.format == "RGBX8888") && !variant->BackendRGB32Supported(0))
+	if (in_file.format == "RGBX8888" && !variant->BackendRGB32Supported(0))
 	{
-		std::cerr << "Backend hardware does not support RGBX formats" << std::endl;
+		std::cerr << "Backend hardware does not support RGBX input" << std::endl;
 		exit(-1);
 	}
 	pisp_image_format_config i = {};
@@ -307,9 +307,32 @@ int main(int argc, char *argv[])
 	be.SetInputFormat(i);
 
 	pisp_be_output_format_config o = {};
-	o.image.width = out_file.width;
-	o.image.height = out_file.height;
-	o.image.format = libpisp::get_pisp_image_format(out_file.format);
+	if (out_file.format == "RGBX8888" && !variant->BackendRGB32Supported(0))
+	{
+		// Hack to generate RGBX even when BE_MINOR_VERSION < 1 using Resample
+		if (out_file.width < i.width)
+			std::cerr << "Backend hardware has limited RGBX support; resize artifacts may be present" << std::endl;
+
+		o.image.width = out_file.width * 2 - 1;
+		o.image.height = out_file.height;
+		o.image.format = libpisp::get_pisp_image_format("UYVY");
+
+		pisp_be_ccm_config csc = {}; // Define a matrix to swap components [0] and [1]
+		csc.coeffs[1] = 1024;
+		csc.coeffs[3] = 1024;
+		csc.coeffs[8] = 1024;
+		csc.offsets[0] = 131072; // round to nearest after Resample, for 8-bit output
+		csc.offsets[1] = 131072;
+		csc.offsets[2] = 131072;
+		be.SetCsc(0, csc);
+		global.rgb_enables |= PISP_BE_RGB_ENABLE_CSC0;
+	}
+	else
+	{
+		o.image.width = out_file.width;
+		o.image.height = out_file.height;
+		o.image.format = libpisp::get_pisp_image_format(out_file.format);
+	}
 	assert(o.image.format);
 	libpisp::compute_optimal_stride(o.image, true);
 	be.SetOutputFormat(0, o);
