@@ -74,6 +74,8 @@ enum pisp_image_format {
 
 	PISP_IMAGE_FORMAT_BPP_32 = 0x00100000,
 
+	PISP_IMAGE_FORMAT_X_VALUE = 0x00200000,
+
 	PISP_IMAGE_FORMAT_UNCOMPRESSED = 0x00000000,
 	PISP_IMAGE_FORMAT_COMPRESSION_MODE_1 = 0x01000000,
 	PISP_IMAGE_FORMAT_COMPRESSION_MODE_2 = 0x02000000,
@@ -140,6 +142,8 @@ enum pisp_image_format {
 #define PISP_IMAGE_FORMAT_HOG(fmt)                                             \
 	((fmt) &                                                               \
 	 (PISP_IMAGE_FORMAT_HOG_SIGNED | PISP_IMAGE_FORMAT_HOG_UNSIGNED))
+#define PISP_IMAGE_FORMAT_X_VALUE(fmt)                                     \
+	((fmt) & PISP_IMAGE_FORMAT_X_VALUE)
 
 #define PISP_WALLPAPER_WIDTH 128 /* in bytes */
 
