@@ -57,7 +57,7 @@ public:
 		}
 
 		Buffer(const v4l2_buffer& buf)
-        	: buffer(buf), size({}), mem({})
+			: buffer(buf), size({}), mem({})
 		{
 		}
 
@@ -79,7 +79,7 @@ public:
 	int QueueBuffer(unsigned int index);
 	int DequeueBuffer(unsigned int timeout_ms = 500);
 
-	void SetFormat(const pisp_image_format_config &format);
+	void SetFormat(const pisp_image_format_config &format, bool use_opaque_format = false);
 
 	void StreamOn();
 	void StreamOff();
