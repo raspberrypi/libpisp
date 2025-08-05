@@ -30,6 +30,11 @@ public:
 		return valid_;
 	}
 
+	V4l2Device &Node(const std::string &node)
+	{
+		return nodes_.at(node);
+	}
+
 	std::map<std::string, V4l2Device::Buffer> AcquireBuffers();
 	void ReleaseBuffer(const std::map<std::string, V4l2Device::Buffer> &buffers);
 	V4l2Device::Buffer &ConfigBuffer()
