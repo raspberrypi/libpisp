@@ -8,8 +8,6 @@
 #include <cstdint>
 #include <cstring>
 
-#include "libpisp/common/utils.hpp"
-
 #include "backend_device.hpp"
 
 using namespace libpisp::helpers;
@@ -32,41 +30,54 @@ BackendDevice::~BackendDevice()
 	nodes_.at("pispbe-config").StreamOff();
 }
 
-void BackendDevice::Setup(const pisp_be_tiles_config &config)
+void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffer_count)
 {
 	nodes_enabled_.clear();
 
-	if (config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_INPUT)
+	if ((config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_INPUT) ||
+		(config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_INPUT))
 	{
-		const pisp_image_format_config &f = config.config.input_format;
-		nodes_.at("pispbe-input").SetFormat(f.width, f.height, f.stride, f.stride2,
-											libpisp::get_pisp_image_format(f.format));
+		nodes_.at("pispbe-input").SetFormat(config.config.input_format);
 		// Release old/allocate a single buffer.
 		nodes_.at("pispbe-input").ReturnBuffers();
-		nodes_.at("pispbe-input").RequestBuffers(1);
+		nodes_.at("pispbe-input").RequestBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-input");
 	}
 
 	if (config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT0)
 	{
-		const pisp_image_format_config &f = config.config.output_format[0].image;
-		nodes_.at("pispbe-output0").SetFormat(f.width, f.height, f.stride, f.stride2,
-											  libpisp::get_pisp_image_format(f.format));
+		nodes_.at("pispbe-output0").SetFormat(config.config.output_format[0].image);
 		// Release old/allocate a single buffer.
 		nodes_.at("pispbe-output0").ReturnBuffers();
-		nodes_.at("pispbe-output0").RequestBuffers(1);
+		nodes_.at("pispbe-output0").RequestBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-output0");
 	}
 
 	if (config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT1)
 	{
-		const pisp_image_format_config &f = config.config.output_format[1].image;
-		nodes_.at("pispbe-output1").SetFormat(f.width, f.height, f.stride, f.stride2,
-											  libpisp::get_pisp_image_format(f.format));
+		nodes_.at("pispbe-output1").SetFormat(config.config.output_format[1].image);
 		// Release old/allocate a single buffer.
 		nodes_.at("pispbe-output1").ReturnBuffers();
-		nodes_.at("pispbe-output1").RequestBuffers(1);
+		nodes_.at("pispbe-output1").RequestBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-output1");
+	}
+
+	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_OUTPUT)
+	{
+		nodes_.at("pispbe-tdn_output").SetFormat(config.config.tdn_output_format);
+		// Release old/allocate a single buffer.
+		nodes_.at("pispbe-tdn_output").ReturnBuffers();
+		nodes_.at("pispbe-tdn_output").RequestBuffers(buffer_count);
+		nodes_enabled_.emplace("pispbe-tdn_output");
+	}
+
+	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_STITCH_OUTPUT)
+	{
+		nodes_.at("pispbe-stitch_output").SetFormat(config.config.stitch_output_format);
+		// Release old/allocate a single buffer.
+		nodes_.at("pispbe-stitch_output").ReturnBuffers();
+		nodes_.at("pispbe-stitch_output").RequestBuffers(buffer_count);
+		nodes_enabled_.emplace("pispbe-stitch_output");
 	}
 
 	std::memcpy(reinterpret_cast<pisp_be_tiles_config *>(config_buffer_.mem[0]), &config, sizeof(config));

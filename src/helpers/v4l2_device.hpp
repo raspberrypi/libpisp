@@ -15,6 +15,8 @@
 
 #include <linux/videodev2.h>
 
+#include "libpisp/backend/pisp_be_config.h"
+
 #include "device_fd.hpp"
 
 namespace libpisp::helpers
@@ -77,8 +79,7 @@ public:
 	int QueueBuffer(unsigned int index);
 	int DequeueBuffer(unsigned int timeout_ms = 500);
 
-	void SetFormat(unsigned int width, unsigned int height, unsigned int stride, unsigned int stride2,
-				   const std::string &format);
+	void SetFormat(const pisp_image_format_config &format);
 
 	void StreamOn();
 	void StreamOff();
