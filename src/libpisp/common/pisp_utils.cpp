@@ -242,7 +242,7 @@ static const std::map<std::string, uint32_t> &formats_table()
 		{ "RGB888", PISP_IMAGE_FORMAT_THREE_CHANNEL },
 		{ "RGBX8888", PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPP_32 },
 		{ "RGB161616", PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_16 },
-		{ "BAYER", PISP_IMAGE_FORMAT_BPS_16 + PISP_IMAGE_FORMAT_UNCOMPRESSED },
+		{ "BAYER16", PISP_IMAGE_FORMAT_BPS_16 + PISP_IMAGE_FORMAT_UNCOMPRESSED },
 		{ "PISP_COMP1", PISP_IMAGE_FORMAT_COMPRESSION_MODE_1 },
 		{ "PISP_COMP2", PISP_IMAGE_FORMAT_COMPRESSION_MODE_2 },
 	};
@@ -261,6 +261,9 @@ unsigned int get_pisp_image_format(const std::string &format)
 
 std::string get_pisp_image_format(uint32_t format)
 {
+	// Remove shift from the format assignment, its value does not change format.
+	format = format & ~PISP_IMAGE_FORMAT_SHIFT_MASK;
+
 	const auto &fmts = formats_table();
 	auto it = std::find_if(fmts.begin(), fmts.end(), [format](const auto &f) { return f.second == format; });
 	if (it == fmts.end())
