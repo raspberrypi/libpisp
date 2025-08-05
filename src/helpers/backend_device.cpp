@@ -24,7 +24,7 @@ BackendDevice::BackendDevice(const std::string &device)
 	// Allocate a config buffer to persist.
 	nodes_.at("pispbe-config").RequestBuffers(1);
 	nodes_.at("pispbe-config").StreamOn();
-	config_buffer_ = nodes_.at("pispbe-config").GetBuffer().value();
+	config_buffer_ = nodes_.at("pispbe-config").AcquireBuffer().value();
 }
 
 BackendDevice::~BackendDevice()
@@ -42,10 +42,9 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config)
 		nodes_.at("pispbe-input").SetFormat(f.width, f.height, f.stride, f.stride2,
 											libpisp::get_pisp_image_format(f.format));
 		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-input").ReleaseBuffers();
+		nodes_.at("pispbe-input").ReturnBuffers();
 		nodes_.at("pispbe-input").RequestBuffers(1);
 		nodes_enabled_.emplace("pispbe-input");
-		buffers_["pispbe-input"] = nodes_.at("pispbe-input").GetBuffer().value();
 	}
 
 	if (config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT0)
@@ -54,10 +53,9 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config)
 		nodes_.at("pispbe-output0").SetFormat(f.width, f.height, f.stride, f.stride2,
 											  libpisp::get_pisp_image_format(f.format));
 		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-output0").ReleaseBuffers();
+		nodes_.at("pispbe-output0").ReturnBuffers();
 		nodes_.at("pispbe-output0").RequestBuffers(1);
 		nodes_enabled_.emplace("pispbe-output0");
-		buffers_["pispbe-output0"] = nodes_.at("pispbe-output0").GetBuffer().value();
 	}
 
 	if (config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT1)
@@ -66,23 +64,38 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config)
 		nodes_.at("pispbe-output1").SetFormat(f.width, f.height, f.stride, f.stride2,
 											  libpisp::get_pisp_image_format(f.format));
 		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-output1").ReleaseBuffers();
+		nodes_.at("pispbe-output1").ReturnBuffers();
 		nodes_.at("pispbe-output1").RequestBuffers(1);
 		nodes_enabled_.emplace("pispbe-output1");
-		buffers_["pispbe-output1"] = nodes_.at("pispbe-output1").GetBuffer().value();
 	}
 
 	std::memcpy(reinterpret_cast<pisp_be_tiles_config *>(config_buffer_.mem[0]), &config, sizeof(config));
 }
 
-int BackendDevice::Run()
+std::map<std::string, V4l2Device::Buffer> BackendDevice::AcquireBuffers()
+{
+	std::map<std::string, V4l2Device::Buffer> buffers;
+
+	for (auto const &n : nodes_enabled_)
+		buffers[n] = nodes_.at(n).AcquireBuffer().value();
+
+	return buffers;
+}
+
+void BackendDevice::ReleaseBuffer(const std::map<std::string, V4l2Device::Buffer> &buffers)
+{
+	for (auto const &[n, b] : buffers)
+		nodes_.at(n).ReleaseBuffer(b);
+}
+
+int BackendDevice::Run(const std::map<std::string, V4l2Device::Buffer> &buffers)
 {
 	int ret = 0;
 
 	for (auto const &n : nodes_enabled_)
 	{
 		nodes_.at(n).StreamOn();
-		if (nodes_.at(n).QueueBuffer(buffers_.at(n).buffer.index))
+		if (nodes_.at(n).QueueBuffer(buffers.at(n).buffer.index))
 			ret = -1;
 	}
 

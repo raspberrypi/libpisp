@@ -67,7 +67,7 @@ V4l2Device::V4l2Device(const std::string &device)
 
 V4l2Device::~V4l2Device()
 {
-	ReleaseBuffers();
+	ReturnBuffers();
 	Close();
 }
 
@@ -75,7 +75,7 @@ int V4l2Device::RequestBuffers(unsigned int count)
 {
 	int ret;
 
-	ReleaseBuffers();
+	ReturnBuffers();
 
 	v4l2_requestbuffers req_bufs {};
 
@@ -127,7 +127,7 @@ int V4l2Device::RequestBuffers(unsigned int count)
 	return v4l2_buffers_.size();
 }
 
-void V4l2Device::ReleaseBuffers()
+void V4l2Device::ReturnBuffers()
 {
 	v4l2_requestbuffers req_bufs {};
 
@@ -148,7 +148,7 @@ void V4l2Device::ReleaseBuffers()
 	v4l2_buffers_.clear();
 }
 
-std::optional<V4l2Device::Buffer> V4l2Device::GetBuffer()
+std::optional<V4l2Device::Buffer> V4l2Device::AcquireBuffer()
 {
 	if (available_buffers_.empty())
 		return {};
@@ -156,6 +156,11 @@ std::optional<V4l2Device::Buffer> V4l2Device::GetBuffer()
 	unsigned int index = available_buffers_.front();
 	available_buffers_.pop();
 	return findBuffer(index);
+}
+
+void V4l2Device::ReleaseBuffer(const Buffer &buffer)
+{
+	available_buffers_.push(buffer.buffer.index);
 }
 
 int V4l2Device::QueueBuffer(unsigned int index)
@@ -216,7 +221,6 @@ int V4l2Device::DequeueBuffer(unsigned int timeout_ms)
 	if (ret)
 		return -1;
 
-	available_buffers_.push(buf.index);
 	return buf.index;
 }
 
