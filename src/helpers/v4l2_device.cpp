@@ -23,6 +23,8 @@
 
 using namespace libpisp::helpers;
 
+namespace {
+
 struct FormatInfo
 {
 	unsigned int v4l2_pixfmt;
@@ -47,6 +49,8 @@ static FormatInfo get_v4l2_format(const std::string &format)
 
 	return it->second;
 }
+
+} // namespace
 
 V4l2Device::V4l2Device(const std::string &device)
 	: fd_(device, O_RDWR | O_NONBLOCK | O_CLOEXEC), num_memory_planes_(1)
@@ -226,12 +230,10 @@ int V4l2Device::DequeueBuffer(unsigned int timeout_ms)
 	return buf.index;
 }
 
-void V4l2Device::SetFormat(const pisp_image_format_config &format)
+void V4l2Device::SetFormat(const pisp_image_format_config &format, bool use_opaque_format)
 {
 	struct v4l2_format f = {};
 	FormatInfo info = get_v4l2_format(libpisp::get_pisp_image_format(format.format));
-
-	assert(info.v4l2_pixfmt);
 
 	num_memory_planes_ = info.num_memory_planes;
 
@@ -242,10 +244,38 @@ void V4l2Device::SetFormat(const pisp_image_format_config &format)
 	f.fmt.pix_mp.field = V4L2_FIELD_NONE;
 	f.fmt.pix_mp.num_planes = num_memory_planes_;
 
-	for (unsigned int p = 0; p < num_memory_planes_; p++)
+	unsigned int num_image_planes = libpisp::num_planes((pisp_image_format)format.format);
+
+	if (use_opaque_format || info.v4l2_pixfmt == 0)
 	{
-		f.fmt.pix_mp.plane_fmt[p].bytesperline = p == 0 ? format.stride : format.stride2;
-		f.fmt.pix_mp.plane_fmt[p].sizeimage = 0;
+		// This format is not specified by V4L2, we use an opaque buffer buffer as a workaround.
+		// Size the dimensions down so the kernel drive does not attempt to resize it.
+		f.fmt.pix_mp.width = 16;
+		f.fmt.pix_mp.height = 16;
+		f.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_YUV444M;
+		num_memory_planes_ = 3;
+		f.fmt.pix_mp.plane_fmt[0].bytesperline = format.stride;
+
+		f.fmt.pix_mp.plane_fmt[0].sizeimage = 0;
+		for (unsigned int i = 0; i < 3; i++)
+			f.fmt.pix_mp.plane_fmt[0].sizeimage += libpisp::get_plane_size(format, i);
+
+		f.fmt.pix_mp.plane_fmt[1].sizeimage = f.fmt.pix_mp.plane_fmt[2].sizeimage = f.fmt.pix_mp.plane_fmt[0].sizeimage;
+		f.fmt.pix_mp.plane_fmt[1].bytesperline = f.fmt.pix_mp.plane_fmt[2].bytesperline = format.stride2;
+	}
+	else
+	{
+		unsigned int p = 0;
+		for (; p < num_memory_planes_; p++)
+		{
+			const unsigned int stride = p == 0 ? format.stride : format.stride2;
+			// Wallpaper stride is not something the V4L2 kernel knows about!
+			f.fmt.pix_mp.plane_fmt[p].bytesperline = stride;
+			f.fmt.pix_mp.plane_fmt[p].sizeimage = libpisp::get_plane_size(format, p);
+		}
+
+		for (; p < num_image_planes; p++)
+			f.fmt.pix_mp.plane_fmt[num_memory_planes_ - 1].sizeimage += libpisp::get_plane_size(format, p);
 	}
 
 	int ret = ioctl(fd_.Get(), VIDIOC_S_FMT, &f);
