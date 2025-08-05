@@ -62,6 +62,15 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 		nodes_enabled_.emplace("pispbe-output1");
 	}
 
+	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_INPUT)
+	{
+		nodes_.at("pispbe-tdn_input").SetFormat(config.config.tdn_input_format, use_opaque_format);
+		// Release old/allocate a single buffer.
+		nodes_.at("pispbe-tdn_input").ReturnBuffers();
+		nodes_.at("pispbe-tdn_input").RequestBuffers(buffer_count);
+		nodes_enabled_.emplace("pispbe-tdn_input");
+	}
+
 	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_OUTPUT)
 	{
 		nodes_.at("pispbe-tdn_output").SetFormat(config.config.tdn_output_format, use_opaque_format);
@@ -69,6 +78,15 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 		nodes_.at("pispbe-tdn_output").ReturnBuffers();
 		nodes_.at("pispbe-tdn_output").RequestBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-tdn_output");
+	}
+
+	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_STITCH_INPUT)
+	{
+		nodes_.at("pispbe-stitch_input").SetFormat(config.config.stitch_input_format, use_opaque_format);
+		// Release old/allocate a single buffer.
+		nodes_.at("pispbe-stitch_input").ReturnBuffers();
+		nodes_.at("pispbe-stitch_input").RequestBuffers(buffer_count);
+		nodes_enabled_.emplace("pispbe-stitch_input");
 	}
 
 	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_STITCH_OUTPUT)
