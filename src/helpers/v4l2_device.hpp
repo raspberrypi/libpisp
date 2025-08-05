@@ -65,9 +65,14 @@ public:
 	};
 
 	int RequestBuffers(unsigned int count = 1);
-	void ReleaseBuffers();
+	void ReturnBuffers();
 
-	std::optional<Buffer> GetBuffer();
+	std::optional<Buffer> AcquireBuffer();
+	void ReleaseBuffer(const Buffer &buffer);
+	const std::vector<Buffer> &Buffers() const
+	{
+		return v4l2_buffers_;
+	};
 
 	int QueueBuffer(unsigned int index);
 	int DequeueBuffer(unsigned int timeout_ms = 500);

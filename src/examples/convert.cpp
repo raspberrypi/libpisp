@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
 	be.Prepare(&config);
 
 	backend_device.Setup(config);
-	auto buffers = backend_device.GetBuffers();
+	auto buffers = backend_device.AcquireBuffers();
 
 	std::string input_filename = args["input"].as<std::string>();
 	std::ifstream in(input_filename, std::ios::binary);
@@ -382,7 +382,7 @@ int main(int argc, char *argv[])
 				   i.stride);
 	in.close();
 
-	int ret = backend_device.Run();
+	int ret = backend_device.Run(buffers);
 	if (ret)
 	{
 		std::cerr << "Job run error!" << std::endl;
@@ -401,6 +401,8 @@ int main(int argc, char *argv[])
 		.write_file(out, buffers["pispbe-output0"].mem, out_file.width, out_file.height, out_file.stride,
 					o.image.stride);
 	out.close();
+
+	backend_device.ReleaseBuffer(buffers);
 
 	std::cerr << "Writing " << output_file << " "
 			  << out_file.width << ":" << out_file.height << ":" << out_file.stride << ":" << out_file.format << std::endl;

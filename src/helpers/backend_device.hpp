@@ -23,16 +23,18 @@ public:
 	~BackendDevice();
 
 	void Setup(const pisp_be_tiles_config &config);
-	int Run();
+	int Run(const std::map<std::string, V4l2Device::Buffer> &buffers);
 
 	bool Valid() const
 	{
 		return valid_;
 	}
 
-	const std::map<std::string, V4l2Device::Buffer> &GetBuffers() const
+	std::map<std::string, V4l2Device::Buffer> AcquireBuffers();
+	void ReleaseBuffer(const std::map<std::string, V4l2Device::Buffer> &buffers);
+	V4l2Device::Buffer &ConfigBuffer()
 	{
-		return buffers_;
+		return config_buffer_;
 	}
 
 private:
@@ -41,7 +43,6 @@ private:
 	MediaDevice devices_;
 	std::unordered_set<std::string> nodes_enabled_;
 	V4l2Device::Buffer config_buffer_;
-	std::map<std::string, V4l2Device::Buffer> buffers_;
 };
 
 } // namespace libpisp
