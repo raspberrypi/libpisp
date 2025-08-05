@@ -22,7 +22,7 @@ public:
 	BackendDevice(const std::string &device);
 	~BackendDevice();
 
-	void Setup(const pisp_be_tiles_config &config);
+	void Setup(const pisp_be_tiles_config &config, unsigned int buffer_count = 1);
 	int Run(const std::map<std::string, V4l2Device::Buffer> &buffers);
 
 	bool Valid() const

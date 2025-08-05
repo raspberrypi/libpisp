@@ -17,6 +17,8 @@
 #include <sys/mman.h>
 #include <time.h>
 
+#include "libpisp/common/utils.hpp"
+
 #include "v4l2_device.hpp"
 
 using namespace libpisp::helpers;
@@ -224,26 +226,25 @@ int V4l2Device::DequeueBuffer(unsigned int timeout_ms)
 	return buf.index;
 }
 
-void V4l2Device::SetFormat(unsigned int width, unsigned int height, unsigned int stride, unsigned int stride2,
-						   const std::string &format)
+void V4l2Device::SetFormat(const pisp_image_format_config &format)
 {
 	struct v4l2_format f = {};
-	FormatInfo info = get_v4l2_format(format);
+	FormatInfo info = get_v4l2_format(libpisp::get_pisp_image_format(format.format));
 
 	assert(info.v4l2_pixfmt);
 
 	num_memory_planes_ = info.num_memory_planes;
 
 	f.type = buf_type_;
-	f.fmt.pix_mp.width = width;
-	f.fmt.pix_mp.height = height;
+	f.fmt.pix_mp.width = format.width;
+	f.fmt.pix_mp.height = format.height;
 	f.fmt.pix_mp.pixelformat = info.v4l2_pixfmt;
 	f.fmt.pix_mp.field = V4L2_FIELD_NONE;
 	f.fmt.pix_mp.num_planes = num_memory_planes_;
 
 	for (unsigned int p = 0; p < num_memory_planes_; p++)
 	{
-		f.fmt.pix_mp.plane_fmt[p].bytesperline = p == 0 ? stride : stride2;
+		f.fmt.pix_mp.plane_fmt[p].bytesperline = p == 0 ? format.stride : format.stride2;
 		f.fmt.pix_mp.plane_fmt[p].sizeimage = 0;
 	}
 
