@@ -175,7 +175,7 @@ int V4l2Device::QueueBuffer(unsigned int index)
 	if (!buf)
 		return -1;
 
-	v4l2_plane planes[VIDEO_MAX_PLANES];
+	v4l2_plane planes[VIDEO_MAX_PLANES] = {};
 	if (!isMeta())
 	{
 		buf->buffer.m.planes = planes;
