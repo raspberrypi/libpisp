@@ -276,7 +276,7 @@ void FrontEnd::SetAgcStats(pisp_fe_agc_stats_config const &agc_stats)
 	fe_config_.dirty_flags |= PISP_FE_ENABLE_AGC_STATS;
 }
 
-void FrontEnd::GetAgcStats(pisp_fe_agc_stats_config &agc_stats)
+void FrontEnd::GetAgcStats(pisp_fe_agc_stats_config &agc_stats) const
 {
 	agc_stats = fe_config_.agc_stats;
 }
@@ -287,7 +287,7 @@ void FrontEnd::SetAwbStats(pisp_fe_awb_stats_config const &awb_stats)
 	fe_config_.dirty_flags |= PISP_FE_ENABLE_AWB_STATS;
 }
 
-void FrontEnd::GetAwbStats(pisp_fe_awb_stats_config &awb_stats)
+void FrontEnd::GetAwbStats(pisp_fe_awb_stats_config &awb_stats) const
 {
 	awb_stats = fe_config_.awb_stats;
 }
@@ -304,7 +304,7 @@ void FrontEnd::SetCdafStats(pisp_fe_cdaf_stats_config const &cdaf_stats)
 	fe_config_.dirty_flags |= PISP_FE_ENABLE_CDAF_STATS;
 }
 
-void FrontEnd::GetCdafStats(pisp_fe_cdaf_stats_config &cdaf_stats)
+void FrontEnd::GetCdafStats(pisp_fe_cdaf_stats_config &cdaf_stats) const
 {
 	cdaf_stats = fe_config_.cdaf_stats;
 }
@@ -356,6 +356,97 @@ void FrontEnd::SetOutputBuffer(unsigned int output_num, pisp_fe_output_buffer_co
 
 	fe_config_.output_buffer[output_num] = output_buffer;
 	// Assume these always get written.
+}
+
+void FrontEnd::GetInput(pisp_fe_input_config &input) const
+{
+	input = fe_config_.input;
+}
+
+void FrontEnd::GetInputBuffer(pisp_fe_input_buffer_config &input_buffer) const
+{
+	input_buffer = fe_config_.input_buffer;
+}
+
+void FrontEnd::GetDecompress(pisp_decompress_config &decompress) const
+{
+	decompress = fe_config_.decompress;
+}
+
+void FrontEnd::GetDecompand(pisp_fe_decompand_config &decompand) const
+{
+	decompand = fe_config_.decompand;
+}
+
+void FrontEnd::GetDpc(pisp_fe_dpc_config &dpc) const
+{
+	dpc = fe_config_.dpc;
+}
+
+void FrontEnd::GetBla(pisp_bla_config &bla) const
+{
+	bla = fe_config_.bla;
+}
+
+void FrontEnd::GetStatsCrop(pisp_fe_crop_config &stats_crop) const
+{
+	stats_crop = fe_config_.stats_crop;
+}
+
+void FrontEnd::GetBlc(pisp_bla_config &blc) const
+{
+	blc = fe_config_.blc;
+}
+
+void FrontEnd::GetRGBY(pisp_fe_rgby_config &rgby) const
+{
+	rgby = fe_config_.rgby;
+}
+
+void FrontEnd::GetLsc(pisp_fe_lsc_config &lsc) const
+{
+	lsc = fe_config_.lsc;
+}
+
+void FrontEnd::GetFloatingStats(pisp_fe_floating_stats_config &floating_stats) const
+{
+	floating_stats = fe_config_.floating_stats;
+}
+
+void FrontEnd::GetCrop(unsigned int output_num, pisp_fe_crop_config &crop) const
+{
+	PISP_ASSERT(output_num < variant_.FrontEndNumBranches(0));
+	crop = fe_config_.ch[output_num].crop;
+}
+
+void FrontEnd::GetDownscale(unsigned int output_num, pisp_fe_downscale_config &downscale) const
+{
+	PISP_ASSERT(output_num < variant_.FrontEndNumBranches(0));
+	downscale = fe_config_.ch[output_num].downscale;
+}
+
+void FrontEnd::GetCompress(unsigned int output_num, pisp_compress_config &compress) const
+{
+	PISP_ASSERT(output_num < variant_.FrontEndNumBranches(0));
+	compress = fe_config_.ch[output_num].compress;
+}
+
+void FrontEnd::GetOutputFormat(unsigned int output_num, pisp_image_format_config &output_format) const
+{
+	PISP_ASSERT(output_num < variant_.FrontEndNumBranches(0));
+	output_format = fe_config_.ch[output_num].output.format;
+}
+
+void FrontEnd::GetOutputBuffer(unsigned int output_num, pisp_fe_output_buffer_config &output_buffer) const
+{
+	PISP_ASSERT(output_num < variant_.FrontEndNumBranches(0));
+	output_buffer = fe_config_.output_buffer[output_num];
+}
+
+int FrontEnd::GetOutputIntrLines(unsigned int output_num) const
+{
+	PISP_ASSERT(output_num < variant_.FrontEndNumBranches(0));
+	return fe_config_.ch[output_num].output.ilines;
 }
 
 void FrontEnd::Prepare(pisp_fe_config *config)
