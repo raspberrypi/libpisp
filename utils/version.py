@@ -5,8 +5,10 @@
 #
 # Generate version information for libcamera-apps
 
+import os
 import subprocess
 import sys
+import time
 from datetime import datetime
 from string import hexdigits
 
@@ -53,7 +55,11 @@ def generate_version():
         commit = '0' * digits + '-invalid'
 
     finally:
-        print(f'{commit} {datetime.now().strftime("%d-%m-%Y (%H:%M:%S)")}', end="")
+        date_str = time.strftime(
+            "%d-%m-%Y (%H:%M:%S)",
+            time.gmtime(int(os.environ.get('SOURCE_DATE_EPOCH', time.time())))
+        )
+        print(f'{commit} {date_str}', end="")
 
 
 if __name__ == "__main__":
