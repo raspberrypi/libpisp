@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 
-# SPDX-License-Identifier: CC0-1.0
-# Copyright (C) 2021, Raspberry Pi Ltd.
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (C) 2021-2025, Raspberry Pi Ltd.
 #
-# Generate version information for libcamera-apps
+# Generate version information for libpisp
 
 import subprocess
 import sys
