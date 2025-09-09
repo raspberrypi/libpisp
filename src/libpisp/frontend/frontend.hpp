@@ -44,6 +44,7 @@ public:
 	void getBla(pisp_bla_config &bla) const;
 	void setStatsCrop(pisp_fe_crop_config const &statsCrop);
 	void getStatsCrop(pisp_fe_crop_config &statsCrop) const;
+	void setStatsDecimate(pisp_fe_stats_decimate_config const &stats_decimate);
 	void setBlc(pisp_bla_config const &blc);
 	void getBlc(pisp_bla_config &blc) const;
 	void setRgby(pisp_fe_rgby_config const &rgby);

@@ -273,6 +273,13 @@ void FrontEnd::setStatsCrop(pisp_fe_crop_config const &statsCrop)
 	feConfig_.dirty_flags |= PISP_FE_ENABLE_STATS_CROP;
 }
 
+void FrontEnd::setStatsDecimate(pisp_fe_stats_decimate_config const &stats_decimate)
+{
+	feConfig_.stats_decimate = stats_decimate;
+	feConfig_.stats_decimate.pad = 0;
+	feConfig_.dirty_flags |= PISP_FE_ENABLE_DECIMATE;
+}
+
 void FrontEnd::setBlc(pisp_bla_config const &blc)
 {
 	feConfig_.blc = blc;

@@ -140,6 +140,13 @@ typedef struct {
 } pisp_fe_rgby_config;
 
 typedef struct {
+	uint8_t quad;  // Quad Bayer option
+	uint8_t h_avg; // Average two horizontal same-component neighbours
+	uint8_t h_sel; // select the left sample (when not averaging); default is right
+	uint8_t pad;   // [placeholder for a future v_sel flag]
+} pisp_fe_stats_decimate_config;
+
+typedef struct {
 	uint16_t offset_x;
 	uint16_t offset_y;
 	uint16_t size_x;
@@ -284,7 +291,7 @@ typedef struct {
 	pisp_bla_config bla;
 	pisp_fe_dpc_config dpc;
 	pisp_fe_crop_config stats_crop;
-	uint32_t spare1; /* placeholder for future decimate configuration */
+	pisp_fe_stats_decimate_config stats_decimate;
 	pisp_bla_config blc;
 	pisp_fe_rgby_config rgby;
 	pisp_fe_lsc_config lsc;
