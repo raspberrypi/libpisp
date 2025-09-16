@@ -248,6 +248,6 @@ std::map<std::string, DeviceFd>::iterator MediaDevice::unlock(const std::string 
 	if (it == lock_map_.end())
 		return lock_map_.end();
 
-	lockf(it->second.Get(), F_ULOCK, 0);
+	std::ignore = lockf(it->second.Get(), F_ULOCK, 0);
 	return lock_map_.erase(it);
 }
