@@ -138,6 +138,10 @@ int BackendDevice::Run(const std::map<std::string, V4l2Device::Buffer> &buffers)
 			ret = -1;
 	}
 
+	// Must dequeue the config buffer in case it's used again.
+	if (nodes_.at("pispbe-config").DequeueBuffer(1000) < 0)
+		ret = -1;
+
 	for (auto const &n : nodes_enabled_)
 		nodes_.at(n).StreamOff();
 
