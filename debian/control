@@ -1,6 +1,5 @@
 Source: libpisp
-Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
-Uploaders: Dylan Aïssi <daissi@debian.org>
+Maintainer: Serge Schneider <serge@raspberrypi.com>
 Section: libs
 Priority: optional
 Rules-Requires-Root: no
@@ -12,8 +11,8 @@ Build-Depends: debhelper-compat (= 13),
                pkgconf
 Standards-Version: 4.7.2
 Homepage: https://github.com/raspberrypi/libpisp
-Vcs-Browser: https://salsa.debian.org/multimedia-team/libpisp
-Vcs-Git: https://salsa.debian.org/multimedia-team/libpisp.git
+Vcs-Browser: https://github.com/raspberrypi/libpisp
+Vcs-Git: https://github.com/raspberrypi/libpisp.git
 
 Package: libpisp-dev
 Section: libdevel
