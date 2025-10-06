@@ -1,0 +1,32 @@
+libpisp (1.2.1-3) unstable; urgency=medium
+
+  * Cherry-pick upstream patch fixing FTBFS (Closes: #1115167)
+
+ -- Dylan Aïssi <daissi@debian.org>  Thu, 25 Sep 2025 22:34:57 +0200
+
+libpisp (1.2.1-2) unstable; urgency=medium
+
+  * Add patch to make the build reproducible (Closes: #1104546)
+
+ -- Dylan Aïssi <daissi@debian.org>  Sat, 03 May 2025 09:44:51 +0200
+
+libpisp (1.2.1-1) unstable; urgency=medium
+
+  * New upstream version 1.2.1
+  * Drop patch included in upstream release.
+
+ -- Dylan Aïssi <daissi@debian.org>  Fri, 02 May 2025 18:15:31 +0200
+
+libpisp (1.2.0-2) unstable; urgency=medium
+
+  * Add retagged-v1.2.0.patch due to v1.2.0 which has been upstream retagged.
+  * Upload to unstable.
+
+ -- Dylan Aïssi <daissi@debian.org>  Thu, 03 Apr 2025 21:44:41 +0200
+
+libpisp (1.2.0-1) experimental; urgency=medium
+
+  * Initial packaging. (Closes: #1100897)
+    Based on the packages from Raspberry Pi OS and Ubuntu.
+
+ -- Dylan Aïssi <daissi@debian.org>  Sat, 22 Mar 2025 10:18:38 +0100

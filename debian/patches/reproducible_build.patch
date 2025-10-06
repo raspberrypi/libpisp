@@ -1,0 +1,33 @@
+Description: Make builds reproducible by using SOURCE_DATE_EPOCH for build date.
+ Don't embed the current date which make the builds unreproducible.
+ See: https://reproducible-builds.org/docs/source-date-epoch/
+Bug-Debian: https://bugs.debian.org/1104546
+Author: Dylan Aïssi <daissi@debian.org>
+Forwarded: https://github.com/raspberrypi/libpisp/pull/50
+
+--- a/utils/version.py
++++ b/utils/version.py
+@@ -5,8 +5,10 @@
+ #
+ # Generate version information for libcamera-apps
+ 
++import os
+ import subprocess
+ import sys
++import time
+ from datetime import datetime
+ from string import hexdigits
+ 
+@@ -53,7 +55,11 @@
+         commit = '0' * digits + '-invalid'
+ 
+     finally:
+-        print(f'{commit} {datetime.now().strftime("%d-%m-%Y (%H:%M:%S)")}', end="")
++        date_str = time.strftime(
++            "%d-%m-%Y (%H:%M:%S)",
++            time.gmtime(int(os.environ.get('SOURCE_DATE_EPOCH', time.time())))
++        )
++        print(f'{commit} {date_str}', end="")
+ 
+ 
+ if __name__ == "__main__":
