@@ -33,19 +33,8 @@ add_project_arguments(logging_args, language : 'cpp')
 # Needed to avoid (erroneous) warnings on the use of addresses of fields in __attribute__((packed)) structs.
 add_project_arguments('-Wno-address-of-packed-member', language : 'cpp')
 
-meson.add_dist_script(meson.project_source_root() / 'utils' / 'gen-dist.sh')
-
 # Generate a version string:
 version_cmd = [meson.project_source_root() / 'utils' / 'version.py', meson.project_version()]
-
-# Check if a version.gen file is present.
-# This would have been generated from the meson dist command.
-fs = import('fs')
-dist_version_file = meson.project_source_root() / 'version.gen'
-if fs.is_file(dist_version_file)
-    version_cmd += fs.read(dist_version_file)
-endif
-
 version_template = meson.project_source_root() / 'utils' / 'version.cpp.in'
 version_cpp = vcs_tag(command : version_cmd,
                       input : version_template,
