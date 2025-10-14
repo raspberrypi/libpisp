@@ -11,13 +11,13 @@ on:
 
 jobs:
   build-test:
-
-    runs-on: [ ubuntu-latest ]
-
     strategy:
       matrix:
+        os: [ ubuntu-latest, ubuntu-24.04-arm ]
         compiler: [ g++, clang++ ]
         build_type: [ release, debug ]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v3

@@ -1,12 +1,14 @@
 #!/usr/bin/python3
 
-# SPDX-License-Identifier: CC0-1.0
-# Copyright (C) 2021, Raspberry Pi Ltd.
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (C) 2021-2025, Raspberry Pi Ltd.
 #
-# Generate version information for libcamera-apps
+# Generate version information for libpisp
 
+import os
 import subprocess
 import sys
+import time
 from datetime import datetime
 from string import hexdigits
 
@@ -36,24 +38,20 @@ def generate_version():
             if r.returncode:
                 commit = commit + '-dirty'
 
-        elif len(sys.argv) == 3:
-            commit = sys.argv[2].lower().strip()
-            if any(c not in hexdigits for c in commit):
-                raise RuntimeError('Invalid git sha!')
-
-            commit = commit[0:digits]
-      
         else:
             raise RuntimeError('Invalid number of command line arguments') 
 
         commit = f'v{sys.argv[1]} {commit}'
 
     except RuntimeError as e:
-        print(f'ERR: {e}', file=sys.stderr)
-        commit = '0' * digits + '-invalid'
+        commit = f'v{sys.argv[1]}'
 
     finally:
-        print(f'{commit} {datetime.now().strftime("%d-%m-%Y (%H:%M:%S)")}', end="")
+        date_str = time.strftime(
+            "%d-%m-%Y (%H:%M:%S)",
+            time.gmtime(int(os.environ.get('SOURCE_DATE_EPOCH', time.time())))
+        )
+        print(f'{commit} {date_str}', end="")
 
 
 if __name__ == "__main__":
