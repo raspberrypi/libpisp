@@ -3,7 +3,6 @@ Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
 Uploaders: Dylan Aïssi <daissi@debian.org>
 Section: libs
 Priority: optional
-Rules-Requires-Root: no
 Build-Depends: debhelper-compat (= 13),
                libboost-log-dev,
                libboost-thread-dev,
