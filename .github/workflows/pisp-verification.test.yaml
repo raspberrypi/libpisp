@@ -26,7 +26,7 @@ jobs:
         clean: true
 
     - name: Configure meson
-      run: meson setup build -Dbuildtype=debug
+      run: meson setup build -Dbuildtype=debug -Dexamples=true
       timeout-minutes: 5
 
     - name: Build
@@ -42,3 +42,7 @@ jobs:
     - name: Run verification tests
       run: LD_LIBRARY_PATH=${{github.workspace}}/build/src LIBPISP_BE_CONFIG_FILE="${{github.workspace}}/src/libpisp/backend/backend_default_config.json" ${{env.BE_TEST_DIR}}/run_be_tests.py --hw --logall --test ${{env.BE_TEST_DIR}}/be_test ${{env.TESTS_DIR}}/back_end
       timeout-minutes: 20
+
+    - name: Run convert tests
+      run: LD_LIBRARY_PATH=${{github.workspace}}/build/src LIBPISP_BE_CONFIG_FILE="${{github.workspace}}/src/libpisp/backend/backend_default_config.json" python3 ${{github.workspace}}/utils/test_convert.py ${{github.workspace}}/build/src/examples/convert --out /tmp/ --in $HOME/libpisp_conv/ --ref ~/libpisp_conv/ref/
+      timeout-minutes: 10

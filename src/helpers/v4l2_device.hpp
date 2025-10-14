@@ -15,6 +15,8 @@
 
 #include <linux/videodev2.h>
 
+#include "libpisp/backend/pisp_be_config.h"
+
 #include "device_fd.hpp"
 
 namespace libpisp::helpers
@@ -55,7 +57,7 @@ public:
 		}
 
 		Buffer(const v4l2_buffer& buf)
-        	: buffer(buf), size({}), mem({})
+			: buffer(buf), size({}), mem({})
 		{
 		}
 
@@ -65,15 +67,19 @@ public:
 	};
 
 	int RequestBuffers(unsigned int count = 1);
-	void ReleaseBuffers();
+	void ReturnBuffers();
 
-	std::optional<Buffer> GetBuffer();
+	std::optional<Buffer> AcquireBuffer();
+	void ReleaseBuffer(const Buffer &buffer);
+	const std::vector<Buffer> &Buffers() const
+	{
+		return v4l2_buffers_;
+	};
 
 	int QueueBuffer(unsigned int index);
 	int DequeueBuffer(unsigned int timeout_ms = 500);
 
-	void SetFormat(unsigned int width, unsigned int height, unsigned int stride, unsigned int stride2,
-				   const std::string &format);
+	void SetFormat(const pisp_image_format_config &format, bool use_opaque_format = false);
 
 	void StreamOn();
 	void StreamOff();

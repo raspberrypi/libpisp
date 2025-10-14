@@ -24,6 +24,8 @@ BackEnd::BackEnd(Config const &config, PiSPVariant const &variant)
 		PISP_LOG(fatal, "Configured max tile width " << config_.max_tile_width << " exceeds " << max_tile_width);
 
 	smart_resize_dirty_ = 0;
+	memset(&be_config_, 0, sizeof(be_config_));
+	memset(&be_config_extra_, 0, sizeof(be_config_extra_));
 
 	const char *env = std::getenv("LIBPISP_BE_CONFIG_FILE");
 	initialiseDefaultConfig(env ? std::string(env) : config.defaults_file);
@@ -68,6 +70,11 @@ void BackEnd::SetInputFormat(pisp_image_format_config const &input_format)
 	retile_ = true;
 }
 
+void BackEnd::GetInputFormat(pisp_image_format_config &input_format) const
+{
+	input_format = be_config_.input_format;
+}
+
 void BackEnd::SetDecompress(pisp_decompress_config const &decompress)
 {
 	be_config_.decompress = decompress;
@@ -93,6 +100,11 @@ void BackEnd::SetTdnInputFormat(pisp_image_format_config const &tdn_input_format
 	be_config_.tdn_input_format = tdn_input_format;
 	be_config_extra_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_TDN_INPUT; // TDN input address will always be written
 	finalise_tiling_ = true;
+}
+
+void BackEnd::GetTdnInputFormat(pisp_image_format_config &tdn_input_format) const
+{
+	tdn_input_format = be_config_.tdn_input_format;
 }
 
 void BackEnd::SetTdnDecompress(pisp_decompress_config const &tdn_decompress)
@@ -206,7 +218,7 @@ void BackEnd::SetWbg(pisp_wbg_config const &wbg)
 	be_config_extra_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_WBG;
 }
 
-void BackEnd::GetWbg(pisp_wbg_config &wbg)
+void BackEnd::GetWbg(pisp_wbg_config &wbg) const
 {
 	wbg = be_config_.wbg;
 }
@@ -235,7 +247,7 @@ void BackEnd::SetDebin(pisp_be_debin_config const &debin)
 	be_config_extra_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEBIN;
 }
 
-void BackEnd::GetDebin(pisp_be_debin_config &debin)
+void BackEnd::GetDebin(pisp_be_debin_config &debin) const
 {
 	debin = be_config_.debin;
 }
@@ -279,7 +291,7 @@ void BackEnd::SetYcbcr(pisp_be_ccm_config const &ycbcr)
 	be_config_extra_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR;
 }
 
-void BackEnd::GetYcbcr(pisp_be_ccm_config &ycbcr)
+void BackEnd::GetYcbcr(pisp_be_ccm_config &ycbcr) const
 {
 	ycbcr = be_config_.ycbcr;
 }
@@ -304,7 +316,7 @@ void BackEnd::SetSharpen(pisp_be_sharpen_config const &sharpen)
 	be_config_extra_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_SHARPEN;
 }
 
-void BackEnd::GetSharpen(pisp_be_sharpen_config &sharpen)
+void BackEnd::GetSharpen(pisp_be_sharpen_config &sharpen) const
 {
 	sharpen = be_config_.sharpen;
 }
@@ -329,7 +341,7 @@ void BackEnd::SetGamma(pisp_be_gamma_config const &gamma)
 	be_config_extra_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_GAMMA;
 }
 
-void BackEnd::GetGamma(pisp_be_gamma_config &gamma)
+void BackEnd::GetGamma(pisp_be_gamma_config &gamma) const
 {
 	gamma = be_config_.gamma;
 }
@@ -356,7 +368,7 @@ void BackEnd::SetCsc(unsigned int i, pisp_be_ccm_config const &csc)
 	be_config_extra_.dirty_flags_bayer |= PISP_BE_RGB_ENABLE_CSC(i);
 }
 
-void BackEnd::GetCsc(unsigned int i, pisp_be_ccm_config &csc)
+void BackEnd::GetCsc(unsigned int i, pisp_be_ccm_config &csc) const
 {
 	csc = be_config_.csc[i];
 }
