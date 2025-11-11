@@ -8,7 +8,6 @@
 #pragma once
 
 #include <cstring>
-#include <type_traits>
 
 #include "common/pisp_common.h"
 #include "common/shm_mutex.hpp"
@@ -91,13 +90,10 @@ public:
 private:
 	void fixOutputSize(unsigned int output_num);
 
-	const PiSPVariant variant_;
+	const PiSPVariant &variant_;
 	pisp_fe_config fe_config_;
 	int align_;
 	mutable ShmMutex mutex_;
 };
-
-// This is required to ensure we can safely share a FrontEnd object across multiple processes.
-static_assert(std::is_standard_layout<FrontEnd>::value, "FrontEnd must be a standard layout type");
 
 } // namespace libpisp
