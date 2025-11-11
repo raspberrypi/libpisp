@@ -29,8 +29,8 @@ struct Length2
 	explicit Length2(int len) : Length2(len, len) {}
 	int dx, dy;
 	int operator[](Dir dir) const { return dir == Dir::Y ? dy : dx; }
-	Length2 operator-(Length2 const &other) { return Length2(dx - other.dx, dy - other.dy); }
-	Length2 operator/(int num) { return Length2(dx / num, dy / num); }
+	Length2 operator-(Length2 const &other) const { return Length2(dx - other.dx, dy - other.dy); }
+	Length2 operator/(int num) const { return Length2(dx / num, dy / num); }
 };
 
 inline std::ostream &operator<<(std::ostream &os, Length2 const &l)
@@ -44,7 +44,7 @@ struct Crop
 	Crop(int _start, int _end) : start(_start), end(_end) {}
 	explicit Crop(int crop) : Crop(crop, crop) {}
 	int start, end;
-	Crop operator+(Crop const &other) { return Crop(start + other.start, end + other.end); }
+	Crop operator+(Crop const &other) const { return Crop(start + other.start, end + other.end); }
 };
 
 inline std::ostream &operator<<(std::ostream &os, Crop const &c)
@@ -61,11 +61,11 @@ struct Interval
 	int End() const { return offset + length; }
 	void SetStart(int start) { length += (offset - start), offset = start; } // leave End unchanged
 	void SetEnd(int end) { length = end - offset; }
-	bool operator==(Interval const &other) { return offset == other.offset && length == other.length; }
+	bool operator==(Interval const &other) const { return offset == other.offset && length == other.length; }
 	Interval operator-(Crop const &crop) const { return Interval(offset - crop.start, length - crop.start - crop.end); }
-	Crop operator-(Interval const &other) { return Crop(other.offset - offset, End() - other.End()); }
-	bool operator>(Interval const &other) { return offset <= other.offset && End() >= other.End(); } // contains
-	bool operator<(Interval const &other) { return offset >= other.offset && End() <= other.End(); } // is contained
+	Crop operator-(Interval const &other) const { return Crop(other.offset - offset, End() - other.End()); }
+	bool operator>(Interval const &other) const { return offset <= other.offset && End() >= other.End(); } // contains
+	bool operator<(Interval const &other) const { return offset >= other.offset && End() <= other.End(); } // is contained
 	Interval &operator|=(int off)
 	{
 		if (off < offset)
@@ -88,7 +88,7 @@ struct Crop2
 	Crop x, y;
 	Crop operator[](Dir dir) const { return dir == Dir::Y ? y : x; }
 	Crop &operator[](Dir dir) { return dir == Dir::Y ? y : x; }
-	Crop2 operator+(Crop2 const &other) { return Crop2(x + other.x, y + other.y); }
+	Crop2 operator+(Crop2 const &other) const { return Crop2(x + other.x, y + other.y); }
 };
 
 inline std::ostream &operator<<(std::ostream &os, Crop2 const &c)
@@ -104,8 +104,8 @@ struct Interval2
 	Interval x, y;
 	Interval operator[](Dir dir) const { return dir == Dir::Y ? y : x; }
 	Interval &operator[](Dir dir) { return dir == Dir::Y ? y : x; }
-	bool operator==(Interval2 const &other) { return x == other.x && y == other.y; }
-	bool operator!=(Interval2 const &other) { return !(*this == other); }
+	bool operator==(Interval2 const &other) const { return x == other.x && y == other.y; }
+	bool operator!=(Interval2 const &other) const { return !(*this == other); }
 };
 
 inline std::ostream &operator<<(std::ostream &os, Interval2 const &i)
