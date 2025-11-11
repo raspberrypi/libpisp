@@ -7,7 +7,7 @@ project('libpisp', 'c', 'cpp',
         default_options : [
             'werror=true',
             'warning_level=2',
-            'cpp_std=c++17',
+            'cpp_std=c++20',
             'buildtype=release',
         ],
         license : 'BSD-2-Clause')

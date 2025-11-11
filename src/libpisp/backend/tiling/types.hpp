@@ -61,7 +61,7 @@ struct Interval
 	int End() const { return offset + length; }
 	void SetStart(int start) { length += (offset - start), offset = start; } // leave End unchanged
 	void SetEnd(int end) { length = end - offset; }
-	bool operator==(Interval const &other) { return offset == other.offset && length == other.length; }
+	bool operator==(Interval const &other) const { return offset == other.offset && length == other.length; }
 	Interval operator-(Crop const &crop) const { return Interval(offset - crop.start, length - crop.start - crop.end); }
 	Crop operator-(Interval const &other) { return Crop(other.offset - offset, End() - other.End()); }
 	bool operator>(Interval const &other) { return offset <= other.offset && End() >= other.End(); } // contains
