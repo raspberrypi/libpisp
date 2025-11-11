@@ -31,7 +31,9 @@ BackEnd::BackEnd(Config const &config, PiSPVariant const &variant, std::span<uin
 	// Initialize mutex pointer - use provided mutex if available, otherwise use internal
 	mutex_ = mutex ? mutex : &internal_mutex_;
 
+	smart_resize_.resize(2, { 0, 0 });
 	smart_resize_dirty_ = 0;
+
 	memset(be_config_, 0, sizeof(*be_config_));
 	memset(&be_config_extra_, 0, sizeof(be_config_extra_));
 
