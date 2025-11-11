@@ -526,7 +526,7 @@ void BackEnd::SetJsonConfig(const std::string &json_str)
 {
 	json j = json::parse(json_str);
 
-	pisp_be_config *config = &be_config_;
+	pisp_be_config *config = be_config_;
 	for (auto const &param : be_config)
 	{
 		for (auto const &field : param.fields)
