@@ -117,7 +117,4 @@ public:
 const std::vector<PiSPVariant> &get_variants();
 std::optional<PiSPVariant> get_variant(unsigned int fe_version, unsigned int be_version);
 
-extern const PiSPVariant BCM2712_C0;
-extern const PiSPVariant BCM2712_D0;
-
 } // namespace libpisp
