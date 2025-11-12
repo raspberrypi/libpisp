@@ -55,8 +55,7 @@ public:
 		uint16_t height;
 	};
 
-	BackEnd(Config const &user_config, PiSPVariant const &variant, std::span<uint8_t> storage = {},
-			ShmMutex *mutex = nullptr);
+	BackEnd(Config const &user_config, PiSPVariant const &variant, std::span<uint8_t> storage = {});
 	~BackEnd();
 
 	void SetGlobal(pisp_be_global_config const &global);
@@ -172,21 +171,6 @@ public:
 		config_.max_stripe_height = height;
 	}
 
-	void lock()
-	{
-		mutex_->lock();
-	}
-
-	void unlock()
-	{
-		mutex_->unlock();
-	}
-
-	bool try_lock()
-	{
-		return mutex_->try_lock();
-	}
-
 private:
 	struct BeConfigExtra
 	{
@@ -219,13 +203,11 @@ private:
 	bool finalise_tiling_;
 	std::vector<pisp_tile> tiles_;
 	int num_tiles_x_, num_tiles_y_;
-	mutable ShmMutex *mutex_;
 	std::vector<SmartResize> smart_resize_;
 	uint32_t smart_resize_dirty_;
 
 	// Internal storage use
 	pisp_be_config internal_config_;
-	mutable ShmMutex internal_mutex_;
 
 	// Default config
 	std::map<std::string, pisp_be_ccm_config> ycbcr_map_;

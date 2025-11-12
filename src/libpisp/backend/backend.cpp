@@ -15,7 +15,7 @@
 
 using namespace libpisp;
 
-BackEnd::BackEnd(Config const &config, PiSPVariant const &variant, std::span<uint8_t> external_storage, ShmMutex *mutex)
+BackEnd::BackEnd(Config const &config, PiSPVariant const &variant, std::span<uint8_t> config_storage)
 	: config_(config), variant_(variant), retile_(true), finalise_tiling_(true)
 {
 	unsigned int max_tile_width = variant_.BackEndMaxTileWidth(0);
@@ -27,9 +27,6 @@ BackEnd::BackEnd(Config const &config, PiSPVariant const &variant, std::span<uin
 		be_config_ = reinterpret_cast<pisp_be_config *>(config_storage.data());
 	else
 		be_config_ = &internal_config_;
-
-	// Initialize mutex pointer - use provided mutex if available, otherwise use internal
-	mutex_ = mutex ? mutex : &internal_mutex_;
 
 	smart_resize_.resize(2, { 0, 0 });
 	smart_resize_dirty_ = 0;
