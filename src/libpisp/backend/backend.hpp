@@ -7,10 +7,12 @@
  */
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <map>
 #include <span>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "common/shm_mutex.hpp"
@@ -27,7 +29,7 @@ namespace libpisp
 class BackEnd final
 {
 public:
-	struct Config
+	struct SoftwareConfig
 	{
 		enum Flags
 		{
@@ -36,7 +38,7 @@ public:
 			HIGH_PRIORITY = 2 	// Not currently implemented
 		};
 
-		Config(unsigned int _max_stripe_height = 0, unsigned int _max_tile_width = 0, unsigned int _flags = 0,
+		SoftwareConfig(unsigned int _max_stripe_height = 0, unsigned int _max_tile_width = 0, unsigned int _flags = 0,
 			   std::string _defaults_file = {})
 			: max_stripe_height(_max_stripe_height), max_tile_width(_max_tile_width), flags(_flags),
 			  defaults_file(_defaults_file)
@@ -55,7 +57,7 @@ public:
 		uint16_t height;
 	};
 
-	BackEnd(Config const &user_config, PiSPVariant const &variant, std::span<uint8_t> storage = {});
+	BackEnd(SoftwareConfig const &sw_config, PiSPVariant const &variant, std::span<uint8_t> config_storage = {});
 	~BackEnd();
 
 	void SetGlobal(pisp_be_global_config const &global);
@@ -163,12 +165,12 @@ public:
 
 	void SetMaxTileWidth(unsigned int width)
 	{
-		config_.max_tile_width = width;
+		sw_.max_tile_width = width;
 	}
 
 	void SetMaxStripeHeight(unsigned int height)
 	{
-		config_.max_stripe_height = height;
+		sw_.max_stripe_height = height;
 	}
 
 private:
@@ -185,6 +187,18 @@ private:
 		uint32_t dirty_flags_extra; //these use pisp_be_dirty_t
 	};
 
+	struct HardwareConfig
+	{
+		pisp_be_config config;
+		BeConfigExtra config_extra;
+		bool retile_ = true;
+		bool finalise_tiling = true;
+		std::array<SmartResize, PISP_BACK_END_NUM_OUTPUTS> smart_resize;
+		uint32_t smart_resize_dirty;
+	};
+
+	static_assert(std::is_standard_layout<HardwareConfig>::value, "HardwareConfig must be a standard layout type");
+
 	void finaliseConfig();
 	void updateSmartResize();
 	void updateTiles();
@@ -194,20 +208,15 @@ private:
 
 	void initialiseDefaultConfig(const std::string &filename);
 
-	Config config_;
-	const PiSPVariant &variant_;
-	pisp_be_config *be_config_;
-	BeConfigExtra be_config_extra_;
-	pisp_image_format_config max_input_;
-	bool retile_;
-	bool finalise_tiling_;
-	std::vector<pisp_tile> tiles_;
-	int num_tiles_x_, num_tiles_y_;
-	std::vector<SmartResize> smart_resize_;
-	uint32_t smart_resize_dirty_;
+	SoftwareConfig sw_;
+	HardwareConfig *hw_;
+	const PiSPVariant variant_;
 
 	// Internal storage use
-	pisp_be_config internal_config_;
+	HardwareConfig internal_hw_config_;
+
+	std::vector<pisp_tile> tiles_;
+	int num_tiles_x_, num_tiles_y_;
 
 	// Default config
 	std::map<std::string, pisp_be_ccm_config> ycbcr_map_;

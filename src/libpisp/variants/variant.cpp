@@ -12,44 +12,38 @@
 namespace libpisp
 {
 
-namespace {
-
-const PiSPVariant variant_error {};
-
-} // namespace
-
 const PiSPVariant BCM2712_C0 {
-	"BCM2712_C0",			/* Name */
-	0x00114666,				/* FrontEnd version */
-	0x02252700,				/* BackEnd version */
-	2,						/* Number of FrontEnds */
-	1,						/* Number of BackEnds */
-	{ 2, 2 },				/* Number of branches per FrontEnd */
-	{ 6144, 6144 }, 		/* Maximum statistics width per FrontEnd branch */
-	{{ { true, true }, { true, true } }}, /* Availability of downscalers per FrontEnd branch */
-	{{ { 6144, 4096 }, { 6144, 4096 } }}, /* Maximum width of downscalers per FrontEnd branch */
-	640,					/* Maximum tile size of the BackEnd */
-	{ 2 },					/* Number of branches per BackEnd */
-	{{ { false, false } }}, /* Availability of integral image output per BackEnd branch */
-	{{ { false, true } }},	/* Availability of downscalers per BackEnd branch */
-	false,					/* BackEnd RGB32 output format support */
+	.name_ = "BCM2712_C0",
+	.fe_version_ = 0x00114666,
+	.be_version_ = 0x02252700,
+	.num_fe_ = 2,
+	.num_be_ = 1,
+	.num_fe_branches_ = { 2, 2 },
+	.fe_stats_max_width_ = { 6144, 6144 },
+	.fe_downscaler_ = { { { true, true }, { true, true } } },
+	.fe_downscaler_max_width_ = { { { 6144, 4096 }, { 6144, 4096 } } },
+	.be_max_tile_width_ = 640,
+	.num_be_branches_ = { 2 },
+	.be_integral_images_ = { { { false, false } } },
+	.be_downscaler_ = { { { false, true } } },
+	.be_rgb32_support_ = false,
 };
 
 const PiSPVariant BCM2712_D0 {
-	"BCM2712_D0",			/* Name */
-	0x00114666,				/* FrontEnd version */
-	0x02252701,				/* BackEnd version */
-	2,						/* Number of FrontEnds */
-	1,						/* Number of BackEnds */
-	{ 2, 2 },				/* Number of branches per FrontEnd */
-	{ 6144, 6144 }, 		/* Maximum statistics width per FrontEnd branch */
-	{{ { true, true }, { true, true } }}, /* Availability of downscalers per FrontEnd branch */
-	{{ { 6144, 4096 }, { 6144, 4096 } }}, /* Maximum width of downscalers per FrontEnd branch */
-	640,					/* Maximum tile size of the BackEnd */
-	{ 2 },					/* Number of branches per BackEnd */
-	{{ { false, false } }}, /* Availability of integral image output per BackEnd branch */
-	{{ { false, true } }},	/* Availability of downscalers per BackEnd branch */
-	true,					/* BackEnd RGB32 output format support */
+	.name_ = "BCM2712_D0",
+	.fe_version_ = 0x00114666,
+	.be_version_ = 0x02252701,
+	.num_fe_ = 2,
+	.num_be_ = 1,
+	.num_fe_branches_ = { 2, 2 },
+	.fe_stats_max_width_ = { 6144, 6144 },
+	.fe_downscaler_ = { { { true, true }, { true, true } } },
+	.fe_downscaler_max_width_ = { { { 6144, 4096 }, { 6144, 4096 } } },
+	.be_max_tile_width_ = 640,
+	.num_be_branches_ = { 2 },
+	.be_integral_images_ = { { { false, false } } },
+	.be_downscaler_ = { { { false, true } } },
+	.be_rgb32_support_ = true,
 };
 
 const std::vector<PiSPVariant> &get_variants()
@@ -62,7 +56,7 @@ const std::vector<PiSPVariant> &get_variants()
 	return variants;
 }
 
-const PiSPVariant &get_variant(unsigned int fe_version, unsigned int be_version)
+std::optional<PiSPVariant> get_variant(unsigned int fe_version, unsigned int be_version)
 {
 	const std::vector<PiSPVariant> &variants = get_variants();
 
@@ -71,7 +65,7 @@ const PiSPVariant &get_variant(unsigned int fe_version, unsigned int be_version)
 																	 hw.BackEndVersion() == be_version; });
 
 	if (it == variants.end())
-		return variant_error;
+		return {};
 
 	return *it;
 }

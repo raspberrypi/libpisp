@@ -41,7 +41,7 @@ class ConvertTester:
                 "output_file": "out_1600x1200_422p.yuv",
                 "input_format": "800:600:1600:YUYV",
                 "output_format": "1600:1200:1600:YUV422P",
-                "reference_file": "ref_1600x1200_422p.yuv"
+                "reference_file": "ref_1600x1200_1600_422p.yuv"
             },
             {
                 "input_file": "conv_rgb888_800x600_2432s.rgb",

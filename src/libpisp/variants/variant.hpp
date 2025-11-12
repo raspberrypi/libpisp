@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -19,7 +20,7 @@ namespace libpisp
 
 class PiSPVariant
 {
-private:
+public:
 	static constexpr unsigned int MaxFrontEnds = 4;
 	static constexpr unsigned int MaxBackEnds = 4;
 	static constexpr unsigned int MaxFrontEndBranches = 4;
@@ -41,35 +42,6 @@ private:
 	std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> be_integral_images_;
 	std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> be_downscaler_;
 	bool be_rgb32_support_;
-
-public:
-	PiSPVariant(const std::string &name,
-				unsigned int fe_version, unsigned int be_version,
-				unsigned int num_fe, unsigned int num_be,
-				const std::array<unsigned int, MaxFrontEnds> &num_fe_branches,
-				const std::array<unsigned int, MaxFrontEnds> &fe_stats_max_width,
-				const std::array<std::array<bool, MaxFrontEndBranches>, MaxFrontEnds> &fe_downscaler,
-				const std::array<std::array<unsigned int, MaxFrontEndBranches>, MaxFrontEnds> fe_downscaler_max_width,
-				unsigned int be_max_tile_width,
-				const std::array<unsigned int, MaxBackEnds> &num_be_branches,
-				const std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> &be_integral_images,
-				const std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> &be_downscaler,
-				bool be_rgb32_support)
-
-				: name_(name), fe_version_(fe_version), be_version_(be_version), num_fe_(num_fe),
-				  num_be_(num_be), num_fe_branches_(num_fe_branches), fe_stats_max_width_(fe_stats_max_width),
-				  fe_downscaler_(fe_downscaler), fe_downscaler_max_width_(fe_downscaler_max_width),
-				  be_max_tile_width_(be_max_tile_width), num_be_branches_(num_be_branches),
-				  be_integral_images_(be_integral_images), be_downscaler_(be_downscaler),
-				  be_rgb32_support_(be_rgb32_support)
-	{
-	}
-
-	// For error handling
-	PiSPVariant()
-		: name_("INVALID"), num_fe_(0), num_be_(0), num_fe_branches_({ 0 }), num_be_branches_({ 0 })
-	{
-	}
 
 	const std::string &Name() const
 	{
@@ -143,7 +115,7 @@ public:
 };
 
 const std::vector<PiSPVariant> &get_variants();
-const PiSPVariant &get_variant(unsigned int fe_version, unsigned int be_version);
+std::optional<PiSPVariant> get_variant(unsigned int fe_version, unsigned int be_version);
 
 extern const PiSPVariant BCM2712_C0;
 extern const PiSPVariant BCM2712_D0;

@@ -526,7 +526,7 @@ void BackEnd::SetJsonConfig(const std::string &json_str)
 {
 	json j = json::parse(json_str);
 
-	pisp_be_config *config = be_config_;
+	pisp_be_config *config = &hw_->config;
 	for (auto const &param : be_config)
 	{
 		for (auto const &field : param.fields)
@@ -546,9 +546,9 @@ void BackEnd::SetJsonConfig(const std::string &json_str)
 	}
 
 	// Clear any dirty flags so no reconfiguration happens on the next Prepare() call.
-	be_config_extra_.dirty_flags_bayer = be_config_extra_.dirty_flags_rgb = be_config_extra_.dirty_flags_extra = 0;
+	hw_->config_extra.dirty_flags_bayer = hw_->config_extra.dirty_flags_rgb = hw_->config_extra.dirty_flags_extra = 0;
 	// But do retile the pipeline to get the tile structures setup correctly.
-	retile_ = true;
+	hw_->retile_ = true;
 }
 
 // clang-format on

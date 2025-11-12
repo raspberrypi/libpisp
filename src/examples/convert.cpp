@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	libpisp::BackEnd be(libpisp::BackEnd::Config({}), *variant);
+	libpisp::BackEnd be(libpisp::BackEnd::SoftwareConfig({}), *variant);
 
 	pisp_be_global_config global;
 	be.GetGlobal(global);
