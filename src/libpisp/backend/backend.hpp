@@ -173,6 +173,8 @@ public:
 		sw_.max_stripe_height = height;
 	}
 
+	static size_t GetStorageSize(const PiSPVariant &variant);
+
 private:
 	struct BeConfigExtra
 	{

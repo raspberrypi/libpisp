@@ -15,6 +15,11 @@
 
 using namespace libpisp;
 
+size_t BackEnd::GetStorageSize([[maybe_unused]] const PiSPVariant &variant)
+{
+	return sizeof(HardwareConfig);
+}
+
 BackEnd::BackEnd(SoftwareConfig const &sw_config, PiSPVariant const &variant, std::span<uint8_t> config_storage)
 	: sw_(sw_config), variant_(variant)
 {
