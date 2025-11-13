@@ -55,6 +55,8 @@ enum pisp_be_bayer_enable {
 	PISP_BE_BAYER_ENABLE_CAC = 0x100000,
 	PISP_BE_BAYER_ENABLE_DEBIN = 0x200000,
 	PISP_BE_BAYER_ENABLE_DEMOSAIC = 0x400000,
+	PISP_BE_BAYER_ENABLE_TONEMAP_INPUT = 0x800000,
+	PISP_BE_BAYER_ENABLE_TRANSPOSE = 0x1000000,	
 };
 
 enum pisp_be_rgb_enable {
@@ -688,7 +690,9 @@ enum pisp_be_transform {
 struct pisp_be_output_format_config {
 	struct pisp_image_format_config image;
 	__u8 transform;
-	__u8 pad[3];
+	__u8 rebayer;
+	__u8 bayer_order;
+	__u8 chroma_pos;
 	__u16 lo;
 	__u16 hi;
 	__u16 lo2;
@@ -757,7 +761,7 @@ struct pisp_be_hog_buffer_config {
  */
 struct pisp_be_config {
 	/* For backward compatibility */
-	uint8_t pad0[108];
+	__u8 pad0[108];
 	/* Processing configuration: */
 	struct pisp_be_global_config global;
 	struct pisp_image_format_config input_format;
@@ -799,7 +803,7 @@ struct pisp_be_config {
 	struct pisp_be_hog_config hog;
 	struct pisp_be_axi_config axi;
 	/* For backward compatibility */
-	uint8_t pad1[84];
+	__u8 pad1[84];
 } __attribute__((packed));
 
 /**
@@ -919,8 +923,194 @@ struct pisp_tile {
 	/* 160 bytes */
 } __attribute__((packed));
 
-struct pisp_be_config_v2 {
-	struct pisp_be_config config;
+// Tonemapping uses a 32x32 grid for a lens shading-like function. The dimensions
+// are chosen to match exactly the lens shading block.
+#define PISP_BE_TONEMAP2_STEP_PRECISION PISP_BE_LSC_STEP_PRECISION
+#define PISP_BE_TONEMAP2_LOG_GRID_SIZE PISP_BE_LSC_LOG_GRID_SIZE
+#define PISP_BE_TONEMAP2_GRID_SIZE PISP_BE_LSC_GRID_SIZE
+// Tonemapping uses a gamma block, matching the existing gamma block implementation
+// except that it operates only on a single channel.
+#define PISP_BE_TONEMAP2_LUT_SIZE 65
+// Precision for dealing with the lores image.
+#define PISP_BE_TONEMAP2_LORES_PRECISION 16
+// Precision of the standard deviation-based weights.
+#define PISP_BE_TONEMAP2_WEIGHT_PRECISION 12
+#define PISP_BE_TONEMAP2_CENTRE_WEIGHT_SCALE 4
+// Precision of standard deviation slope.
+#define PISP_BE_TONEMAP2_SD_SLOPE_PRECISION 8
+// Precision of distance SD reciprocal, in lo-res cell units.
+#define PISP_BE_TONEMAP2_RECIP_PRECISION 10
+
+struct pisp_be_tonemap2_config {
+	// 0 bytes
+	__u16 grid_step_x;
+	__u16 grid_step_y;
+	// 4 bytes
+	__u16 lores_step_x;
+	__u16 lores_step_y;
+	// 8 bytes
+	__u16 sd_constant;
+	__u16 sd_slope;
+	// 12 bytes
+	__u16 dx_sd_recip;
+	__u16 dy_sd_recip;
+	// 16 bytes
+	__u8 centre_weight;
+	__u8 pad0[3];
+	// 20 bytes
+	__u16 spatial_gains[PISP_BE_TONEMAP2_GRID_SIZE + 1][PISP_BE_TONEMAP2_GRID_SIZE + 1];
+	__u8 pad1[2];
+	// 2200 bytes
+	__u16 spatial_gain_knee;
+	__u16 spatial_gain_slope;
+	// 2204 bytes
+	__u16 level_gain_base;
+	__u16 level_gain_boost;
+	// 2208 bytes
+	__u8 level_gain_log;
+	__u8 pad2[3];
+	// 2212 bytes
+	__u16 gamma[PISP_BE_TONEMAP2_LUT_SIZE];
+	__u16 pad3;
+	// 2344 bytes
+	__u16 boost_neg;
+	__u16 boost_pos;
+	// 2348 bytes
+};
+
+
+#define PISP_BE_DDX_LOG_GRID_SIZE 5
+#define PISP_BE_DDX_GRID_SIZE (1 << PISP_BE_DDX_LOG_GRID_SIZE)
+#define PISP_BE_DDX_STEP_PRECISION 18
+
+struct pisp_be_dedistort_config {
+	/* (1<<18) / grid_cell_width in output pixels */
+	__u16 grid_step_x;
+	/* (1<<18) / grid_cell_height in pixels */
+	__u16 grid_step_y;
+	/* Dst->src offsets, in the X axis (after transpose) as s12.4 */
+	__s16 lut[PISP_BE_DDX_GRID_SIZE + 1][PISP_BE_DDX_GRID_SIZE + 1];
+	__u16 pad;
+};
+
+struct pisp_be_demosaic2_config {
+	__u8 sharper;
+	__u8 fc_mode;
+	__u8 grad_scale;
+	__u8 extra_scale;
+
+	__u8 colour_scale1;
+	__u8 colour_scale2;
+	__u8 min_scale;
+	__u8 max_scale;
+
+	__u8 threshold_scale;
+	__u8 pad[3];
+};
+
+struct pisp_be_resample2_config {
+	__u16 scale_factor_h, scale_factor_v;
+	__s16 coef_h[PISP_BE_RESAMPLE_FILTER_SIZE];
+	__s16 coef_v[PISP_BE_RESAMPLE_FILTER_SIZE];
+} __attribute__((packed));
+
+struct pisp_be_tdn2_config {
+	__u16 black_level;
+	__u16 ratio;
+	__u16 noise_constant;
+	__u16 noise_slope;
+	__u16 threshold;
+	__u8 reset;
+	__u8 apply_threshold;
+	__u8 swap_inputs;
+	__u8 pad;
+	__u16 saturation_threshold;
+};
+
+#define PISP_BE_GAMMA2_LUT_SIZE 65
+static_assert(PISP_BE_GAMMA2_LUT_SIZE == PISP_BE_TONEMAP2_LUT_SIZE, "Tonemap2 should match gamma block");
+
+struct pisp_be_gamma2_config {
+	uint16_t lut[PISP_BE_GAMMA2_LUT_SIZE];
+	uint16_t pad;
+};
+
+enum pisp_be_rgb_enable2 {
+	PISP_BE_RGB_ENABLE2_INPUT = 0x0000001,
+	PISP_BE_RGB_ENABLE2_DEDISTORT = 0x0000002,
+	PISP_BE_RGB_ENABLE2_CCM = 0x0000004,
+	PISP_BE_RGB_ENABLE2_SAT_CONTROL = 0x0000008,
+	PISP_BE_RGB_ENABLE2_YCBCR = 0x0000010,
+	PISP_BE_RGB_ENABLE2_FALSE_COLOUR = 0x0000020,
+	PISP_BE_RGB_ENABLE2_SHARPEN = 0x0000040,
+	PISP_BE_RGB_ENABLE2_YCBCR_INVERSE = 0x0000080,
+	PISP_BE_RGB_ENABLE2_PRE_CSC0 = 0x0000100,
+	PISP_BE_RGB_ENABLE2_PRE_CSC1 = 0x0000200,
+	/* Third output PRE_CSC would be at 0x0000800 */
+	PISP_BE_RGB_ENABLE2_GAMMA0 = 0x0000800,
+	PISP_BE_RGB_ENABLE2_GAMMA1 = 0x0001000,
+	/* Third output gamma would be at 0x0002000 */
+	PISP_BE_RGB_ENABLE2_POST_CSC0 = 0x0004000,
+	PISP_BE_RGB_ENABLE2_POST_CSC1 = 0x0008000,
+	/* Third output CSC would be at 0x0010000 */
+	PISP_BE_RGB_ENABLE2_DOWNSCALE0 = 0x0020000,
+	PISP_BE_RGB_ENABLE2_DOWNSCALE1 = 0x0040000,
+	/* Third output downscale would be at 0x0080000 */
+	PISP_BE_RGB_ENABLE2_RESAMPLE0 = 0x0100000,
+	PISP_BE_RGB_ENABLE2_RESAMPLE1 = 0x0200000,
+	/* Third output resample would be at 0x0400000 */
+	PISP_BE_RGB_ENABLE2_OUTPUT0 = 0x0800000,
+	PISP_BE_RGB_ENABLE2_OUTPUT1 = 0x1000000,
+	/* Third output output would be at 0x2000000 */
+	PISP_BE_RGB_ENABLE2_COMPRESS0 =  0x4000000,
+	PISP_BE_RGB_ENABLE2_COMPRESS1 =  0x8000000,
+	/* Third output compress would be at 0x10000000 */
+};
+
+struct pisp_be_config2 {
+	pisp_be_global_config global;
+	pisp_image_format_config input_format;
+	pisp_decompress_config decompress;
+	pisp_be_dpc_config dpc;
+	pisp_be_geq_config geq;
+	pisp_image_format_config tdn_input_format;
+	pisp_decompress_config tdn_decompress;
+	pisp_be_tdn2_config tdn;
+	pisp_compress_config tdn_compress;
+	pisp_image_format_config tdn_output_format;
+	pisp_be_sdn_config sdn;
+	pisp_bla_config blc;
+	pisp_compress_config stitch_compress;
+	pisp_image_format_config stitch_output_format;
+	pisp_image_format_config stitch_input_format;
+	pisp_decompress_config stitch_decompress;
+	pisp_be_tdn2_config stitch;
+	pisp_be_lsc_config lsc;
+	pisp_wbg_config wbg;
+	pisp_be_cdn_config cdn;
+	pisp_be_cac_config cac;
+	pisp_be_debin_config debin;
+	pisp_image_format_config tonemap2_format; /* inserted for Beryl */
+	pisp_be_tonemap2_config tonemap2; /* for Beryl, replaces tonemap */
+	pisp_be_demosaic2_config demosaic;
+	pisp_be_dedistort_config dedistort; /* inserted for Beryl */
+	pisp_be_ccm_config ccm;
+	pisp_be_sat_control_config sat_control;
+	pisp_be_ccm_config ycbcr;
+	pisp_be_sharpen_config sharpen;
+	pisp_be_false_colour_config false_colour;
+	pisp_be_sh_fc_combine_config sh_fc_combine;
+	pisp_be_ccm_config ycbcr_inverse;
+	pisp_be_ccm_config pre_csc[PISP_BACK_END_NUM_OUTPUTS];
+	pisp_be_gamma2_config gamma[PISP_BACK_END_NUM_OUTPUTS];
+	pisp_be_ccm_config post_csc[PISP_BACK_END_NUM_OUTPUTS];
+	pisp_be_downscale_config downscale[PISP_BACK_END_NUM_OUTPUTS];
+	pisp_be_resample2_config resample[PISP_BACK_END_NUM_OUTPUTS];
+	pisp_be_output_format_config
+				output_format[PISP_BACK_END_NUM_OUTPUTS];
+	pisp_compress_config compress[PISP_BACK_END_NUM_OUTPUTS];
+	// Add padding here if necessary to make a multiple of 32 bytes.
+
 } __attribute__((packed));
 
 /**
@@ -940,7 +1130,7 @@ struct pisp_be_tiles_config {
 		} __attribute__((packed));
 
 		// v2
-		struct pisp_be_config_v2 v2;
+		struct pisp_be_config2 v2;
 	};
 } __attribute__((packed));
 

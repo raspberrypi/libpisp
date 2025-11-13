@@ -426,7 +426,7 @@ void BackEnd::SetOutputFormat(unsigned int i, pisp_be_output_format_config const
 {
 	PISP_ASSERT(i < variant_.BackEndNumBranches(0));
 	hw_->config.output_format[i] = output_format;
-	hw_->config.output_format[i].pad[0] = hw_->config.output_format[i].pad[1] = hw_->config.output_format[i].pad[2] = 0;
+	hw_->config.output_format[i].rebayer = hw_->config.output_format[i].bayer_order = hw_->config.output_format[i].chroma_pos = 0;
 	hw_->config_extra.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_OUTPUT(i);
 	// Should only need a retile if the transform has changed, othwise a finalise_tile will do.
 	hw_->retile_ = true;
