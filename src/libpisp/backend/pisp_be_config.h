@@ -757,7 +757,7 @@ struct pisp_be_hog_buffer_config {
  */
 struct pisp_be_config {
 	/* For backward compatibility */
-	uint8_t pad0[112];
+	uint8_t pad0[108];
 	/* Processing configuration: */
 	struct pisp_be_global_config global;
 	struct pisp_image_format_config input_format;
@@ -919,6 +919,10 @@ struct pisp_tile {
 	/* 160 bytes */
 } __attribute__((packed));
 
+struct pisp_be_config_v2 {
+	struct pisp_be_config config;
+} __attribute__((packed));
+
 /**
  * struct pisp_be_tiles_config - Raspberry Pi PiSP Back End configuration
  * @tiles:	Tile descriptors
@@ -926,9 +930,18 @@ struct pisp_tile {
  * @config:	PiSP Back End configuration
  */
 struct pisp_be_tiles_config {
-	struct pisp_be_config config;
-	struct pisp_tile tiles[PISP_BACK_END_NUM_TILES];
-	__u32 num_tiles;
+    __u32 version;
+	union {
+		// v1
+		struct {
+			struct pisp_be_config config;
+			struct pisp_tile tiles[PISP_BACK_END_NUM_TILES];
+			__u32 num_tiles;
+		} __attribute__((packed));
+
+		// v2
+		struct pisp_be_config_v2 v2;
+	};
 } __attribute__((packed));
 
 #endif /* _PISP_BE_CONFIG_H_ */
