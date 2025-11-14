@@ -9,6 +9,7 @@ pisp_build_config = configure_file(output : 'pisp_build_config.h', configuration
 
 backend_sources = files([
     'backend.cpp',
+    'backend_config_adapter.cpp',
     'backend_debug.cpp',
     'backend_default_config.cpp',
     'backend_prepare.cpp',

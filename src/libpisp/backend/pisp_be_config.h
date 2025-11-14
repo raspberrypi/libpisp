@@ -1031,8 +1031,8 @@ struct pisp_be_tdn2_config {
 static_assert(PISP_BE_GAMMA2_LUT_SIZE == PISP_BE_TONEMAP2_LUT_SIZE, "Tonemap2 should match gamma block");
 
 struct pisp_be_gamma2_config {
-	uint16_t lut[PISP_BE_GAMMA2_LUT_SIZE];
-	uint16_t pad;
+	__u16 lut[PISP_BE_GAMMA2_LUT_SIZE];
+	__u16 pad;
 };
 
 enum pisp_be_rgb_enable2 {

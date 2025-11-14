@@ -13,6 +13,7 @@
 #include <span>
 #include <string>
 #include <type_traits>
+#include <variant>
 #include <vector>
 
 #include "common/shm_mutex.hpp"
@@ -216,6 +217,10 @@ private:
 
 	// Internal storage use
 	HardwareConfig internal_hw_config_;
+
+	// Variant to manage different backend hardware variants
+	using BackEndConfig = std::variant<pisp_be_config *, pisp_be_config2 *>;
+	BackEndConfig config_;
 
 	std::vector<pisp_tile> tiles_;
 	int num_tiles_x_, num_tiles_y_;
