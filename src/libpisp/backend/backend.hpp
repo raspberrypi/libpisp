@@ -22,6 +22,8 @@
 
 #include "pisp_be_config.h"
 
+#include "backend_config_adapter.hpp"
+
 // Definition of the PiSP Back End class.
 
 namespace libpisp
@@ -61,8 +63,8 @@ public:
 	BackEnd(SoftwareConfig const &sw_config, PiSPVariant const &variant, std::span<uint8_t> config_storage = {});
 	~BackEnd();
 
-	void SetGlobal(pisp_be_global_config const &global);
-	void GetGlobal(pisp_be_global_config &global) const;
+	void SetGlobal(BackendConfigAdapter::Global const &global);
+	void GetGlobal(BackendConfigAdapter::Global &global) const;
 	void SetInputFormat(pisp_image_format_config const &input_format);
 	void GetInputFormat(pisp_image_format_config &input_format) const;
 	void SetDecompress(pisp_decompress_config const &decompress);
@@ -176,6 +178,8 @@ public:
 
 	static size_t GetStorageSize(const PiSPVariant &variant);
 
+	friend class BackendConfigAdapter;
+
 private:
 	struct BeConfigExtra
 	{
@@ -221,6 +225,7 @@ private:
 	// Variant to manage different backend hardware variants
 	using BackEndConfig = std::variant<pisp_be_config *, pisp_be_config2 *>;
 	BackEndConfig config_;
+	BackendConfigAdapter adaptor_;
 
 	std::vector<pisp_tile> tiles_;
 	int num_tiles_x_, num_tiles_y_;

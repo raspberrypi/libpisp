@@ -21,7 +21,7 @@ size_t BackEnd::GetStorageSize([[maybe_unused]] const PiSPVariant &variant)
 }
 
 BackEnd::BackEnd(SoftwareConfig const &sw_config, PiSPVariant const &variant, std::span<uint8_t> config_storage)
-	: sw_(sw_config), variant_(variant)
+	: sw_(sw_config), variant_(variant), adaptor_(this)
 {
 	unsigned int max_tile_width = variant_.BackEndMaxTileWidth(0);
 
@@ -50,27 +50,24 @@ BackEnd::~BackEnd()
 {
 }
 
-void BackEnd::SetGlobal(pisp_be_global_config const &global)
+void BackEnd::SetGlobal(BackendConfigAdapter::Global const &global)
 {
-	uint32_t changed_rgb_enables = (global.rgb_enables ^ hw_->config.global.rgb_enables);
+	uint32_t changed_rgb_enables = (adaptor_.RgbEnablesToHw(global.rgb_enables) ^ hw_->config.global.rgb_enables);
 
 	if (changed_rgb_enables & (PISP_BE_RGB_ENABLE_DOWNSCALE0 | PISP_BE_RGB_ENABLE_DOWNSCALE1 |
 							   PISP_BE_RGB_ENABLE_RESAMPLE0 | PISP_BE_RGB_ENABLE_RESAMPLE1))
 		hw_->retile_ = true; // must retile when rescale change
 
-	if (global.rgb_enables & PISP_BE_RGB_ENABLE_HOG)
-		throw std::runtime_error("HOG output is not supported.");
-
 	hw_->config_extra.dirty_flags_bayer |=
-		(global.bayer_enables & ~hw_->config.global.bayer_enables); // label anything newly enabled as dirty
+		(adaptor_.BayerEnablesToHw(global.bayer_enables) & ~hw_->config.global.bayer_enables); // label anything newly enabled as dirty
 	hw_->config_extra.dirty_flags_rgb |=
-		(global.rgb_enables & ~hw_->config.global.rgb_enables); // label anything newly enabled as dirty
+		(adaptor_.RgbEnablesToHw(global.rgb_enables) & ~hw_->config.global.rgb_enables); // label anything newly enabled as dirty
 	hw_->config.global = global;
 	hw_->config.global.pad[0] = hw_->config.global.pad[1] = hw_->config.global.pad[2] = 0;
 	hw_->config_extra.dirty_flags_extra |= PISP_BE_DIRTY_GLOBAL;
 }
 
-void BackEnd::GetGlobal(pisp_be_global_config &global) const
+void BackEnd::GetGlobal(BackendConfigAdapter::Global &global) const
 {
 	global = hw_->config.global;
 }
