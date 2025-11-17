@@ -12,68 +12,72 @@
 namespace libpisp
 {
 
-enum class RgbEnableValues : uint32_t {
-	None = 		0,
-	Input = 		(1 << 0),
-	Dedistort = 	(1 << 1),
-	Ccm = 			(1 << 2),
-	Sat_control = 	(1 << 3),
-	Ycbcr = 		(1 << 4),
+enum class RgbEnable : uint32_t
+{
+	None = 0,
+	Input = (1 << 0),
+	Dedistort = (1 << 1),
+	Ccm = (1 << 2),
+	Sat_control = (1 << 3),
+	Ycbcr = (1 << 4),
 	False_colour = (1 << 5),
-	Sharpen = 		(1 << 6),
+	Sharpen = (1 << 6),
 	Ycbcr_inverse = (1 << 7),
-	Pre_csc0 = 	(1 << 8),
-	Pre_csc1 = 	(1 << 9),
-	Gamma0 = 		(1 << 10),
-	Gamma1 = 		(1 << 11),
-	Post_csc0 = 	(1 << 12),
-	Post_csc1 = 	(1 << 13),
-	Downscale0 = 	(1 << 14),
-	Downscale1 = 	(1 << 15),
-	Resample0 = 	(1 << 16),
-	Resample1 = 	(1 << 17),
-	Output0 = 		(1 << 18),
-	Output1 = 		(1 << 19),
-	Compress0 = 	(1 << 20),
-	Compress1 = 	(1 << 21),
+	Csc0 = (1 << 8), // v1 only
+	Csc1 = (1 << 9), // v1 only
+	Pre_csc0 = (1 << 10),
+	Pre_csc1 = (1 << 11),
+	Gamma0 = (1 << 12),
+	Gamma1 = (1 << 13),
+	Post_csc0 = (1 << 14),
+	Post_csc1 = (1 << 15),
+	Downscale0 = (1 << 16),
+	Downscale1 = (1 << 17),
+	Resample0 = (1 << 18),
+	Resample1 = (1 << 19),
+	Output0 = (1 << 20),
+	Output1 = (1 << 21),
+	Compress0 = (1 << 22),
+	Compress1 = (1 << 23),
 };
 
-class RgbEnables : public Bitfield<RgbEnableValues>
+class RgbEnables : public Bitfield<RgbEnable>
 {
 public:
 	using Bitfield::Bitfield; // inherit constructors	
 };
 
-enum class BayerEnableValues: uint32_t {
-	None =			0,
-	Input = 			(1 << 0),
-	Decompress = 		(1 << 1),
-	Dpc = 				(1 << 2),
-	Geq = 				(1 << 3),
-	Tdn_input = 		(1 << 4),
-	Tdn_decompress = 	(1 << 5),
-	Tdn = 				(1 << 6),
-	Tdn_compress = 		(1 << 7),
-	Tdn_output = 		(1 << 8),
-	Sdn = 				(1 << 9),
-	Blc = 				(1 << 10),
-	Stitch_input = 		(1 << 11),
+enum class BayerEnable : uint32_t
+{
+	None = 0,
+	Input = (1 << 0),
+	Decompress = (1 << 1),
+	Dpc = (1 << 2),
+	Geq = (1 << 3),
+	Tdn_input = (1 << 4),
+	Tdn_decompress = (1 << 5),
+	Tdn = (1 << 6),
+	Tdn_compress = (1 << 7),
+	Tdn_output = (1 << 8),
+	Sdn = (1 << 9),
+	Blc = (1 << 10),
+	Stitch_input = (1 << 11),
 	Stitch_decompress = (1 << 12),
-	Stitch = 			(1 << 13),
-	Stitch_compress = 	(1 << 14),
-	Stitch_output = 	(1 << 15),
-	Wbg = 				(1 << 16),
-	Cdn = 				(1 << 17),
-	Lsc = 				(1 << 18),
-	Tonemap = 			(1 << 19),
-	Cac = 				(1 << 20),
-	Debin = 			(1 << 21),
-	Demosaic = 			(1 << 22),
-	Tonemap_input = 	(1 << 23),
-	Transpose = 		(1 << 24),
+	Stitch = (1 << 13),
+	Stitch_compress = (1 << 14),
+	Stitch_output = (1 << 15),
+	Wbg = (1 << 16),
+	Cdn = (1 << 17),
+	Lsc = (1 << 18),
+	Tonemap = (1 << 19),
+	Cac = (1 << 20),
+	Debin = (1 << 21),
+	Demosaic = (1 << 22),
+	Tonemap_input = (1 << 23),
+	Transpose = (1 << 24),
 };
 
-class BayerEnables : public Bitfield<BayerEnableValues>
+class BayerEnables : public Bitfield<BayerEnable>
 {
 public:
 	using Bitfield::Bitfield; // inherit constructors
