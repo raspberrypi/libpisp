@@ -75,7 +75,9 @@ public:
 	}
 
 	uint32_t RgbEnablesToHw(RgbEnables rgb_enables) const;
+	RgbEnables HwToRgbEnables(uint32_t hw_enables) const;
 	uint32_t BayerEnablesToHw(BayerEnables bayer_enables) const;
+	BayerEnables HwToBayerEnables(uint32_t hw_enables) const;
 
 	struct Global
 	{
