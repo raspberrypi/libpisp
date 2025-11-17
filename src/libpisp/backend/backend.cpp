@@ -62,14 +62,14 @@ void BackEnd::SetGlobal(BackendConfigAdapter::Global const &global)
 		(adaptor_.BayerEnablesToHw(global.bayer_enables) & ~hw_->config.global.bayer_enables); // label anything newly enabled as dirty
 	hw_->config_extra.dirty_flags_rgb |=
 		(adaptor_.RgbEnablesToHw(global.rgb_enables) & ~hw_->config.global.rgb_enables); // label anything newly enabled as dirty
-	hw_->config.global = global;
+	hw_->config.global = adaptor_.GlobaltoHw(global);
 	hw_->config.global.pad[0] = hw_->config.global.pad[1] = hw_->config.global.pad[2] = 0;
 	hw_->config_extra.dirty_flags_extra |= PISP_BE_DIRTY_GLOBAL;
 }
 
 void BackEnd::GetGlobal(BackendConfigAdapter::Global &global) const
 {
-	global = hw_->config.global;
+	global = adaptor_.HwtoGlobal(hw_->config.global);
 }
 
 void BackEnd::SetInputFormat(pisp_image_format_config const &input_format)

@@ -288,10 +288,10 @@ int main(int argc, char *argv[])
 
 	libpisp::BackEnd be(libpisp::BackEnd::SoftwareConfig({}), *variant);
 
-	pisp_be_global_config global;
+	libpisp::BackendConfigAdapter::Global global;
 	be.GetGlobal(global);
-	global.bayer_enables = 0;
-	global.rgb_enables = PISP_BE_RGB_ENABLE_INPUT + PISP_BE_RGB_ENABLE_OUTPUT0;
+	global.bayer_enables = libpisp::BayerEnableValues::None;
+	global.rgb_enables = libpisp::RgbEnableValues::Input | libpisp::RgbEnableValues::Output0;
 
 	if (in_file.format == "RGBX8888" && !variant->BackendRGB32Supported(0))
 	{
@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
 		csc.offsets[1] = 131072;
 		csc.offsets[2] = 131072;
 		be.SetCsc(0, csc);
-		global.rgb_enables |= PISP_BE_RGB_ENABLE_CSC0;
+		global.rgb_enables |= libpisp::RgbEnableValues::Pre_csc0;
 	}
 	else
 	{
@@ -345,7 +345,7 @@ int main(int argc, char *argv[])
 		pisp_be_ccm_config csc;
 		be.InitialiseYcbcrInverse(csc, "jpeg");
 		be.SetCcm(csc);
-		global.rgb_enables |= PISP_BE_RGB_ENABLE_CCM;
+		global.rgb_enables |= libpisp::RgbEnableValues::Ccm;
 	}
 
 	if (out_file.format >= "U")
@@ -353,7 +353,7 @@ int main(int argc, char *argv[])
 		pisp_be_ccm_config csc;
 		be.InitialiseYcbcr(csc, "jpeg");
 		be.SetCsc(0, csc);
-		global.rgb_enables |= PISP_BE_RGB_ENABLE_CSC0;
+		global.rgb_enables |= libpisp::RgbEnableValues::Pre_csc0;
 	}
 
 	be.SetGlobal(global);
