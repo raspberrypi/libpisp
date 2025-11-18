@@ -176,6 +176,11 @@ public:
 		sw_.max_stripe_height = height;
 	}
 
+	const PiSPVariant &GetVariant() const
+	{
+		return variant_;
+	}
+
 	static size_t GetStorageSize(const PiSPVariant &variant);
 
 	friend class BackendConfigAdapter;

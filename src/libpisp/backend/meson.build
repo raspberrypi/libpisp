@@ -17,6 +17,8 @@ backend_sources = files([
 
 backend_headers = files([
     'backend.hpp',
+    'backend_config_adapter.hpp',
+    'bitfield.hpp',
     'pisp_be_config.h',
 ])
 

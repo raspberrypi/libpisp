@@ -5,6 +5,7 @@
  * backend_device.cpp - PiSP Backend device helper
  */
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 
@@ -16,7 +17,11 @@ using namespace libpisp::helpers;
 BackendDevice::BackendDevice(const std::string &device)
 	: valid_(true)
 {
-	nodes_ = MediaDevice().OpenV4l2Nodes(device);
+	media_dev_ = MediaDevice().Acquire(device);
+	if (media_dev_.empty())
+		throw std::runtime_error("Unable to acquire any pisp_be device!");
+
+	nodes_ = MediaDevice().OpenV4l2Nodes(media_dev_);
 	if (nodes_.empty())
 		valid_ = false;
 
@@ -24,6 +29,15 @@ BackendDevice::BackendDevice(const std::string &device)
 	nodes_.at("pispbe-config").RequestBuffers(1);
 	nodes_.at("pispbe-config").StreamOn();
 	config_buffer_ = nodes_.at("pispbe-config").AcquireBuffer().value();
+
+	const std::vector<libpisp::PiSPVariant> &variants = libpisp::get_variants();
+	const media_device_info info = MediaDevice().DeviceInfo(media_dev_);
+	auto variant = std::find_if(variants.begin(), variants.end(),
+								[&info](const auto &v) { return v.BackEndVersion() == info.hw_revision; });
+	if (variant == variants.end())
+		throw std::runtime_error("Backend hardware cound not be identified: " + std::to_string(info.hw_revision));
+
+	be_ = std::make_unique<libpisp::BackEnd>(libpisp::BackEnd::SoftwareConfig({}), *variant);
 }
 
 BackendDevice::~BackendDevice()
@@ -31,12 +45,17 @@ BackendDevice::~BackendDevice()
 	nodes_.at("pispbe-config").StreamOff();
 }
 
-void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffer_count, bool use_opaque_format)
+void BackendDevice::Setup(unsigned int buffer_count, bool use_opaque_format)
 {
+	BackendConfigAdapter::Global global;
+	be_->GetGlobal(global);
+
+	pisp_be_tiles_config config = {};
+	be_->Prepare(&config);
+
 	nodes_enabled_.clear();
 
-	if ((config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_INPUT) ||
-		(config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_INPUT))
+	if ((global.rgb_enables & RgbEnable::Input) || (global.bayer_enables & BayerEnable::Input))
 	{
 		nodes_.at("pispbe-input").SetFormat(config.config.input_format, use_opaque_format);
 		// Release old/allocate a single buffer.
@@ -45,7 +64,7 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 		nodes_enabled_.emplace("pispbe-input");
 	}
 
-	if (config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT0)
+	if (global.rgb_enables & RgbEnable::Output0)
 	{
 		nodes_.at("pispbe-output0").SetFormat(config.config.output_format[0].image, use_opaque_format);
 		// Release old/allocate a single buffer.
@@ -54,7 +73,7 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 		nodes_enabled_.emplace("pispbe-output0");
 	}
 
-	if (config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT1)
+	if (global.rgb_enables & RgbEnable::Output1)
 	{
 		nodes_.at("pispbe-output1").SetFormat(config.config.output_format[1].image, use_opaque_format);
 		// Release old/allocate a single buffer.
@@ -63,7 +82,7 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 		nodes_enabled_.emplace("pispbe-output1");
 	}
 
-	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_INPUT)
+	if (global.bayer_enables & BayerEnable::Tdn_input)
 	{
 		nodes_.at("pispbe-tdn_input").SetFormat(config.config.tdn_input_format, use_opaque_format);
 		// Release old/allocate a single buffer.
@@ -72,7 +91,7 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 		nodes_enabled_.emplace("pispbe-tdn_input");
 	}
 
-	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_OUTPUT)
+	if (global.bayer_enables & BayerEnable::Tdn_output)
 	{
 		nodes_.at("pispbe-tdn_output").SetFormat(config.config.tdn_output_format, use_opaque_format);
 		// Release old/allocate a single buffer.
@@ -81,7 +100,7 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 		nodes_enabled_.emplace("pispbe-tdn_output");
 	}
 
-	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_STITCH_INPUT)
+	if (global.bayer_enables & BayerEnable::Stitch_input)
 	{
 		nodes_.at("pispbe-stitch_input").SetFormat(config.config.stitch_input_format, use_opaque_format);
 		// Release old/allocate a single buffer.
@@ -90,7 +109,7 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 		nodes_enabled_.emplace("pispbe-stitch_input");
 	}
 
-	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_STITCH_OUTPUT)
+	if (global.bayer_enables & BayerEnable::Stitch_output)
 	{
 		nodes_.at("pispbe-stitch_output").SetFormat(config.config.stitch_output_format, use_opaque_format);
 		// Release old/allocate a single buffer.
