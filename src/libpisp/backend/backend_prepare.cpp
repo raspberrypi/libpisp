@@ -383,7 +383,7 @@ void BackEnd::checkTiles(const TilingConfig &tiling_config)
 		if (tile.input_width < PISP_BACK_END_MIN_TILE_WIDTH || tile.input_height < PISP_BACK_END_MIN_TILE_HEIGHT)
 			throw std::runtime_error("Tile too small at input");
 
-		for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
+		for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 		{
 			if ((pipe_->rgbEnables & getFlagForBranch(RgbEnable::Output0, i)) == 0)
 				continue;
@@ -504,7 +504,7 @@ void BackEnd::finaliseConfig()
 	if (dirty_flags_bayer & BayerEnable::Cac)
 		finaliseCac();
 
-	for (unsigned int j = 0; j < variant_.BackEndNumBranches(0); j++)
+	for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++)
 	{
 		bool enabled = pipe_->rgbEnables & getFlagForBranch(RgbEnable::Output0, j);
 
@@ -518,7 +518,7 @@ void BackEnd::finaliseConfig()
 
 			if (dirty_flags_rgb & getFlagForBranch(RgbEnable::Downscale0, j))
 			{
-				if (variant_.BackEndDownscalerAvailable(0, j))
+				if (variant_.backEndDownscalerAvailable(0, j))
 					finaliseDownscale(j, w, h);
 				else
 					throw std::runtime_error("Downscale is not available in output branch " + std::to_string(j));
@@ -547,7 +547,7 @@ void BackEnd::finaliseConfig()
 
 	BayerEnables bayer_output_enables = pipe_->bayerEnables & (BayerEnable::TdnOutput | BayerEnable::StitchOutput);
 	RgbEnables rgb_output_enables = RgbEnable::None;
-	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
+	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 		rgb_output_enables |= pipe_->rgbEnables & getFlagForBranch(RgbEnable::Output0, i);
 
 	if (rgb_output_enables == RgbEnable::None && bayer_output_enables == BayerEnable::None)
@@ -561,7 +561,7 @@ void BackEnd::updateSmartResize()
 
 	// Look through the output branches adjusting the scaling blocks where "smart resizing"
 	// has been requested.
-	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
+	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 	{
 		// First get the size of the input to the rescalers. The crops are zero when not in use.
 		uint16_t input_width = pipe_->configExtra.crop[i].width;
@@ -587,7 +587,7 @@ void BackEnd::updateSmartResize()
 				// We're doing to use the downscaler if it's available and we're downscaling
 				// by more than 2x.
 				// \todo - increase this "2x" threshold by using different resampler kernels.
-				if (variant_.BackEndDownscalerAvailable(0, i) &&
+				if (variant_.backEndDownscalerAvailable(0, i) &&
 					(resampler_output_width * 2 < input_width || resampler_output_height * 2 < input_height))
 				{
 					uint16_t downscaler_output_width = input_width;
@@ -721,7 +721,7 @@ void BackEnd::updateTiles()
 
 		tiling_config.input_image_size = tiling::Length2(c.input_format.width, c.input_format.height);
 
-		for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
+		for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 		{
 			tiling_config.crop[i] = tiling::Interval2(tiling::Interval(ce.crop[i].offset_x, ce.crop[i].width),
 													  tiling::Interval(ce.crop[i].offset_y, ce.crop[i].height));
@@ -745,7 +745,7 @@ void BackEnd::updateTiles()
 				calculate_output_alignment(c.output_format[i].image.format, PISP_BACK_END_OUTPUT_MIN_ALIGN);
 		}
 
-		tiling_config.max_tile_size.dx = sw_.maxTileWidth ? sw_.maxTileWidth : variant_.BackEndMaxTileWidth(0);
+		tiling_config.max_tile_size.dx = sw_.maxTileWidth ? sw_.maxTileWidth : variant_.backEndMaxTileWidth(0);
 		tiling_config.max_tile_size.dy = sw_.maxStripeHeight ? sw_.maxStripeHeight : MaxStripeHeight;
 		tiling_config.min_tile_size = tiling::Length2(PISP_BACK_END_MIN_TILE_WIDTH, PISP_BACK_END_MIN_TILE_HEIGHT);
 
@@ -808,7 +808,7 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 		if (tiles[i].input.output != tiles[i].input.input)
 			throw std::runtime_error("BackEnd::retilePipeline: tiling error in Bayer pipe");
 
-		for (unsigned int j = 0; j < variant_.BackEndNumBranches(0); j++)
+		for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++)
 		{
 			bool enabled = (pipe_->rgbEnables & getFlagForBranch(RgbEnable::Output0, j));
 			if (enabled && (tiles[i].output[j].output.x.length == 0 || tiles[i].output[j].output.y.length == 0))
@@ -871,8 +871,8 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 					unsigned int frac_y = (resample_size.y.offset * pipe_->hwConfig.downscale[j].scale_factor_v) &
 										  ((1 << ScalePrecision) - 1);
 					// Fractional component of the input required to generate the output pixel.
-					t.downscale_phase_x[p * variant_.BackEndNumBranches(0) + j] = (UnityPhase - frac_x);
-					t.downscale_phase_y[p * variant_.BackEndNumBranches(0) + j] = (UnityPhase - frac_y);
+					t.downscale_phase_x[p * variant_.backEndNumBranches(0) + j] = (UnityPhase - frac_x);
+					t.downscale_phase_y[p * variant_.backEndNumBranches(0) + j] = (UnityPhase - frac_y);
 				}
 
 				if (pipe_->rgbEnables & getFlagForBranch(RgbEnable::Resample0, j))
@@ -883,18 +883,18 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 					unsigned int interpolated_pix_y =
 						(t.output_offset_y[j] * NumPhases * pipe_->hwConfig.resample[j].scale_factor_v) >> ScalePrecision;
 					// Phase of the interpolated input pixel.
-					t.resample_phase_x[p * variant_.BackEndNumBranches(0) + j] =
+					t.resample_phase_x[p * variant_.backEndNumBranches(0) + j] =
 						((interpolated_pix_x % NumPhases) << ScalePrecision) / NumPhases;
-					t.resample_phase_y[p * variant_.BackEndNumBranches(0) + j] =
+					t.resample_phase_y[p * variant_.backEndNumBranches(0) + j] =
 						((interpolated_pix_y % NumPhases) << ScalePrecision) / NumPhases;
 					// Account for any user defined initial phase - this could be negative!
-					t.resample_phase_x[p * variant_.BackEndNumBranches(0) + j] +=
+					t.resample_phase_x[p * variant_.backEndNumBranches(0) + j] +=
 						pipe_->configExtra.resample[j].initial_phase_h[p];
-					t.resample_phase_y[p * variant_.BackEndNumBranches(0) + j] +=
+					t.resample_phase_y[p * variant_.backEndNumBranches(0) + j] +=
 						pipe_->configExtra.resample[j].initial_phase_v[p];
 					// Have to be within this range, else some calculation went wrong.
-					PISP_ASSERT(t.resample_phase_x[p * variant_.BackEndNumBranches(0) + j] <= (2 * UnityPhase - 1));
-					PISP_ASSERT(t.resample_phase_y[p * variant_.BackEndNumBranches(0) + j] <= (2 * UnityPhase - 1));
+					PISP_ASSERT(t.resample_phase_x[p * variant_.backEndNumBranches(0) + j] <= (2 * UnityPhase - 1));
+					PISP_ASSERT(t.resample_phase_y[p * variant_.backEndNumBranches(0) + j] <= (2 * UnityPhase - 1));
 				}
 			}
 
@@ -902,22 +902,22 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 			if (pipe_->rgbEnables & getFlagForBranch(RgbEnable::Resample0, j))
 			{
 				int phase_max = (pipe_->hwConfig.resample[j].scale_factor_h * UnityPhase / 2) >> ScalePrecision;
-				if (std::abs(t.resample_phase_x[0 * variant_.BackEndNumBranches(0) + j] -
-							 t.resample_phase_x[1 * variant_.BackEndNumBranches(0) + j]) > phase_max ||
-					std::abs(t.resample_phase_x[1 * variant_.BackEndNumBranches(0) + j] -
-							 t.resample_phase_x[2 * variant_.BackEndNumBranches(0) + j]) > phase_max ||
-					std::abs(t.resample_phase_x[0 * variant_.BackEndNumBranches(0) + j] -
-							 t.resample_phase_x[2 * variant_.BackEndNumBranches(0) + j]) > phase_max)
+				if (std::abs(t.resample_phase_x[0 * variant_.backEndNumBranches(0) + j] -
+							 t.resample_phase_x[1 * variant_.backEndNumBranches(0) + j]) > phase_max ||
+					std::abs(t.resample_phase_x[1 * variant_.backEndNumBranches(0) + j] -
+							 t.resample_phase_x[2 * variant_.backEndNumBranches(0) + j]) > phase_max ||
+					std::abs(t.resample_phase_x[0 * variant_.backEndNumBranches(0) + j] -
+							 t.resample_phase_x[2 * variant_.backEndNumBranches(0) + j]) > phase_max)
 				{
 					throw std::runtime_error("Resample phase x for tile is > 0.5 pixels on the output dimensions.");
 				}
 				phase_max = (pipe_->hwConfig.resample[j].scale_factor_v * UnityPhase / 2) >> ScalePrecision;
-				if (std::abs(t.resample_phase_y[0 * variant_.BackEndNumBranches(0) + j] -
-							 t.resample_phase_y[1 * variant_.BackEndNumBranches(0) + j]) > phase_max ||
-					std::abs(t.resample_phase_y[1 * variant_.BackEndNumBranches(0) + j] -
-							 t.resample_phase_y[2 * variant_.BackEndNumBranches(0) + j]) > phase_max ||
-					std::abs(t.resample_phase_y[0 * variant_.BackEndNumBranches(0) + j] -
-							 t.resample_phase_y[2 * variant_.BackEndNumBranches(0) + j]) > phase_max)
+				if (std::abs(t.resample_phase_y[0 * variant_.backEndNumBranches(0) + j] -
+							 t.resample_phase_y[1 * variant_.backEndNumBranches(0) + j]) > phase_max ||
+					std::abs(t.resample_phase_y[1 * variant_.backEndNumBranches(0) + j] -
+							 t.resample_phase_y[2 * variant_.backEndNumBranches(0) + j]) > phase_max ||
+					std::abs(t.resample_phase_y[0 * variant_.backEndNumBranches(0) + j] -
+							 t.resample_phase_y[2 * variant_.backEndNumBranches(0) + j]) > phase_max)
 				{
 					throw std::runtime_error("Resample phase y for tile is > 0.5 pixels on the output dimensions.");
 				}
@@ -958,7 +958,7 @@ void BackEnd::finaliseTiling()
 			t.cac_grid_offset_y = (t.input_offset_y + pipe_->configExtra.cac.offset_y) * pipe_->hwConfig.cac.grid_step_y;
 		}
 
-		for (unsigned int j = 0; j < variant_.BackEndNumBranches(0); j++)
+		for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++)
 		{
 			int output_offset_x_unflipped = t.output_offset_x[j], output_offset_y_unflipped = t.output_offset_y[j];
 
@@ -1034,7 +1034,7 @@ void BackEnd::prepare(pisp_be_tiles_config *config)
 
 	// 2. Also check the output configuration is all filled in and looks sensible. Again, addresses must be
 	// left to the HAL.
-	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
+	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 	{
 		pisp_image_format_config &image_config = pipe_->hwConfig.output_format[i].image;
 		computeOutputImageFormat(i, image_config, pipe_->hwConfig.input_format);

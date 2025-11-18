@@ -481,7 +481,7 @@ void write_val(uint8_t *ptr, uint32_t offset, uint32_t size, uint32_t val)
 
 std::string BackEnd::getJsonConfig(pisp_be_tiles_config *config)
 {
-	json j = { {"version", 1.0}, {"be_revision", variant_.BackEndVersion()} };
+	json j = { {"version", 1.0}, {"be_revision", variant_.backEndVersion()} };
 
 	for (auto const &param : beConfig)
 	{

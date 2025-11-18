@@ -18,7 +18,7 @@ using namespace libpisp;
 BackEnd::BackEnd(SoftwareConfig const &swConfig, PiSPVariant const &variant, std::span<uint8_t> configStorage)
 	: sw_(swConfig), variant_(variant), adaptor_(this)
 {
-	unsigned int maxTileWidth = variant_.BackEndMaxTileWidth(0);
+	unsigned int maxTileWidth = variant_.backEndMaxTileWidth(0);
 
 	if (sw_.maxTileWidth > maxTileWidth)
 		PISP_LOG(fatal, "Configured max tile width " << sw_.maxTileWidth << " exceeds " << maxTileWidth);
@@ -350,7 +350,7 @@ void BackEnd::getGamma(pisp_be_gamma_config &gamma) const
 
 void BackEnd::setCrop(pisp_be_crop_config const &crop)
 {
-	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
+	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 		pipe_->configExtra.crop[i] = crop;
 	pipe_->dirtyFlagsExtra |= DirtyFlag::Crop;
 	pipe_->retile = true;
@@ -358,7 +358,7 @@ void BackEnd::setCrop(pisp_be_crop_config const &crop)
 
 void BackEnd::setCrop(unsigned int i, pisp_be_crop_config const &crop)
 {
-	PISP_ASSERT(i < variant_.BackEndNumBranches(0));
+	PISP_ASSERT(i < variant_.backEndNumBranches(0));
 	pipe_->configExtra.crop[i] = crop;
 	pipe_->dirtyFlagsExtra |= DirtyFlag::Crop;
 	pipe_->retile = true;
@@ -409,7 +409,7 @@ void BackEnd::setResample(unsigned int i, pisp_be_resample_extra const &resample
 
 void BackEnd::setOutputFormat(unsigned int i, pisp_be_output_format_config const &output_format)
 {
-	PISP_ASSERT(i < variant_.BackEndNumBranches(0));
+	PISP_ASSERT(i < variant_.backEndNumBranches(0));
 	pipe_->hwConfig.output_format[i] = output_format;
 	pipe_->hwConfig.output_format[i].rebayer = pipe_->hwConfig.output_format[i].bayer_order = pipe_->hwConfig.output_format[i].chroma_pos = 0;
 	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::Output0, i);
@@ -419,13 +419,13 @@ void BackEnd::setOutputFormat(unsigned int i, pisp_be_output_format_config const
 
 void BackEnd::getOutputFormat(unsigned int i, pisp_be_output_format_config &output_format) const
 {
-	PISP_ASSERT(i < variant_.BackEndNumBranches(0));
+	PISP_ASSERT(i < variant_.backEndNumBranches(0));
 	output_format = pipe_->hwConfig.output_format[i];
 }
 
 void BackEnd::setSmartResize(unsigned int i, BackEnd::SmartResize const &smart_resize)
 {
-	PISP_ASSERT(i < variant_.BackEndNumBranches(0));
+	PISP_ASSERT(i < variant_.backEndNumBranches(0));
 	// Non-zero width and height will be interpreted as "enabled".
 	pipe_->smartResize[i] = smart_resize;
 	pipe_->smartResizeDirty |= (1 << i);
@@ -436,7 +436,7 @@ unsigned int BackEnd::getMaxDownscale() const
 	// Return an estimate of the largest horizontal downscale we can do.
 	unsigned int max_tile_width = sw_.maxTileWidth;
 	if (!max_tile_width)
-		max_tile_width = variant_.BackEndMaxTileWidth(0);
+		max_tile_width = variant_.backEndMaxTileWidth(0);
 
 	// We reckon a 640 tile-width implementation can do 24x safely with formats that
 	// want 1 byte per pixel. This should approximately scale with the max tile width.

@@ -276,7 +276,7 @@ int main(int argc, char *argv[])
 	global.bayerEnables = libpisp::BayerEnable::None;
 	global.rgbEnables = libpisp::RgbEnable::Input | libpisp::RgbEnable::Output0;
 
-	if (in_file.format == "RGBX8888" && !variant.BackendRGB32Supported(0))
+	if (in_file.format == "RGBX8888" && !variant.backendRgb32Supported(0))
 	{
 		std::cerr << "Backend hardware does not support RGBX input" << std::endl;
 		exit(-1);
@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
 	be->setInputFormat(i);
 
 	pisp_be_output_format_config o = {};
-	if (out_file.format == "RGBX8888" && !variant.BackendRGB32Supported(0))
+	if (out_file.format == "RGBX8888" && !variant.backendRgb32Supported(0))
 	{
 		// Hack to generate RGBX even when BE_MINOR_VERSION < 1 using Resample
 		if (out_file.width < i.width)

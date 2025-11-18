@@ -255,12 +255,12 @@ private:
 	BackendConfigAdapter adaptor_;
 
 	// Default config
-	std::map<std::string, pisp_be_ccm_config> ycbcrMap;
-	std::map<std::string, pisp_be_ccm_config> inverseYcbcrMap;
-	std::map<std::string, pisp_be_resample_config> resampleFilterMap;
-	std::vector<std::pair<double, std::string>> resampleSelectList;
-	pisp_be_sharpen_config defaultSharpen;
-	pisp_be_sh_fc_combine_config defaultShfc;
+	std::map<std::string, pisp_be_ccm_config> ycbcrMap_;
+	std::map<std::string, pisp_be_ccm_config> inverseYcbcrMap_;
+	std::map<std::string, pisp_be_resample_config> resampleFilterMap_;
+	std::vector<std::pair<double, std::string>> resampleSelectList_;
+	pisp_be_sharpen_config defaultSharpen_;
+	pisp_be_sh_fc_combine_config defaultShfc_;
 };
 
 } // namespace libpisp

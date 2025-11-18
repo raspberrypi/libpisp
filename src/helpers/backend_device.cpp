@@ -30,10 +30,10 @@ BackendDevice::BackendDevice(const std::string &device)
 	nodes_.at("pispbe-config").StreamOn();
 	config_buffer_ = nodes_.at("pispbe-config").AcquireBuffer().value();
 
-	const std::vector<libpisp::PiSPVariant> &variants = libpisp::get_variants();
+		const std::vector<libpisp::PiSPVariant> &variants = libpisp::getVariants();
 	const media_device_info info = MediaDevice().DeviceInfo(media_dev_);
 	auto variant = std::find_if(variants.begin(), variants.end(),
-								[&info](const auto &v) { return v.BackEndVersion() == info.hw_revision; });
+								[&info](const auto &v) { return v.backEndVersion() == info.hw_revision; });
 	if (variant == variants.end())
 		throw std::runtime_error("Backend hardware cound not be identified: " + std::to_string(info.hw_revision));
 

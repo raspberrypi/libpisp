@@ -13,40 +13,40 @@ namespace libpisp
 {
 
 const PiSPVariant BCM2712_C0 {
-	.name_ = "BCM2712_C0",
-	.fe_version_ = 0x00114666,
-	.be_version_ = 0x02252700,
-	.num_fe_ = 2,
-	.num_be_ = 1,
-	.num_fe_branches_ = { 2, 2 },
-	.fe_stats_max_width_ = { 6144, 6144 },
-	.fe_downscaler_ = { { { true, true }, { true, true } } },
-	.fe_downscaler_max_width_ = { { { 6144, 4096 }, { 6144, 4096 } } },
-	.be_max_tile_width_ = 640,
-	.num_be_branches_ = { 2 },
-	.be_integral_images_ = { { { false, false } } },
-	.be_downscaler_ = { { { false, true } } },
-	.be_rgb32_support_ = false,
+	.name = "BCM2712_C0",
+	.feVersion = 0x00114666,
+	.beVersion = 0x02252700,
+	.numFe = 2,
+	.numBe = 1,
+	.numFeBranches = { 2, 2 },
+	.feStatsMaxWidth = { 6144, 6144 },
+	.feDownscaler = { { { true, true }, { true, true } } },
+	.feDownscalerMaxWidth = { { { 6144, 4096 }, { 6144, 4096 } } },
+	.beMaxTileWidth = 640,
+	.numBeBranches = { 2 },
+	.beIntegralImages = { { { false, false } } },
+	.beDownscaler = { { { false, true } } },
+	.beRgb32Support = false,
 };
 
 const PiSPVariant BCM2712_D0 {
-	.name_ = "BCM2712_D0",
-	.fe_version_ = 0x00114666,
-	.be_version_ = 0x02252701,
-	.num_fe_ = 2,
-	.num_be_ = 1,
-	.num_fe_branches_ = { 2, 2 },
-	.fe_stats_max_width_ = { 6144, 6144 },
-	.fe_downscaler_ = { { { true, true }, { true, true } } },
-	.fe_downscaler_max_width_ = { { { 6144, 4096 }, { 6144, 4096 } } },
-	.be_max_tile_width_ = 640,
-	.num_be_branches_ = { 2 },
-	.be_integral_images_ = { { { false, false } } },
-	.be_downscaler_ = { { { false, true } } },
-	.be_rgb32_support_ = true,
+	.name = "BCM2712_D0",
+	.feVersion = 0x00114666,
+	.beVersion = 0x02252701,
+	.numFe = 2,
+	.numBe = 1,
+	.numFeBranches = { 2, 2 },
+	.feStatsMaxWidth = { 6144, 6144 },
+	.feDownscaler = { { { true, true }, { true, true } } },
+	.feDownscalerMaxWidth = { { { 6144, 4096 }, { 6144, 4096 } } },
+	.beMaxTileWidth = 640,
+	.numBeBranches = { 2 },
+	.beIntegralImages = { { { false, false } } },
+	.beDownscaler = { { { false, true } } },
+	.beRgb32Support = true,
 };
 
-const std::vector<PiSPVariant> &get_variants()
+const std::vector<PiSPVariant> &getVariants()
 {
 	static const std::vector<PiSPVariant> variants {
 		BCM2712_C0,
@@ -56,13 +56,13 @@ const std::vector<PiSPVariant> &get_variants()
 	return variants;
 }
 
-std::optional<PiSPVariant> get_variant(unsigned int fe_version, unsigned int be_version)
+std::optional<PiSPVariant> getVariant(unsigned int feVersion, unsigned int beVersion)
 {
-	const std::vector<PiSPVariant> &variants = get_variants();
+	const std::vector<PiSPVariant> &variants = getVariants();
 
 	auto it = std::find_if(variants.begin(), variants.end(),
-				   [fe_version, be_version](const auto &hw) { return hw.FrontEndVersion() == fe_version &&
-																	 hw.BackEndVersion() == be_version; });
+				   [feVersion, beVersion](const auto &hw) { return hw.frontEndVersion() == feVersion &&
+																	 hw.backEndVersion() == beVersion; });
 
 	if (it == variants.end())
 		return {};

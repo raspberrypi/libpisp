@@ -274,38 +274,38 @@ namespace libpisp
 
 void BackEnd::initialiseYcbcr(pisp_be_ccm_config &ycbcr, const std::string &colour_space)
 {
-	get_matrix(ycbcr, ycbcrMap, colour_space);
+	get_matrix(ycbcr, ycbcrMap_, colour_space);
 }
 
 void BackEnd::initialiseYcbcrInverse(pisp_be_ccm_config &ycbcr_inverse, const std::string &colour_space)
 {
-	get_matrix(ycbcr_inverse, inverseYcbcrMap, colour_space);
+	get_matrix(ycbcr_inverse, inverseYcbcrMap_, colour_space);
 }
 
 void BackEnd::initialiseResample(pisp_be_resample_config &resample, const std::string &filter)
 {
 	memset(resample.coef, 0, sizeof(resample.coef));
 
-	auto it = resampleFilterMap.find(filter);
-	if (it != resampleFilterMap.end())
+	auto it = resampleFilterMap_.find(filter);
+	if (it != resampleFilterMap_.end())
 		memcpy(resample.coef, it->second.coef, sizeof(resample.coef));
 }
 
 void BackEnd::initialiseResample(pisp_be_resample_config &resample, double downscale)
 {
-	auto it = std::find_if(resampleSelectList.begin(), resampleSelectList.end(),
+	auto it = std::find_if(resampleSelectList_.begin(), resampleSelectList_.end(),
 						   [downscale](const auto &item) { return item.first >= downscale; });
 
-	if (it != resampleSelectList.end())
+	if (it != resampleSelectList_.end())
 		initialiseResample(resample, it->second);
 	else
-		initialiseResample(resample, resampleSelectList.back().second);
+		initialiseResample(resample, resampleSelectList_.back().second);
 }
 
 void BackEnd::initialiseSharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc)
 {
-	sharpen = defaultSharpen;
-	shfc = defaultShfc;
+	sharpen = defaultSharpen_;
+	shfc = defaultShfc_;
 }
 
 void BackEnd::initialiseDefaultConfig(const std::string &filename)
@@ -344,9 +344,9 @@ void BackEnd::initialiseDefaultConfig(const std::string &filename)
 	initialise_gamma(pipe_->hwConfig.gamma, root);
 	pipe_->dirtyFlagsRgb |= RgbEnable::Gamma0;
 
-	read_ycbcr(ycbcrMap, inverseYcbcrMap, root);
-	read_resample(resampleFilterMap, resampleSelectList, root);
-	read_sharpen(defaultSharpen, defaultShfc, root);
+	read_ycbcr(ycbcrMap_, inverseYcbcrMap_, root);
+	read_resample(resampleFilterMap_, resampleSelectList_, root);
+	read_sharpen(defaultSharpen_, defaultShfc_, root);
 
 	initialiseSharpen(pipe_->hwConfig.sharpen, pipe_->hwConfig.sh_fc_combine);
 	pipe_->dirtyFlagsRgb |= RgbEnable::Sharpen;
@@ -356,7 +356,7 @@ void BackEnd::initialiseDefaultConfig(const std::string &filename)
 	initialiseYcbcrInverse(pipe_->hwConfig.ycbcr, "jpeg");
 	pipe_->dirtyFlagsRgb |= RgbEnable::Ycbcr | RgbEnable::YcbcrInverse;
 
-	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
+	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 	{
 		// Start with a sensible default
 		initialiseResample(pipe_->hwConfig.resample[i], "lanczos3");
