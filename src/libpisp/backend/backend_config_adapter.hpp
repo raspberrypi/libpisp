@@ -24,8 +24,6 @@ enum class RgbEnable : uint32_t
 	False_colour	= 0x00000020,
 	Sharpen			= 0x00000040,
 	Ycbcr_inverse	= 0x00000080,
-	Csc0			= 0x00000100, // v1 only
-	Csc1			= 0x00000200, // v1 only
 	Pre_csc0		= 0x00000400,
 	Pre_csc1		= 0x00000800,
 	Gamma0			= 0x00001000,

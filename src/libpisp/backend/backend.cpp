@@ -372,7 +372,7 @@ void BackEnd::SetCrop(unsigned int i, pisp_be_crop_config const &crop)
 void BackEnd::SetCsc(unsigned int i, pisp_be_ccm_config const &csc)
 {
 	pipe_->hw_config.csc[i] = csc;
-	pipe_->dirty_flags_rgb |= get_flag_for_branch(RgbEnable::Csc0, i);
+	pipe_->dirty_flags_rgb |= get_flag_for_branch(RgbEnable::Post_csc0, i);
 }
 
 void BackEnd::GetCsc(unsigned int i, pisp_be_ccm_config &csc) const

@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
 		csc.offsets[1] = 131072;
 		csc.offsets[2] = 131072;
 		be.SetCsc(0, csc);
-		global.rgb_enables |= libpisp::RgbEnable::Csc0;
+		global.rgb_enables |= libpisp::RgbEnable::Post_csc0;
 	}
 	else
 	{
@@ -353,7 +353,7 @@ int main(int argc, char *argv[])
 		pisp_be_ccm_config csc;
 		be.InitialiseYcbcr(csc, "jpeg");
 		be.SetCsc(0, csc);
-		global.rgb_enables |= libpisp::RgbEnable::Csc0;
+		global.rgb_enables |= libpisp::RgbEnable::Post_csc0;
 	}
 
 	be.SetGlobal(global);
