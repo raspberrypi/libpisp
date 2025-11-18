@@ -555,6 +555,7 @@ void BackEnd::finaliseConfig()
 
 void BackEnd::updateSmartResize()
 {
+	BackendConfigAdapter::Global global = adaptor_.HwtoGlobal(pipe_->hw_config.global);
 	std::string filter;
 
 	// Look through the output branches adjusting the scaling blocks where "smart resizing"
@@ -620,7 +621,7 @@ void BackEnd::updateSmartResize()
 					downscale.scaled_width = downscaler_output_width;
 					downscale.scaled_height = downscaler_output_height;
 					SetDownscale(i, downscale);
-					pipe_->rgb_enables |= get_flag_for_branch(RgbEnable::Downscale0, i);
+					global.rgb_enables |= get_flag_for_branch(RgbEnable::Downscale0, i);
 
 					// Now adjust the input dimensions that the code below (which
 					// programs the resampler) will see, so that it can, if necessary,
@@ -630,14 +631,14 @@ void BackEnd::updateSmartResize()
 				}
 				else
 				{
-					pipe_->rgb_enables &= ~get_flag_for_branch(RgbEnable::Downscale0, i);
+					global.rgb_enables &= ~get_flag_for_branch(RgbEnable::Downscale0, i);
 				}
 
 				// Don't resample by unity: it needlessly reduces bit-depth, and can over-sharpen
 				if (resampler_input_width == resampler_output_width &&
 					resampler_input_height == resampler_output_height)
 				{
-					pipe_->rgb_enables &= ~get_flag_for_branch(RgbEnable::Resample0, i);
+					global.rgb_enables &= ~get_flag_for_branch(RgbEnable::Resample0, i);
 					continue;
 				}
 
@@ -695,11 +696,12 @@ void BackEnd::updateSmartResize()
 				resample_extra.scaled_width = resampler_output_width;
 				resample_extra.scaled_height = resampler_output_height;
 				SetResample(i, resample_extra);
-				pipe_->rgb_enables |= get_flag_for_branch(RgbEnable::Resample0, i);
+				global.rgb_enables |= get_flag_for_branch(RgbEnable::Resample0, i);
 			}
 		}
 	}
 
+	SetGlobal(global);
 	pipe_->smart_resize_dirty = 0;
 }
 
