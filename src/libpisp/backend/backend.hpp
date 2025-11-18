@@ -181,7 +181,10 @@ public:
 		return variant_;
 	}
 
-	static size_t GetStorageSize(const PiSPVariant &variant);
+	static size_t GetStorageSize([[maybe_unused]] const PiSPVariant &variant)
+	{
+		return sizeof(PipelineConfig);
+	}
 
 	friend class BackendConfigAdapter;
 
