@@ -492,7 +492,7 @@ void FrontEnd::prepare(pisp_fe_config *config)
 
 			fixOutputSize(i);
 			if (!imageConfig.stride)
-				compute_stride_align(imageConfig, align_);
+				computeStrideAlign(imageConfig, align_);
 		}
 	}
 

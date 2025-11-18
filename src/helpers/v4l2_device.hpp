@@ -34,20 +34,20 @@ public:
 	V4l2Device(const V4l2Device &) = delete;
 	V4l2Device &operator=(const V4l2Device &) = delete;
 
-	unsigned int Fd()
+	unsigned int fd()
 	{
-		return fd_.Get();
+		return fd_.get();
 	}
 
-	bool Valid()
+	bool valid()
 	{
-		return fd_.Valid();
+		return fd_.valid();
 	}
 
-	void Close()
+	void close()
 	{
-		if (fd_.Valid())
-			fd_.Close();
+		if (fd_.valid())
+			fd_.close();
 	}
 
 	struct Buffer
@@ -66,33 +66,33 @@ public:
 		std::array<uint8_t *, 3> mem;
 	};
 
-	int RequestBuffers(unsigned int count = 1);
-	void ReturnBuffers();
+	int requestBuffers(unsigned int count = 1);
+	void returnBuffers();
 
-	std::optional<Buffer> AcquireBuffer();
-	void ReleaseBuffer(const Buffer &buffer);
-	const std::vector<Buffer> &Buffers() const
+	std::optional<Buffer> acquireBuffer();
+	void releaseBuffer(const Buffer &buffer);
+	const std::vector<Buffer> &buffers() const
 	{
-		return v4l2_buffers_;
+		return v4l2Buffers_;
 	};
 
-	int QueueBuffer(unsigned int index);
-	int DequeueBuffer(unsigned int timeout_ms = 500);
+	int queueBuffer(unsigned int index);
+	int dequeueBuffer(unsigned int timeoutMs = 500);
 
-	void SetFormat(const pisp_image_format_config &format, bool use_opaque_format = false);
+	void setFormat(const pisp_image_format_config &format, bool useOpaqueFormat = false);
 
-	void StreamOn();
-	void StreamOff();
+	void streamOn();
+	void streamOff();
 
 private:
 	bool isMeta()
 	{
-		return buf_type_ == V4L2_BUF_TYPE_META_OUTPUT;
+		return bufType_ == V4L2_BUF_TYPE_META_OUTPUT;
 	}
 
 	bool isCapture()
 	{
-		return buf_type_ == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+		return bufType_ == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 	}
 
 	bool isOutput()
@@ -102,11 +102,11 @@ private:
 
 	std::optional<Buffer> findBuffer(unsigned int index) const;
 
-	std::queue<unsigned int> available_buffers_;
-	std::vector<Buffer> v4l2_buffers_;
+	std::queue<unsigned int> availableBuffers_;
+	std::vector<Buffer> v4l2Buffers_;
 	DeviceFd fd_;
-	enum v4l2_buf_type buf_type_;
-	unsigned int num_memory_planes_;
+	enum v4l2_buf_type bufType_;
+	unsigned int numMemoryPlanes_;
 };
 
 } // namespace libpisp

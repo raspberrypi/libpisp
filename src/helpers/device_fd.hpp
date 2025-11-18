@@ -23,14 +23,14 @@ public:
 	DeviceFd(const std::string &file, mode_t mode)
 		: deviceFd_(-1)
 	{
-		int DeviceFd = ::open(file.c_str(), mode);
-		if (DeviceFd >= 0)
-			deviceFd_ = DeviceFd;
+		int deviceFd = ::open(file.c_str(), mode);
+		if (deviceFd >= 0)
+			deviceFd_ = deviceFd;
 	}
 
 	~DeviceFd()
 	{
-		Close();
+		close();
 	}
 
 	DeviceFd(DeviceFd &&other)
@@ -50,20 +50,20 @@ public:
 		return *this;
 	}
 
-	int Get()
+	int get()
 	{
 		return deviceFd_;
 	}
 
-	void Close()
+	void close()
 	{
-		if (Valid())
+		if (valid())
 			::close(deviceFd_);
 
 		deviceFd_ = -1;
 	}
 
-	bool Valid()
+	bool valid()
 	{
 		return deviceFd_ >= 0;
 	}

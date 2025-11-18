@@ -31,12 +31,12 @@ namespace libpisp
 
 namespace {
 
-std::mutex mutex;
+std::mutex mutex_;
 
 boost::shared_ptr<sinks::synchronous_sink<sinks::text_ostream_backend>> console;
 boost::shared_ptr<sinks::synchronous_sink<sinks::text_file_backend>> file;
 
-void logging_file_init(const char *filename, unsigned int level)
+void loggingFileInit(const char *filename, unsigned int level)
 {
 	logging::formatter format =
 		expr::format("[libpisp %1%] %2%")
@@ -55,9 +55,9 @@ void logging_file_init(const char *filename, unsigned int level)
 
 } // namespace
 
-void logging_init()
+void loggingInit()
 {
-	std::scoped_lock<std::mutex> l(mutex);
+	std::scoped_lock<std::mutex> l(mutex_);
 	// Default to "warning" level.
 	unsigned int level = 3;
 
@@ -89,7 +89,7 @@ void logging_init()
 		if (lev)
 			level = std::atoi(lev);
 
-		logging_file_init(log_file, level);
+		loggingFileInit(log_file, level);
 	}
 }
 
@@ -97,7 +97,7 @@ void logging_init()
 
 #else
 
-void libpisp::logging_init()
+void libpisp::loggingInit()
 {
 }
 

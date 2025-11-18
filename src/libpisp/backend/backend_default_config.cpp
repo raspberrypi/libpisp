@@ -96,7 +96,7 @@ void initialise_gamma(pisp_be_gamma_config &gamma, const json &root)
 	constexpr unsigned int num_points = sizeof(gamma.lut) / sizeof(gamma.lut[0]);
 
 	libpisp::Pwl pwl;
-	pwl.Read(root["gamma"]["lut"]);
+	pwl.read(root["gamma"]["lut"]);
 
 	static constexpr unsigned int SlopeBits = 14;
 	static constexpr unsigned int PosBits = 16;
@@ -112,7 +112,7 @@ void initialise_gamma(pisp_be_gamma_config &gamma, const json &root)
 		else
 			x = std::min(65535u, (i - 48) * 2048 + 32768);
 
-		y = pwl.Eval(x);
+		y = pwl.eval(x);
 		if (y < 0 || (i && y < lastY))
 			throw std::runtime_error("initialise_gamma: Malformed LUT");
 

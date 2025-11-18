@@ -46,49 +46,49 @@ public:
 	MediaEnumerator(MediaEnumerator &other) = delete;
 	void operator=(const MediaEnumerator &other) = delete;
 
-	static const MediaEnumerator *Get()
+	static const MediaEnumerator *get()
 	{
 		static std::unique_ptr<MediaEnumerator> mdev(new MediaEnumerator);
 		return mdev.get();
 	}
 
-	const MediaDevList &MediaDeviceList() const
+	const MediaDevList &mediaDeviceList() const
 	{
-		return device_list_;
+		return deviceList_;
 	}
 
 private:
 	MediaEnumerator()
 	{
 		// Sysfs path for media devices - correct for Raspberry Pi, but not sure if this is globally consistent.
-		const fs::path media_sysfs("/sys/bus/media/devices");
+		const fs::path mediaSysfs("/sys/bus/media/devices");
 
-		if (!fs::exists(media_sysfs))
+		if (!fs::exists(mediaSysfs))
 			return;
 
-		for (auto const &media_device : fs::directory_iterator { media_sysfs })
+		for (auto const &mediaDevice : fs::directory_iterator { mediaSysfs })
 		{
-			if (!fs::is_symlink(media_device))
+			if (!fs::is_symlink(mediaDevice))
 				continue;
 
 			// Find a pisp_be device link,
-			const std::string link(fs::read_symlink(media_device).string());
+			const std::string link(fs::read_symlink(mediaDevice).string());
 			if (link.find("pisp_be") == std::string::npos)
 				continue;
 
 			// Find the /dev/mediaX device node.
 			const std::string::size_type pos = link.find_last_of("/");
-			const std::string media_node("/dev/" + link.substr(pos + 1));
+			const std::string mediaNode("/dev/" + link.substr(pos + 1));
 
-			DeviceFd fd(media_node.c_str(), O_RDWR | O_CLOEXEC);
-			if (!fd.Valid())
+			DeviceFd fd(mediaNode.c_str(), O_RDWR | O_CLOEXEC);
+			if (!fd.valid())
 				continue;
 
 			struct media_v2_topology topology;
 			std::memset(&topology, 0, sizeof(topology));
 
 			// First ioctl call to get the number of interfaces.
-			int ret = ioctl(fd.Get(), MEDIA_IOC_G_TOPOLOGY, &topology);
+			int ret = ioctl(fd.get(), MEDIA_IOC_G_TOPOLOGY, &topology);
 			if (ret < 0 || !topology.num_interfaces)
 				continue;
 
@@ -96,11 +96,11 @@ private:
 			topology.ptr_interfaces = reinterpret_cast<uintptr_t>(interfaces.get());
 
 			// Second ioctl call with allocated space to populate the interface array.
-			ret = ioctl(fd.Get(), MEDIA_IOC_G_TOPOLOGY, &topology);
+			ret = ioctl(fd.get(), MEDIA_IOC_G_TOPOLOGY, &topology);
 			if (ret < 0)
 				continue;
 
-			std::vector<DeviceNode> device_node;
+			std::vector<DeviceNode> deviceNodes;
 			for (unsigned int i = 0; i < topology.num_interfaces; i++)
 			{
 				const media_v2_interface &intf = interfaces[i];
@@ -109,66 +109,66 @@ private:
 					break;
 
 				// Find the char dev with the major:minor advertised by the interface.
-				const fs::path char_dev("/sys/dev/char/" + std::to_string(intf.devnode.major) + ":" +
+				const fs::path charDev("/sys/dev/char/" + std::to_string(intf.devnode.major) + ":" +
 										std::to_string(intf.devnode.minor));
-				if (!fs::is_symlink(char_dev))
+				if (!fs::is_symlink(charDev))
 					break;
 
-				const std::string char_dev_link = fs::read_symlink(char_dev).string();
-				const std::string::size_type npos = char_dev_link.find_last_of("/");
-				const std::string dev_node("/dev/" + char_dev_link.substr(npos + 1));
+				const std::string charDevLink = fs::read_symlink(charDev).string();
+				const std::string::size_type npos = charDevLink.find_last_of("/");
+				const std::string devNode("/dev/" + charDevLink.substr(npos + 1));
 
 				// Finally get the /dev/videoX node for the interface.
-				std::ifstream dev_name_file(char_dev / "name");
-				if (!dev_name_file.is_open())
+				std::ifstream devNameFile(charDev / "name");
+				if (!devNameFile.is_open())
 					break;
 
-				std::string dev_name;
-				std::getline(dev_name_file, dev_name);
-				device_node.push_back({ dev_name, dev_node });
+				std::string devName;
+				std::getline(devNameFile, devName);
+				deviceNodes.push_back({ devName, devNode });
 			}
 
 			// If we have some device nodes enumerated, add them to our map.
-			if (!device_node.empty())
-				device_list_.emplace_back(media_node, std::move(device_node));
+			if (!deviceNodes.empty())
+				deviceList_.emplace_back(mediaNode, std::move(deviceNodes));
 		}
 	}
 
-	MediaDevList device_list_;
+	MediaDevList deviceList_;
 };
 
 MediaDevice::MediaDevice()
-	: media_enumerator_(MediaEnumerator::Get())
+	: mediaEnumerator_(MediaEnumerator::get())
 {
 }
 
 MediaDevice::~MediaDevice()
 {
-	for (auto it = lock_map_.begin(); it != lock_map_.end();)
+	for (auto it = lockMap_.begin(); it != lockMap_.end();)
 		it = unlock(it->first);
 }
 
-std::string MediaDevice::Acquire(const std::string &device)
+std::string MediaDevice::acquire(const std::string &device)
 {
-	for (const auto &m : media_enumerator_->MediaDeviceList())
+	for (const auto &m : mediaEnumerator_->mediaDeviceList())
 	{
 		if (!device.empty() && m.media_node != device)
 			continue;
 
 		// Check if this process has the lock.
-		auto it = lock_map_.find(m.media_node.c_str());
-		if (it != lock_map_.end())
+		auto it = lockMap_.find(m.media_node.c_str());
+		if (it != lockMap_.end())
 			continue;
 
 		// Check if another process has the lock.
 		DeviceFd fd(m.media_node.c_str(), O_RDWR | O_CLOEXEC);
-		if (!fd.Valid())
+		if (!fd.valid())
 			continue;
 
-		if (lockf(fd.Get(), F_TLOCK, 0))
+		if (lockf(fd.get(), F_TLOCK, 0))
 			continue;
 
-		lock_map_.emplace(std::piecewise_construct,
+		lockMap_.emplace(std::piecewise_construct,
 						  std::forward_as_tuple(m.media_node), std::forward_as_tuple(std::move(fd)));
 
 		return m.media_node;
@@ -177,16 +177,16 @@ std::string MediaDevice::Acquire(const std::string &device)
 	return {};
 }
 
-void MediaDevice::Release(const std::string &device)
+void MediaDevice::release(const std::string &device)
 {
 	unlock(device);
 }
 
-V4l2DevMap MediaDevice::OpenV4l2Nodes(const std::string &device) const
+V4l2DevMap MediaDevice::openV4l2Nodes(const std::string &device) const
 {
-	V4l2DevMap dev_map;
+	V4l2DevMap devMap;
 
-	for (const auto &m : media_enumerator_->MediaDeviceList())
+	for (const auto &m : mediaEnumerator_->mediaDeviceList())
 	{
 		if (m.media_node != device)
 			continue;
@@ -194,30 +194,30 @@ V4l2DevMap MediaDevice::OpenV4l2Nodes(const std::string &device) const
 		for (auto const &n : m.device_nodes)
 		{
 			V4l2Device dev(n.dev_node);
-			if (!dev.Valid())
+			if (!dev.valid())
 				return {};
 
-			dev_map.emplace(std::piecewise_construct, std::forward_as_tuple(n.name),
+			devMap.emplace(std::piecewise_construct, std::forward_as_tuple(n.name),
 							std::forward_as_tuple(std::move(dev)));
 		}
 
-		return dev_map;
+		return devMap;
 	}
 
 	return {};
 }
 
-void MediaDevice::CloseV4l2Nodes(V4l2DevMap &device_map)
+void MediaDevice::closeV4l2Nodes(V4l2DevMap &deviceMap)
 {
-	for (auto &d : device_map)
-		d.second.Close();
+	for (auto &d : deviceMap)
+		d.second.close();
 }
 
-std::string MediaDevice::List() const
+std::string MediaDevice::list() const
 {
 	std::stringstream ss;
 
-	for (const auto &it : media_enumerator_->MediaDeviceList())
+	for (const auto &it : mediaEnumerator_->mediaDeviceList())
 	{
 		ss << std::endl << it.media_node << std::endl;
 		for (const auto &it1 : it.device_nodes)
@@ -227,15 +227,15 @@ std::string MediaDevice::List() const
 	return ss.str();
 }
 
-media_device_info MediaDevice::DeviceInfo(const std::string &device) const
+media_device_info MediaDevice::deviceInfo(const std::string &device) const
 {
 	media_device_info info;
 
 	DeviceFd fd(device.c_str(), O_RDONLY | O_CLOEXEC);
-	if (!fd.Valid())
+	if (!fd.valid())
 		return {};
 
-	int ret = ioctl(fd.Get(), MEDIA_IOC_DEVICE_INFO, &info);
+	int ret = ioctl(fd.get(), MEDIA_IOC_DEVICE_INFO, &info);
 	if (ret)
 		return {};
 
@@ -244,10 +244,10 @@ media_device_info MediaDevice::DeviceInfo(const std::string &device) const
 
 std::map<std::string, DeviceFd>::iterator MediaDevice::unlock(const std::string &device)
 {
-	auto it = lock_map_.find(device);
-	if (it == lock_map_.end())
-		return lock_map_.end();
+	auto it = lockMap_.find(device);
+	if (it == lockMap_.end())
+		return lockMap_.end();
 
-	std::ignore = lockf(it->second.Get(), F_ULOCK, 0);
-	return lock_map_.erase(it);
+	std::ignore = lockf(it->second.get(), F_ULOCK, 0);
+	return lockMap_.erase(it);
 }

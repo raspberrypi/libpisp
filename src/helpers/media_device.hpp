@@ -29,19 +29,19 @@ public:
 	MediaDevice();
 	~MediaDevice();
 
-	std::string Acquire(const std::string &device = {});
-	void Release(const std::string &device);
+	std::string acquire(const std::string &device = {});
+	void release(const std::string &device);
 
-	V4l2DevMap OpenV4l2Nodes(const std::string &device) const;
-	void CloseV4l2Nodes(V4l2DevMap &device_map);
+	V4l2DevMap openV4l2Nodes(const std::string &device) const;
+	void closeV4l2Nodes(V4l2DevMap &deviceMap);
 
-	std::string List() const;
-	struct media_device_info DeviceInfo(const std::string &device) const;
+	std::string list() const;
+	struct media_device_info deviceInfo(const std::string &device) const;
 
 private:
 	std::map<std::string, DeviceFd>::iterator unlock(const std::string &device);
-	std::map<std::string, DeviceFd> lock_map_;
-	const MediaEnumerator *media_enumerator_;
+	std::map<std::string, DeviceFd> lockMap_;
+	const MediaEnumerator *mediaEnumerator_;
 };
 
 } // namespace libpisp

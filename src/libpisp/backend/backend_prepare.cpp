@@ -33,7 +33,7 @@ constexpr unsigned int ResamplePrecision = 10;
 constexpr unsigned int NumPhases = 16;
 constexpr unsigned int NumTaps = 6;
 
-void check_stride(pisp_image_format_config const &config)
+void checkStride(pisp_image_format_config const &config)
 {
 	if (config.stride % PISP_BACK_END_OUTPUT_MIN_ALIGN || config.stride2 % PISP_BACK_END_OUTPUT_MIN_ALIGN)
 		throw std::runtime_error("Output stride values not sufficiently aligned");
@@ -42,7 +42,7 @@ void check_stride(pisp_image_format_config const &config)
 		throw std::runtime_error("Wallpaper format should have 128-byte aligned rolls");
 
 	pisp_image_format_config check = config;
-	compute_stride_align(check, PISP_BACK_END_OUTPUT_MIN_ALIGN);
+	computeStrideAlign(check, PISP_BACK_END_OUTPUT_MIN_ALIGN);
 	if (check.stride > config.stride || check.stride2 > config.stride2)
 	{
 		PISP_LOG(fatal, "Strides should be at least " << check.stride << " and " << check.stride2 << " but are "
@@ -51,7 +51,7 @@ void check_stride(pisp_image_format_config const &config)
 }
 
 // TDN and Stitch I/O dimensions must match the input, though the format may differ.
-static void check_rawio_format(pisp_image_format_config &fmt, uint16_t w, uint16_t h)
+static void checkRawioFormat(pisp_image_format_config &fmt, uint16_t w, uint16_t h)
 {
 	if (fmt.width == 0 || fmt.height == 0)
 	{
@@ -62,53 +62,53 @@ static void check_rawio_format(pisp_image_format_config &fmt, uint16_t w, uint16
 		throw std::runtime_error("BackEnd::finalise: Image dimensions do not match input");
 
 	if (fmt.stride == 0)
-		compute_stride(fmt);
+		computeStride(fmt);
 	else
-		check_stride(fmt);
+		checkStride(fmt);
 }
-unsigned int get_pixel_alignment(uint32_t format, int byte_alignment)
+unsigned int getPixelAlignment(uint32_t format, int byteAlignment)
 {
-	int alignment_pixels = byte_alignment; // for 8bpp formats
+	int alignmentPixels = byteAlignment; // for 8bpp formats
 
 	if (PISP_IMAGE_FORMAT_BPS_16(format))
-		alignment_pixels = byte_alignment / 2;
+		alignmentPixels = byteAlignment / 2;
 	else if (PISP_IMAGE_FORMAT_BPS_10(format))
-		alignment_pixels = byte_alignment * 3 / 4;
+		alignmentPixels = byteAlignment * 3 / 4;
 	else if (PISP_IMAGE_FORMAT_BPP_32(format))
-		alignment_pixels = byte_alignment / 4;
+		alignmentPixels = byteAlignment / 4;
 
 	if (PISP_IMAGE_FORMAT_PLANAR(format) && !PISP_IMAGE_FORMAT_SAMPLING_444(format))
-		alignment_pixels *= 2; // the UV planes in fully planar 420/422 output will have half the width
+		alignmentPixels *= 2; // the UV planes in fully planar 420/422 output will have half the width
 	else if (PISP_IMAGE_FORMAT_INTERLEAVED(format) &&
 			 (PISP_IMAGE_FORMAT_SAMPLING_422(format) || PISP_IMAGE_FORMAT_SAMPLING_420(format)))
-		alignment_pixels /= 2; // YUYV type outputs need only 8 pixels to make 16 bytes
+		alignmentPixels /= 2; // YUYV type outputs need only 8 pixels to make 16 bytes
 
-	return alignment_pixels;
+	return alignmentPixels;
 }
 
 unsigned int lcm(int a, int b)
 {
-	int orig_a = a, orig_b = b, tmp;
+	int origA = a, origB = b, tmp;
 	while (b)
 		tmp = a % b, a = b, b = tmp;
-	return orig_a / a * orig_b;
+	return origA / a * origB;
 }
 
-static tiling::Length2 calculate_output_alignment(uint32_t format, int align = PISP_BACK_END_OUTPUT_MAX_ALIGN)
+static tiling::Length2 calculateOutputAlignment(uint32_t format, int align = PISP_BACK_END_OUTPUT_MAX_ALIGN)
 {
-	int y_alignment = PISP_IMAGE_FORMAT_SAMPLING_420(format) ? 2 : 1;
+	int yAlignment = PISP_IMAGE_FORMAT_SAMPLING_420(format) ? 2 : 1;
 
-	return tiling::Length2(get_pixel_alignment(format, align), y_alignment);
+	return tiling::Length2(getPixelAlignment(format, align), yAlignment);
 }
 
-void calculate_input_addr_offset(int x, int y, pisp_image_format_config const &input_format, uint32_t *addr_offset,
-								 uint32_t *addr_offset2 = nullptr)
+void calculateInputAddrOffset(int x, int y, pisp_image_format_config const &inputFormat, uint32_t *addrOffset,
+								 uint32_t *addrOffset2 = nullptr)
 {
 	uint32_t offset2 = 0;
 
-	compute_addr_offset(input_format, x, y, addr_offset, &offset2);
-	if (addr_offset2)
-		*addr_offset2 = offset2;
+	computeAddrOffset(inputFormat, x, y, addrOffset, &offset2);
+	if (addrOffset2)
+		*addrOffset2 = offset2;
 }
 
 } // namespace
@@ -155,7 +155,7 @@ void BackEnd::finaliseInputs() const
 void BackEnd::finaliseLsc()
 {
 	pisp_be_lsc_config &lsc = pipe_->hwConfig.lsc;
-	pisp_be_lsc_extra &lsc_extra = pipe_->configExtra.lsc;
+	pisp_be_lsc_extra &lscExtra = pipe_->configExtra.lsc;
 	uint16_t width = pipe_->hwConfig.input_format.width, height = pipe_->hwConfig.input_format.height;
 
 	// Just a warning that ACLS algorithms might want the grid calculations here to match the AWB/ACLS stats.
@@ -166,14 +166,14 @@ void BackEnd::finaliseLsc()
 	if (lsc.grid_step_y == 0)
 		lsc.grid_step_y = (PISP_BE_LSC_GRID_SIZE << P) / height;
 
-	PISP_ASSERT(lsc.grid_step_x * (width + lsc_extra.offset_x - 1) < (PISP_BE_LSC_GRID_SIZE << P));
-	PISP_ASSERT(lsc.grid_step_y * (height + lsc_extra.offset_y - 1) < (PISP_BE_LSC_GRID_SIZE << P));
+	PISP_ASSERT(lsc.grid_step_x * (width + lscExtra.offset_x - 1) < (PISP_BE_LSC_GRID_SIZE << P));
+	PISP_ASSERT(lsc.grid_step_y * (height + lscExtra.offset_y - 1) < (PISP_BE_LSC_GRID_SIZE << P));
 }
 
 void BackEnd::finaliseCac()
 {
 	pisp_be_cac_config &cac = pipe_->hwConfig.cac;
-	pisp_be_cac_extra &cac_extra = pipe_->configExtra.cac;
+	pisp_be_cac_extra &cacExtra = pipe_->configExtra.cac;
 	uint16_t width = pipe_->hwConfig.input_format.width, height = pipe_->hwConfig.input_format.height;
 
 	static const int P = PISP_BE_CAC_STEP_PRECISION;
@@ -183,46 +183,46 @@ void BackEnd::finaliseCac()
 	if (cac.grid_step_y == 0)
 		cac.grid_step_y = (PISP_BE_CAC_GRID_SIZE << P) / height;
 
-	PISP_ASSERT(cac.grid_step_x * (width + cac_extra.offset_x - 1) < (PISP_BE_CAC_GRID_SIZE << P));
-	PISP_ASSERT(cac.grid_step_y * (height + cac_extra.offset_y - 1) < (PISP_BE_CAC_GRID_SIZE << P));
+	PISP_ASSERT(cac.grid_step_x * (width + cacExtra.offset_x - 1) < (PISP_BE_CAC_GRID_SIZE << P));
+	PISP_ASSERT(cac.grid_step_y * (height + cacExtra.offset_y - 1) < (PISP_BE_CAC_GRID_SIZE << P));
 }
 
 void BackEnd::finaliseResample(unsigned int index, uint16_t width, uint16_t height)
 {
 	pisp_be_resample_config &resample = pipe_->hwConfig.resample[index];
-	pisp_be_resample_extra &resample_extra = pipe_->configExtra.resample[index];
+	pisp_be_resample_extra &resampleExtra = pipe_->configExtra.resample[index];
 
-	uint32_t scale_factor_h = ((width - 1) << ScalePrecision) / (resample_extra.scaled_width - 1);
-	uint32_t scale_factor_v = ((height - 1) << ScalePrecision) / (resample_extra.scaled_height - 1);
+	uint32_t scaleFactorH = ((width - 1) << ScalePrecision) / (resampleExtra.scaled_width - 1);
+	uint32_t scaleFactorV = ((height - 1) << ScalePrecision) / (resampleExtra.scaled_height - 1);
 
-	if ((scale_factor_h < UnityScale / 16 || scale_factor_h >= 16 * UnityScale) ||
-		(scale_factor_v < UnityScale / 16 || scale_factor_v >= 16 * UnityScale))
+	if ((scaleFactorH < UnityScale / 16 || scaleFactorH >= 16 * UnityScale) ||
+		(scaleFactorV < UnityScale / 16 || scaleFactorV >= 16 * UnityScale))
 		throw std::runtime_error("finaliseResample: Invalid scaling factors (must be < 16x down/upscale).");
 
-	resample.scale_factor_h = scale_factor_h;
-	resample.scale_factor_v = scale_factor_v;
+	resample.scale_factor_h = scaleFactorH;
+	resample.scale_factor_v = scaleFactorV;
 	// If the filter coefficients are unset we should probably copy in our "default ones".
 }
 
 void BackEnd::finaliseDownscale(unsigned int index, uint16_t width, uint16_t height)
 {
 	pisp_be_downscale_config &downscale = pipe_->hwConfig.downscale[index];
-	pisp_be_downscale_extra &downscale_extra = pipe_->configExtra.downscale[index];
+	pisp_be_downscale_extra &downscaleExtra = pipe_->configExtra.downscale[index];
 
-	PISP_LOG(debug, "width " << width << " scaled_width " << downscale_extra.scaled_width);
-	PISP_LOG(debug, "height " << height << " scaled_height " << downscale_extra.scaled_height);
+	PISP_LOG(debug, "width " << width << " scaled_width " << downscaleExtra.scaled_width);
+	PISP_LOG(debug, "height " << height << " scaled_height " << downscaleExtra.scaled_height);
 
-	uint32_t scale_factor_h = (width << ScalePrecision) / (downscale_extra.scaled_width);
-	uint32_t scale_factor_v = (height << ScalePrecision) / (downscale_extra.scaled_height);
+	uint32_t scaleFactorH = (width << ScalePrecision) / (downscaleExtra.scaled_width);
+	uint32_t scaleFactorV = (height << ScalePrecision) / (downscaleExtra.scaled_height);
 
-	if ((scale_factor_h != UnityScale && (scale_factor_h < 2 * UnityScale || scale_factor_h > 8 * UnityScale)) ||
-		(scale_factor_v != UnityScale && (scale_factor_v < 2 * UnityScale || scale_factor_v > 8 * UnityScale)))
+	if ((scaleFactorH != UnityScale && (scaleFactorH < 2 * UnityScale || scaleFactorH > 8 * UnityScale)) ||
+		(scaleFactorV != UnityScale && (scaleFactorV < 2 * UnityScale || scaleFactorV > 8 * UnityScale)))
 		throw std::runtime_error("finaliseDownscale: Invalid scaling factors (must be 1x or >= 2x && <= 8x).");
 
-	downscale.scale_factor_h = scale_factor_h;
-	downscale.scale_factor_v = scale_factor_v;
-	downscale.scale_recip_h = (downscale_extra.scaled_width << ScalePrecision) / (width);
-	downscale.scale_recip_v = (downscale_extra.scaled_height << ScalePrecision) / (height);
+	downscale.scale_factor_h = scaleFactorH;
+	downscale.scale_factor_v = scaleFactorV;
+	downscale.scale_recip_h = (downscaleExtra.scaled_width << ScalePrecision) / (width);
+	downscale.scale_recip_v = (downscaleExtra.scaled_height << ScalePrecision) / (height);
 
 	PISP_LOG(debug, "scale_factor_h " << downscale.scale_factor_h << " scale_factor_v " << downscale.scale_factor_v);
 	PISP_LOG(debug, "scale_recip_h " << downscale.scale_recip_h << " scale_recip_v " << downscale.scale_recip_v);
@@ -231,69 +231,69 @@ void BackEnd::finaliseDownscale(unsigned int index, uint16_t width, uint16_t hei
 void BackEnd::finaliseDecompression() const
 {
 	uint32_t fmt = pipe_->hwConfig.input_format.format;
-	BayerEnables bayer_enables = pipe_->bayerEnables;
+	BayerEnables bayerEnables = pipe_->bayerEnables;
 
-	if (PISP_IMAGE_FORMAT_COMPRESSED(fmt) && !(bayer_enables & BayerEnable::Decompress))
+	if (PISP_IMAGE_FORMAT_COMPRESSED(fmt) && !(bayerEnables & BayerEnable::Decompress))
 		throw std::runtime_error("BackEnd::finalise: input compressed but decompression not enabled");
 
-	if (!PISP_IMAGE_FORMAT_COMPRESSED(fmt) && (bayer_enables & BayerEnable::Decompress))
+	if (!PISP_IMAGE_FORMAT_COMPRESSED(fmt) && (bayerEnables & BayerEnable::Decompress))
 		throw std::runtime_error("BackEnd::finalise: input uncompressed but decompression enabled");
 
-	if ((bayer_enables & BayerEnable::Decompress) && !PISP_IMAGE_FORMAT_BPS_8(fmt))
+	if ((bayerEnables & BayerEnable::Decompress) && !PISP_IMAGE_FORMAT_BPS_8(fmt))
 		throw std::runtime_error("BackEnd::finalise: compressed input is not 8bpp");
 }
 
 void BackEnd::finaliseTdn()
 {
 	pisp_be_config &config = pipe_->hwConfig;
-	int tdn_enabled = pipe_->bayerEnables & BayerEnable::Tdn;
-	int tdn_input_enabled = pipe_->bayerEnables & BayerEnable::TdnInput;
-	int tdn_decompress_enabled = pipe_->bayerEnables & BayerEnable::TdnDecompress;
-	int tdn_compress_enabled = pipe_->bayerEnables & BayerEnable::TdnCompress;
-	int tdn_output_enabled = pipe_->bayerEnables & BayerEnable::TdnOutput;
+	int tdnEnabled = pipe_->bayerEnables & BayerEnable::Tdn;
+	int tdnInputEnabled = pipe_->bayerEnables & BayerEnable::TdnInput;
+	int tdnDecompressEnabled = pipe_->bayerEnables & BayerEnable::TdnDecompress;
+	int tdnCompressEnabled = pipe_->bayerEnables & BayerEnable::TdnCompress;
+	int tdnOutputEnabled = pipe_->bayerEnables & BayerEnable::TdnOutput;
 	uint32_t fmt = config.tdn_output_format.format;
 
-	if (tdn_enabled && !tdn_output_enabled)
+	if (tdnEnabled && !tdnOutputEnabled)
 		throw std::runtime_error("finaliseTdn: TDN output not enabled when TDN enabled");
 
-	if (PISP_IMAGE_FORMAT_COMPRESSED(fmt) && !tdn_compress_enabled)
+	if (PISP_IMAGE_FORMAT_COMPRESSED(fmt) && !tdnCompressEnabled)
 		throw std::runtime_error("finaliseTdn: TDN output compressed but compression not enabled");
 
-	if (!PISP_IMAGE_FORMAT_COMPRESSED(fmt) && tdn_compress_enabled)
+	if (!PISP_IMAGE_FORMAT_COMPRESSED(fmt) && tdnCompressEnabled)
 		throw std::runtime_error("finaliseTdn: TDN output uncompressed but compression enabled");
 
-	if (tdn_compress_enabled && !PISP_IMAGE_FORMAT_BPS_8(fmt))
+	if (tdnCompressEnabled && !PISP_IMAGE_FORMAT_BPS_8(fmt))
 		throw std::runtime_error("finaliseTdn: TDN output does not match compression mode");
 
-	if (tdn_output_enabled)
-          check_rawio_format(config.tdn_output_format, config.input_format.width, config.input_format.height);
+	if (tdnOutputEnabled)
+          checkRawioFormat(config.tdn_output_format, config.input_format.width, config.input_format.height);
 
-	if (tdn_input_enabled)
-		check_rawio_format(config.tdn_input_format, config.input_format.width, config.input_format.height);
+	if (tdnInputEnabled)
+		checkRawioFormat(config.tdn_input_format, config.input_format.width, config.input_format.height);
 
-	if (!tdn_enabled)
+	if (!tdnEnabled)
 	{
-		if (tdn_input_enabled)
+		if (tdnInputEnabled)
 			throw std::runtime_error("finaliseTdn: TDN input enabled but TDN not enabled");
 		// I suppose there is a weird (and entirely pointless) case where TDN is not enabled but TDN output is, which we allow.
 	}
 	else if (config.tdn.reset)
 	{
-		if (tdn_input_enabled)
+		if (tdnInputEnabled)
 			throw std::runtime_error("finaliseTdn: TDN input enabled but TDN being reset");
 	}
 	else
 	{
-		if (!tdn_input_enabled)
+		if (!tdnInputEnabled)
 			throw std::runtime_error("finaliseTdn: TDN input not enabled but TDN not being reset");
 		// Make the TDN input match the output if it's unset. Usually this will be the sensible thing to do.
 		if (config.tdn_input_format.width == 0 && config.tdn_input_format.height == 0)
 			config.tdn_input_format = config.tdn_output_format;
-		if (PISP_IMAGE_FORMAT_COMPRESSED(fmt) && !tdn_decompress_enabled)
+		if (PISP_IMAGE_FORMAT_COMPRESSED(fmt) && !tdnDecompressEnabled)
 			throw std::runtime_error("finaliseTdn: TDN input compressed but decompression not enabled");
-		if (!PISP_IMAGE_FORMAT_COMPRESSED(fmt) && tdn_decompress_enabled)
+		if (!PISP_IMAGE_FORMAT_COMPRESSED(fmt) && tdnDecompressEnabled)
 			throw std::runtime_error("finaliseTdn: TDN input uncompressed but decompression enabled");
-		if (tdn_compress_enabled && !PISP_IMAGE_FORMAT_BPS_8(fmt))
+		if (tdnCompressEnabled && !PISP_IMAGE_FORMAT_BPS_8(fmt))
 			throw std::runtime_error("finaliseTdn: TDN output does not match compression mode");
 	}
 }
@@ -301,34 +301,34 @@ void BackEnd::finaliseTdn()
 void BackEnd::finaliseStitch()
 {
 	pisp_be_config &config = pipe_->hwConfig;
-	bool stitch_enabled = pipe_->bayerEnables & BayerEnable::Stitch;
-	bool stitch_input_enabled = pipe_->bayerEnables & BayerEnable::StitchInput;
-	bool stitch_decompress_enabled = pipe_->bayerEnables & BayerEnable::StitchDecompress;
-	bool stitch_compress_enabled = pipe_->bayerEnables & BayerEnable::StitchCompress;
-	bool stitch_output_enabled = pipe_->bayerEnables & BayerEnable::StitchOutput;
-	uint32_t input_fmt = config.stitch_input_format.format;
-	uint32_t output_fmt = config.stitch_output_format.format;
+	bool stitchEnabled = pipe_->bayerEnables & BayerEnable::Stitch;
+	bool stitchInputEnabled = pipe_->bayerEnables & BayerEnable::StitchInput;
+	bool stitchDecompressEnabled = pipe_->bayerEnables & BayerEnable::StitchDecompress;
+	bool stitchCompressEnabled = pipe_->bayerEnables & BayerEnable::StitchCompress;
+	bool stitchOutputEnabled = pipe_->bayerEnables & BayerEnable::StitchOutput;
+	uint32_t inputFmt = config.stitch_input_format.format;
+	uint32_t outputFmt = config.stitch_output_format.format;
 
-	if (stitch_enabled != stitch_input_enabled)
+	if (stitchEnabled != stitchInputEnabled)
 		throw std::runtime_error("BackEnd::finalise: stitch and stitch_input should be enabled/disabled together");
-	if (stitch_input_enabled && PISP_IMAGE_FORMAT_COMPRESSED(input_fmt) && !stitch_decompress_enabled)
+	if (stitchInputEnabled && PISP_IMAGE_FORMAT_COMPRESSED(inputFmt) && !stitchDecompressEnabled)
 		throw std::runtime_error("BackEnd::finalise: stitch output compressed but decompression not enabled");
-	if (stitch_input_enabled && !PISP_IMAGE_FORMAT_COMPRESSED(input_fmt) && stitch_decompress_enabled)
+	if (stitchInputEnabled && !PISP_IMAGE_FORMAT_COMPRESSED(inputFmt) && stitchDecompressEnabled)
 		throw std::runtime_error("BackEnd::finalise: stitch output uncompressed but decompression enabled");
-	if (stitch_output_enabled && PISP_IMAGE_FORMAT_COMPRESSED(output_fmt) && !stitch_compress_enabled)
+	if (stitchOutputEnabled && PISP_IMAGE_FORMAT_COMPRESSED(outputFmt) && !stitchCompressEnabled)
 		throw std::runtime_error("BackEnd::finalise: stitch output compressed but compression not enabled");
-	if (stitch_output_enabled && !PISP_IMAGE_FORMAT_COMPRESSED(output_fmt) && stitch_compress_enabled)
+	if (stitchOutputEnabled && !PISP_IMAGE_FORMAT_COMPRESSED(outputFmt) && stitchCompressEnabled)
 		throw std::runtime_error("BackEnd::finalise: stitch output uncompressed but compression enabled");
-	if (stitch_decompress_enabled && !PISP_IMAGE_FORMAT_BPS_8(input_fmt))
+	if (stitchDecompressEnabled && !PISP_IMAGE_FORMAT_BPS_8(inputFmt))
 		throw std::runtime_error("BackEnd::finalise: stitch input does not match compression mode");
-	if (stitch_compress_enabled && !PISP_IMAGE_FORMAT_BPS_8(output_fmt))
+	if (stitchCompressEnabled && !PISP_IMAGE_FORMAT_BPS_8(outputFmt))
 		throw std::runtime_error("BackEnd::finalise: stitch output does not match compression mode");
 
-	if (stitch_output_enabled)
-		check_rawio_format(config.stitch_output_format, config.input_format.width, config.input_format.height);
+	if (stitchOutputEnabled)
+		checkRawioFormat(config.stitch_output_format, config.input_format.width, config.input_format.height);
 
-	if (stitch_input_enabled)
-		check_rawio_format(config.stitch_input_format, config.input_format.width, config.input_format.height);
+	if (stitchInputEnabled)
+		checkRawioFormat(config.stitch_input_format, config.input_format.width, config.input_format.height);
 
 	// Compute the motion_threshold reciprocal if it hasn't been done.
 	if (config.stitch.motion_threshold_recip == 0)
@@ -442,12 +442,12 @@ tiling::Length2 BackEnd::calculateInputAlignment() const
 	{
 		PISP_LOG(debug, "RGB input enabled");
 		// Need 4 byte alignment AND even number of pixels. Height must be 2 row aligned only for 420 input.
-		return tiling::Length2(lcm(get_pixel_alignment(config.input_format.format, PISP_BACK_END_INPUT_ALIGN), 2),
+		return tiling::Length2(lcm(getPixelAlignment(config.input_format.format, PISP_BACK_END_INPUT_ALIGN), 2),
 							   PISP_IMAGE_FORMAT_SAMPLING_420(config.input_format.format) ? 2 : 1);
 	}
 
 	// For starters, we need 4 *byte* alignment (this automatically cover 2 *pixel* alignment for all the raw formats).
-	int pixel_alignment = get_pixel_alignment(config.input_format.format, PISP_BACK_END_INPUT_ALIGN);
+	int pixelAlignment = getPixelAlignment(config.input_format.format, PISP_BACK_END_INPUT_ALIGN);
 
 	// If any input is compressed, we need 8 *pixel* alignment.
 	if (PISP_IMAGE_FORMAT_COMPRESSED(config.input_format.format) ||
@@ -455,17 +455,17 @@ tiling::Length2 BackEnd::calculateInputAlignment() const
 		 PISP_IMAGE_FORMAT_COMPRESSED(config.tdn_input_format.format)) ||
 		((pipe_->bayerEnables & BayerEnable::StitchInput) &&
 		 PISP_IMAGE_FORMAT_COMPRESSED(config.stitch_input_format.format)))
-		pixel_alignment = lcm(pixel_alignment, PISP_BACK_END_COMPRESSED_ALIGN);
+		pixelAlignment = lcm(pixelAlignment, PISP_BACK_END_COMPRESSED_ALIGN);
 
 	// If any of the Bayer outputs are enabled, those need 16 *byte* alignment. (This already covers the outputs being compressed.)
 	if (pipe_->bayerEnables & BayerEnable::TdnOutput)
-		pixel_alignment =
-			lcm(pixel_alignment, get_pixel_alignment(config.tdn_output_format.format, PISP_BACK_END_OUTPUT_MIN_ALIGN));
+		pixelAlignment =
+			lcm(pixelAlignment, getPixelAlignment(config.tdn_output_format.format, PISP_BACK_END_OUTPUT_MIN_ALIGN));
 	if (pipe_->bayerEnables & BayerEnable::StitchOutput)
-		pixel_alignment = lcm(pixel_alignment,
-							  get_pixel_alignment(config.stitch_output_format.format, PISP_BACK_END_OUTPUT_MIN_ALIGN));
+		pixelAlignment = lcm(pixelAlignment,
+							  getPixelAlignment(config.stitch_output_format.format, PISP_BACK_END_OUTPUT_MIN_ALIGN));
 
-	return tiling::Length2(pixel_alignment, 2); // Bayer input rows always in pairs
+	return tiling::Length2(pixelAlignment, 2); // Bayer input rows always in pairs
 }
 
 void BackEnd::finaliseConfig()
@@ -740,9 +740,9 @@ void BackEnd::updateTiles()
 			tiling_config.output_image_size[i] =
 				tiling::Length2(c.output_format[i].image.width, c.output_format[i].image.height);
 			tiling_config.output_max_alignment[i] =
-				calculate_output_alignment(c.output_format[i].image.format, PISP_BACK_END_OUTPUT_MAX_ALIGN);
+				calculateOutputAlignment(c.output_format[i].image.format, PISP_BACK_END_OUTPUT_MAX_ALIGN);
 			tiling_config.output_min_alignment[i] =
-				calculate_output_alignment(c.output_format[i].image.format, PISP_BACK_END_OUTPUT_MIN_ALIGN);
+				calculateOutputAlignment(c.output_format[i].image.format, PISP_BACK_END_OUTPUT_MIN_ALIGN);
 		}
 
 		tiling_config.max_tile_size.dx = sw_.maxTileWidth ? sw_.maxTileWidth : variant_.backEndMaxTileWidth(0);
@@ -933,15 +933,15 @@ void BackEnd::finaliseTiling()
 	{
 		pisp_tile &t = pipe_->tiles[tile_num];
 
-		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, pipe_->hwConfig.input_format,
+		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, pipe_->hwConfig.input_format,
 									&t.input_addr_offset, &t.input_addr_offset2);
-		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, pipe_->hwConfig.tdn_input_format,
+		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, pipe_->hwConfig.tdn_input_format,
 									&t.tdn_input_addr_offset);
-		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, pipe_->hwConfig.tdn_output_format,
+		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, pipe_->hwConfig.tdn_output_format,
 									&t.tdn_output_addr_offset);
-		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, pipe_->hwConfig.stitch_input_format,
+		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, pipe_->hwConfig.stitch_input_format,
 									&t.stitch_input_addr_offset);
-		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, pipe_->hwConfig.stitch_output_format,
+		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, pipe_->hwConfig.stitch_output_format,
 									&t.stitch_output_addr_offset);
 		PISP_LOG(debug, "Input offsets " << t.input_offset_x << "," << t.input_offset_y << " address offsets "
 										 << t.input_addr_offset << " and " << t.input_addr_offset2);
@@ -969,7 +969,7 @@ void BackEnd::finaliseTiling()
 			if (pipe_->hwConfig.output_format[j].transform & PISP_BE_TRANSFORM_VFLIP)
 				t.output_offset_y[j] = pipe_->hwConfig.output_format[j].image.height - output_offset_y_unflipped - 1;
 
-			compute_addr_offset(pipe_->hwConfig.output_format[j].image, t.output_offset_x[j], t.output_offset_y[j],
+			computeAddrOffset(pipe_->hwConfig.output_format[j].image, t.output_offset_x[j], t.output_offset_y[j],
 								&t.output_addr_offset[j], &t.output_addr_offset2[j]);
 
 			PISP_LOG(debug, "Branch " << j << " output offsets " << t.output_offset_x[j] << "," << t.output_offset_y[j]
@@ -1006,9 +1006,9 @@ bool BackEnd::computeOutputImageFormat(unsigned int i, pisp_image_format_config 
 {
 		getOutputSize(i, &fmt.width, &fmt.height, ifmt);
 		if (!fmt.stride)
-			compute_stride(fmt);
+			computeStride(fmt);
 		else
-			check_stride(fmt);
+			checkStride(fmt);
 		return true;
 	}
 	else

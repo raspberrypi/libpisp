@@ -41,15 +41,15 @@ public:
 	};
 	Pwl() {}
 	Pwl(std::vector<Point> const &points) : points_(points) {}
-	void Read(nlohmann::json const &params);
-	void Append(double x, double y, const double eps = 1e-6);
-	void Prepend(double x, double y, const double eps = 1e-6);
-	Interval Domain() const;
-	Interval Range() const;
-	bool Empty() const;
+	void read(nlohmann::json const &params);
+	void append(double x, double y, const double eps = 1e-6);
+	void prepend(double x, double y, const double eps = 1e-6);
+	Interval domain() const;
+	Interval range() const;
+	bool empty() const;
 	// Evaluate Pwl, optionally supplying an initial guess for the "span". The "span" may be optionally be updated.
 	// If you want to know the "span" value but don't have an initial guess you can set it to -1.
-	double Eval(double x, int *span_ptr = nullptr, bool update_span = true) const;
+	double eval(double x, int *spanPtr = nullptr, bool updateSpan = true) const;
 	// Find perpendicular closest to xy, starting from span+1 so you can call it repeatedly to check for multiple
 	// closest points (set span to -1 on the first call). Also returns "pseudo" perpendiculars; see PerpType enum.
 	enum class PerpType
@@ -60,20 +60,20 @@ public:
 		Vertex, // vertex of Pwl is closest point
 		Perpendicular // true perpendicular found
 	};
-	PerpType Invert(Point const &xy, Point &perp, int &span, const double eps = 1e-6) const;
+	PerpType invert(Point const &xy, Point &perp, int &span, const double eps = 1e-6) const;
 	// Compose two Pwls together, doing "this" first and "other" after.
-	Pwl Compose(Pwl const &other, const double eps = 1e-6) const;
+	Pwl compose(Pwl const &other, const double eps = 1e-6) const;
 	// Apply function to (x,y) values at every control point.
-	void Map(std::function<void(double x, double y)> f) const;
+	void map(std::function<void(double x, double y)> f) const;
 	// Apply function to (x, y0, y1) values wherever either Pwl has a control point.
-	static void Map2(Pwl const &pwl0, Pwl const &pwl1, std::function<void(double x, double y0, double y1)> f);
+	static void map2(Pwl const &pwl0, Pwl const &pwl1, std::function<void(double x, double y0, double y1)> f);
 	// Combine two Pwls, meaning we create a new Pwl where the y values are given by running f wherever either has a knot.
-	static Pwl Combine(Pwl const &pwl0, Pwl const &pwl1, std::function<double(double x, double y0, double y1)> f,
+	static Pwl combine(Pwl const &pwl0, Pwl const &pwl1, std::function<double(double x, double y0, double y1)> f,
 					   const double eps = 1e-6);
 	// Make "this" match (at least) the given domain. Any extension my be clipped or linear.
-	void MatchDomain(Interval const &domain, bool clip = true, const double eps = 1e-6);
+	void matchDomain(Interval const &domain, bool clip = true, const double eps = 1e-6);
 	Pwl &operator*=(double d);
-	void Debug(FILE *fp = stdout) const;
+	void debug(FILE *fp = stdout) const;
 
 private:
 	int findSpan(double x, int span) const;
