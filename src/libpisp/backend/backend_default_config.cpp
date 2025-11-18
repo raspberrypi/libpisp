@@ -333,34 +333,34 @@ void BackEnd::initialiseDefaultConfig(const std::string &filename)
 	json root = json::parse(ifs);
 	ifs.close();
 
-	memset(&hw_->config, 0, sizeof(hw_->config));
+	memset(&pipe_->hw_config, 0, sizeof(pipe_->hw_config));
 
-	initialise_debin(hw_->config.debin, root);
-	hw_->config_extra.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEBIN;
-	initialise_demosaic(hw_->config.demosaic, root);
-	hw_->config_extra.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEMOSAIC;
-	initialise_false_colour(hw_->config.false_colour, root);
-	hw_->config_extra.dirty_flags_bayer |= PISP_BE_RGB_ENABLE_FALSE_COLOUR;
-	initialise_gamma(hw_->config.gamma, root);
-	hw_->config_extra.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_GAMMA;
+	initialise_debin(pipe_->hw_config.debin, root);
+	pipe_->dirty_flags_bayer |= BayerEnable::Debin;
+	initialise_demosaic(pipe_->hw_config.demosaic, root);
+	pipe_->dirty_flags_bayer |= BayerEnable::Demosaic;
+	initialise_false_colour(pipe_->hw_config.false_colour, root);
+	pipe_->dirty_flags_rgb |= RgbEnable::False_colour;
+	initialise_gamma(pipe_->hw_config.gamma, root);
+	pipe_->dirty_flags_rgb |= RgbEnable::Gamma0;
 
 	read_ycbcr(ycbcr_map_, inverse_ycbcr_map_, root);
 	read_resample(resample_filter_map_, resample_select_list_, root);
 	read_sharpen(default_sharpen_, default_shfc_, root);
 
-	InitialiseSharpen(hw_->config.sharpen, hw_->config.sh_fc_combine);
-	hw_->config_extra.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_SHARPEN;
+	InitialiseSharpen(pipe_->hw_config.sharpen, pipe_->hw_config.sh_fc_combine);
+	pipe_->dirty_flags_rgb |= RgbEnable::Sharpen;
 
 	// Start with a sensible default YCbCr -- must be full-range on 2712C1
-	InitialiseYcbcr(hw_->config.ycbcr, "jpeg");
-	InitialiseYcbcrInverse(hw_->config.ycbcr, "jpeg");
-	hw_->config_extra.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_YCBCR_INVERSE;
+	InitialiseYcbcr(pipe_->hw_config.ycbcr, "jpeg");
+	InitialiseYcbcrInverse(pipe_->hw_config.ycbcr, "jpeg");
+	pipe_->dirty_flags_rgb |= RgbEnable::Ycbcr | RgbEnable::Ycbcr_inverse;
 
 	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
 	{
 		// Start with a sensible default
-		InitialiseResample(hw_->config.resample[i], "lanczos3");
-		hw_->config_extra.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_RESAMPLE(i);
+		InitialiseResample(pipe_->hw_config.resample[i], "lanczos3");
+		pipe_->dirty_flags_rgb |= static_cast<RgbEnable>(static_cast<uint32_t>(RgbEnable::Resample0) << i);
 	}
 }
 

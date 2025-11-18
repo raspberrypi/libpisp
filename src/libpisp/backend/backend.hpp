@@ -189,23 +189,38 @@ private:
 		pisp_be_downscale_extra downscale[PISP_BACK_END_NUM_OUTPUTS];
 		pisp_be_resample_extra resample[PISP_BACK_END_NUM_OUTPUTS];
 		pisp_be_crop_config crop[PISP_BACK_END_NUM_OUTPUTS];
-		uint32_t dirty_flags_bayer; //these use pisp_be_bayer_enable
-		uint32_t dirty_flags_rgb; //use pisp_be_rgb_enable
-		uint32_t dirty_flags_extra; //these use pisp_be_dirty_t
 	};
 
-	struct HardwareConfig
+	struct PipelineConfig
 	{
-		pisp_be_config config;
-		BeConfigExtra config_extra;
+		pisp_be_config hw_config{};
+		BeConfigExtra config_extra{};
+
+		BayerEnables bayer_enables;
+		RgbEnables rgb_enables;
+		BayerEnables dirty_flags_bayer;
+		RgbEnables dirty_flags_rgb;
+		DirtyFlags dirty_flags_extra;
 		bool retile_ = true;
 		bool finalise_tiling = true;
-		std::array<SmartResize, PISP_BACK_END_NUM_OUTPUTS> smart_resize;
-		uint32_t smart_resize_dirty;
+		std::array<SmartResize, PISP_BACK_END_NUM_OUTPUTS> smart_resize{};
+		uint32_t smart_resize_dirty = 0;
 	};
 
-	static_assert(std::is_standard_layout<HardwareConfig>::value, "HardwareConfig must be a standard layout type");
+	static_assert(std::is_standard_layout<PipelineConfig>::value, "PipelineConfig must be a standard layout type");
 
+	void finaliseBayerRgbInputs() const;
+	void finaliseInputs() const;
+	void finaliseLsc();
+	void finaliseCac();
+	void finaliseResample(unsigned int index, uint16_t width, uint16_t height);
+	void finaliseDownscale(unsigned int index, uint16_t width, uint16_t height);
+	void finaliseDecompression() const;
+	void finaliseTdn();
+	void finaliseStitch();
+	void finaliseOutput(unsigned int index);
+	void checkTiles(const TilingConfig &tiling_config);
+	tiling::Length2 calculateInputAlignment() const;
 	void finaliseConfig();
 	void updateSmartResize();
 	void updateTiles();
@@ -216,11 +231,11 @@ private:
 	void initialiseDefaultConfig(const std::string &filename);
 
 	SoftwareConfig sw_;
-	HardwareConfig *hw_;
+	PipelineConfig *pipe_;
 	const PiSPVariant variant_;
 
 	// Internal storage use
-	HardwareConfig internal_hw_config_;
+	PipelineConfig internal_hw_config_;
 
 	// Variant to manage different backend hardware variants
 	using BackEndConfig = std::variant<pisp_be_config *, pisp_be_config2 *>;

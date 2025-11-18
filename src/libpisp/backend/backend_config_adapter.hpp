@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cstdint>
+#include <type_traits>
 
 #include "bitfield.hpp"
 #include "pisp_be_config.h"
@@ -41,11 +42,7 @@ enum class RgbEnable : uint32_t
 	Compress1 = (1 << 23),
 };
 
-class RgbEnables : public Bitfield<RgbEnable>
-{
-public:
-	using Bitfield::Bitfield; // inherit constructors	
-};
+CREATE_BITFIELD(RgbEnables, RgbEnable);
 
 enum class BayerEnable : uint32_t
 {
@@ -77,11 +74,28 @@ enum class BayerEnable : uint32_t
 	Transpose = (1 << 24),
 };
 
-class BayerEnables : public Bitfield<BayerEnable>
+CREATE_BITFIELD(BayerEnables, BayerEnable);
+
+enum class DirtyFlag : uint32_t
 {
-public:
-	using Bitfield::Bitfield; // inherit constructors
+	None = 0,
+	Crop = (1 << 0),
+	Global = (1 << 1),
+	SH_FC_Combine = (1 << 2),
 };
+
+CREATE_BITFIELD(DirtyFlags, DirtyFlag);
+
+template <typename T>
+concept EnumType = requires {
+	requires std::is_enum_v<T>;
+};
+
+template <EnumType T>
+T get_flag_for_branch(const T field, unsigned int branch)
+{
+	return static_cast<T>(static_cast<std::underlying_type_t<T>>(field) << branch);
+}
 
 class BackEnd;
 

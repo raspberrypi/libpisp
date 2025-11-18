@@ -9,6 +9,7 @@
 #include <cstring>
 
 #include "backend_device.hpp"
+#include "libpisp/backend/backend_config_adapter.hpp"
 
 using namespace libpisp::helpers;
 
