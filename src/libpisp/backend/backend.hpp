@@ -210,6 +210,10 @@ private:
 		bool finalise_tiling = true;
 		std::array<SmartResize, PISP_BACK_END_NUM_OUTPUTS> smart_resize{};
 		uint32_t smart_resize_dirty = 0;
+
+		std::array<pisp_tile, PISP_BACK_END_NUM_TILES> tiles{};
+		unsigned int num_tiles_x = 0;
+		unsigned int num_tiles_y = 0;
 	};
 
 	static_assert(std::is_standard_layout<PipelineConfig>::value, "PipelineConfig must be a standard layout type");
@@ -229,7 +233,7 @@ private:
 	void finaliseConfig();
 	void updateSmartResize();
 	void updateTiles();
-	std::vector<pisp_tile> retilePipeline(TilingConfig const &tiling_config);
+	void retilePipeline(TilingConfig const &tiling_config);
 	void finaliseTiling();
 	void getOutputSize(int output_num, uint16_t *width, uint16_t *height, pisp_image_format_config const &ifmt) const;
 
@@ -240,15 +244,12 @@ private:
 	const PiSPVariant variant_;
 
 	// Internal storage use
-	PipelineConfig internal_hw_config_;
+	PipelineConfig internal_pipeline_config_;
 
 	// Variant to manage different backend hardware variants
 	using BackEndConfig = std::variant<pisp_be_config *, pisp_be_config2 *>;
 	BackEndConfig config_;
 	BackendConfigAdapter adaptor_;
-
-	std::vector<pisp_tile> tiles_;
-	int num_tiles_x_, num_tiles_y_;
 
 	// Default config
 	std::map<std::string, pisp_be_ccm_config> ycbcr_map_;

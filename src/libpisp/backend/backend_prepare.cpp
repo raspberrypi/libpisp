@@ -374,9 +374,10 @@ void BackEnd::finaliseOutput(unsigned int index)
 
 void BackEnd::checkTiles(const TilingConfig &tiling_config)
 {
-	int tile_num = 0;
-	for (auto &tile : tiles_)
+	for (unsigned int tile_num = 0; tile_num < pipe_->num_tiles_x * pipe_->num_tiles_y; tile_num++)
 	{
+		const pisp_tile &tile = pipe_->tiles[tile_num];
+
 		PISP_ASSERT(tile.input_width && tile.input_height); // zero inputs shouldn't be possible
 
 		if (tile.input_width < PISP_BACK_END_MIN_TILE_WIDTH || tile.input_height < PISP_BACK_END_MIN_TILE_HEIGHT)
@@ -761,7 +762,7 @@ void BackEnd::updateTiles()
 		// Set compressed_input to false as otherwise the tiling would pad tiles up to multiples of 8 pixels even when these lie
 		// outside the actual image width (and we've chosen not to handle compression like that).
 		tiling_config.compressed_input = false;
-		tiles_ = retilePipeline(tiling_config);
+		retilePipeline(tiling_config);
 		checkTiles(tiling_config);
 		pipe_->finalise_tiling = true;
 	}
@@ -773,31 +774,30 @@ void BackEnd::updateTiles()
 	}
 }
 
-std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config)
+void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 {
 	// The tiling library provides tiles in a SW Tile structure.
 	Tile tiles[PISP_BACK_END_NUM_TILES];
 	tiling::Length2 grid;
 
 	tile_pipeline(tiling_config, tiles, PISP_BACK_END_NUM_TILES, &grid);
-	num_tiles_x_ = grid.dx;
-	num_tiles_y_ = grid.dy;
+	pipe_->num_tiles_x = grid.dx;
+	pipe_->num_tiles_y = grid.dy;
 
-	std::vector<pisp_tile> tile_vector(num_tiles_x_ * num_tiles_y_);
 	// Finally convert the Tiles into pisp_tiles.
-	for (int i = 0; i < num_tiles_x_ * num_tiles_y_; i++)
+	for (unsigned int i = 0; i < pipe_->num_tiles_x * pipe_->num_tiles_y; i++)
 	{
-		pisp_tile &t = tile_vector[i];
+		pisp_tile &t = pipe_->tiles[i];
 
 		memset(&t, 0, sizeof(pisp_tile));
 		t.edge = 0;
-		if (i < num_tiles_x_)
+		if (i < pipe_->num_tiles_x)
 			t.edge |= PISP_TOP_EDGE;
-		if (i >= num_tiles_x_ * (num_tiles_y_ - 1))
+		if (i >= pipe_->num_tiles_x * (pipe_->num_tiles_y - 1))
 			t.edge |= PISP_BOTTOM_EDGE;
-		if (i % num_tiles_x_ == 0)
+		if (i % pipe_->num_tiles_x == 0)
 			t.edge |= PISP_LEFT_EDGE;
-		if ((i + 1) % num_tiles_x_ == 0)
+		if ((i + 1) % pipe_->num_tiles_x == 0)
 			t.edge |= PISP_RIGHT_EDGE;
 
 		t.input_offset_x = tiles[i].input.input.x.offset;
@@ -924,14 +924,15 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 			}
 		}
 	}
-	return tile_vector;
 }
 
 void BackEnd::finaliseTiling()
 {
 	// Update tile parameters (offsets/strides) from on the BE pipeline configuration.
-	for (pisp_tile &t : tiles_)
+	for (unsigned int tile_num = 0; tile_num < pipe_->num_tiles_x * pipe_->num_tiles_y; tile_num++)
 	{
+		pisp_tile &t = pipe_->tiles[tile_num];
+
 		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, pipe_->hw_config.input_format,
 									&t.input_addr_offset, &t.input_addr_offset2);
 		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, pipe_->hw_config.tdn_input_format,
@@ -1053,8 +1054,8 @@ void BackEnd::Prepare(pisp_be_tiles_config *config)
 	{
 		// Allow passing of empty pointer, if only pipe_->hw_config should be filled
 		// 4. Write the config and tiles to the provided buffer to send to the hardware.
-		config->num_tiles = num_tiles_x_ * num_tiles_y_;
-		memcpy(config->tiles, tiles_.data(), config->num_tiles * sizeof(pisp_tile));
+		config->num_tiles = pipe_->num_tiles_x * pipe_->num_tiles_y;
+		memcpy(config->tiles, pipe_->tiles.data(), config->num_tiles * sizeof(pisp_tile));
 		config->config = pipe_->hw_config;
 
 		// 5. Clear any dirty flags for the next configuration update.

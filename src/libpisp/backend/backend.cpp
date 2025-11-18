@@ -31,7 +31,7 @@ BackEnd::BackEnd(SoftwareConfig const &sw_config, PiSPVariant const &variant, st
 	if (config_storage.data() && config_storage.size() >= sizeof(PipelineConfig))
 		pipe_ = reinterpret_cast<PipelineConfig *>(config_storage.data());
 	else
-		pipe_ = &internal_hw_config_;
+		pipe_ = &internal_pipeline_config_;
 
 	const char *env = std::getenv("LIBPISP_BE_CONFIG_FILE");
 	initialiseDefaultConfig(env ? std::string(env) : sw_config.defaults_file);
