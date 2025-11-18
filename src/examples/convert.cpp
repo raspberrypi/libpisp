@@ -269,12 +269,12 @@ int main(int argc, char *argv[])
 	}
 
 	libpisp::BackEnd *be = backend_device.Get();
-	libpisp::PiSPVariant variant = be->GetVariant();
+	libpisp::PiSPVariant variant = be->getVariant();
 
 	libpisp::BackendConfigAdapter::Global global;
-	be->GetGlobal(global);
-	global.bayer_enables = libpisp::BayerEnable::None;
-	global.rgb_enables = libpisp::RgbEnable::Input | libpisp::RgbEnable::Output0;
+	be->getGlobal(global);
+	global.bayerEnables = libpisp::BayerEnable::None;
+	global.rgbEnables = libpisp::RgbEnable::Input | libpisp::RgbEnable::Output0;
 
 	if (in_file.format == "RGBX8888" && !variant.BackendRGB32Supported(0))
 	{
@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
 	i.format = libpisp::get_pisp_image_format(in_file.format);
 	assert(i.format);
 	libpisp::compute_optimal_stride(i);
-	be->SetInputFormat(i);
+	be->setInputFormat(i);
 
 	pisp_be_output_format_config o = {};
 	if (out_file.format == "RGBX8888" && !variant.BackendRGB32Supported(0))
@@ -307,8 +307,8 @@ int main(int argc, char *argv[])
 		csc.offsets[0] = 131072; // round to nearest after Resample, for 8-bit output
 		csc.offsets[1] = 131072;
 		csc.offsets[2] = 131072;
-		be->SetCsc(0, csc);
-		global.rgb_enables |= libpisp::RgbEnable::Post_csc0;
+		be->setCsc(0, csc);
+		global.rgbEnables |= libpisp::RgbEnable::PostCsc0;
 	}
 	else
 	{
@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
 	}
 	assert(o.image.format);
 	libpisp::compute_optimal_stride(o.image, true);
-	be->SetOutputFormat(0, o);
+	be->setOutputFormat(0, o);
 
 	if (!out_file.stride)
 		out_file.stride = o.image.stride;
@@ -326,22 +326,22 @@ int main(int argc, char *argv[])
 	if (in_file.format >= "U")
 	{
 		pisp_be_ccm_config csc;
-		be->InitialiseYcbcrInverse(csc, "jpeg");
-		be->SetCcm(csc);
-		global.rgb_enables |= libpisp::RgbEnable::Ccm;
+		be->initialiseYcbcrInverse(csc, "jpeg");
+		be->setCcm(csc);
+		global.rgbEnables |= libpisp::RgbEnable::Ccm;
 	}
 
 	if (out_file.format >= "U")
 	{
 		pisp_be_ccm_config csc;
-		be->InitialiseYcbcr(csc, "jpeg");
-		be->SetCsc(0, csc);
-		global.rgb_enables |= libpisp::RgbEnable::Post_csc0;
+		be->initialiseYcbcr(csc, "jpeg");
+		be->setCsc(0, csc);
+		global.rgbEnables |= libpisp::RgbEnable::PostCsc0;
 	}
 
-	be->SetGlobal(global);
-	be->SetCrop(0, { 0, 0, i.width, i.height });
-	be->SetSmartResize(0, { o.image.width, o.image.height });
+	be->setGlobal(global);
+	be->setCrop(0, { 0, 0, i.width, i.height });
+	be->setSmartResize(0, { o.image.width, o.image.height });
 
 	backend_device.Setup();
 	auto buffers = backend_device.AcquireBuffers();

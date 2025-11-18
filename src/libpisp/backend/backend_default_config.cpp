@@ -272,40 +272,40 @@ void get_matrix(pisp_be_ccm_config &matrix, const std::map<std::string, pisp_be_
 namespace libpisp
 {
 
-void BackEnd::InitialiseYcbcr(pisp_be_ccm_config &ycbcr, const std::string &colour_space)
+void BackEnd::initialiseYcbcr(pisp_be_ccm_config &ycbcr, const std::string &colour_space)
 {
-	get_matrix(ycbcr, ycbcr_map_, colour_space);
+	get_matrix(ycbcr, ycbcrMap, colour_space);
 }
 
-void BackEnd::InitialiseYcbcrInverse(pisp_be_ccm_config &ycbcr_inverse, const std::string &colour_space)
+void BackEnd::initialiseYcbcrInverse(pisp_be_ccm_config &ycbcr_inverse, const std::string &colour_space)
 {
-	get_matrix(ycbcr_inverse, inverse_ycbcr_map_, colour_space);
+	get_matrix(ycbcr_inverse, inverseYcbcrMap, colour_space);
 }
 
-void BackEnd::InitialiseResample(pisp_be_resample_config &resample, const std::string &filter)
+void BackEnd::initialiseResample(pisp_be_resample_config &resample, const std::string &filter)
 {
 	memset(resample.coef, 0, sizeof(resample.coef));
 
-	auto it = resample_filter_map_.find(filter);
-	if (it != resample_filter_map_.end())
+	auto it = resampleFilterMap.find(filter);
+	if (it != resampleFilterMap.end())
 		memcpy(resample.coef, it->second.coef, sizeof(resample.coef));
 }
 
-void BackEnd::InitialiseResample(pisp_be_resample_config &resample, double downscale)
+void BackEnd::initialiseResample(pisp_be_resample_config &resample, double downscale)
 {
-	auto it = std::find_if(resample_select_list_.begin(), resample_select_list_.end(),
+	auto it = std::find_if(resampleSelectList.begin(), resampleSelectList.end(),
 						   [downscale](const auto &item) { return item.first >= downscale; });
 
-	if (it != resample_select_list_.end())
-		InitialiseResample(resample, it->second);
+	if (it != resampleSelectList.end())
+		initialiseResample(resample, it->second);
 	else
-		InitialiseResample(resample, resample_select_list_.back().second);
+		initialiseResample(resample, resampleSelectList.back().second);
 }
 
-void BackEnd::InitialiseSharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc)
+void BackEnd::initialiseSharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc)
 {
-	sharpen = default_sharpen_;
-	shfc = default_shfc_;
+	sharpen = defaultSharpen;
+	shfc = defaultShfc;
 }
 
 void BackEnd::initialiseDefaultConfig(const std::string &filename)
@@ -333,34 +333,34 @@ void BackEnd::initialiseDefaultConfig(const std::string &filename)
 	json root = json::parse(ifs);
 	ifs.close();
 
-	memset(&pipe_->hw_config, 0, sizeof(pipe_->hw_config));
+	memset(&pipe_->hwConfig, 0, sizeof(pipe_->hwConfig));
 
-	initialise_debin(pipe_->hw_config.debin, root);
-	pipe_->dirty_flags_bayer |= BayerEnable::Debin;
-	initialise_demosaic(pipe_->hw_config.demosaic, root);
-	pipe_->dirty_flags_bayer |= BayerEnable::Demosaic;
-	initialise_false_colour(pipe_->hw_config.false_colour, root);
-	pipe_->dirty_flags_rgb |= RgbEnable::False_colour;
-	initialise_gamma(pipe_->hw_config.gamma, root);
-	pipe_->dirty_flags_rgb |= RgbEnable::Gamma0;
+	initialise_debin(pipe_->hwConfig.debin, root);
+	pipe_->dirtyFlagsBayer |= BayerEnable::Debin;
+	initialise_demosaic(pipe_->hwConfig.demosaic, root);
+	pipe_->dirtyFlagsBayer |= BayerEnable::Demosaic;
+	initialise_false_colour(pipe_->hwConfig.false_colour, root);
+	pipe_->dirtyFlagsRgb |= RgbEnable::FalseColour;
+	initialise_gamma(pipe_->hwConfig.gamma, root);
+	pipe_->dirtyFlagsRgb |= RgbEnable::Gamma0;
 
-	read_ycbcr(ycbcr_map_, inverse_ycbcr_map_, root);
-	read_resample(resample_filter_map_, resample_select_list_, root);
-	read_sharpen(default_sharpen_, default_shfc_, root);
+	read_ycbcr(ycbcrMap, inverseYcbcrMap, root);
+	read_resample(resampleFilterMap, resampleSelectList, root);
+	read_sharpen(defaultSharpen, defaultShfc, root);
 
-	InitialiseSharpen(pipe_->hw_config.sharpen, pipe_->hw_config.sh_fc_combine);
-	pipe_->dirty_flags_rgb |= RgbEnable::Sharpen;
+	initialiseSharpen(pipe_->hwConfig.sharpen, pipe_->hwConfig.sh_fc_combine);
+	pipe_->dirtyFlagsRgb |= RgbEnable::Sharpen;
 
 	// Start with a sensible default YCbCr -- must be full-range on 2712C1
-	InitialiseYcbcr(pipe_->hw_config.ycbcr, "jpeg");
-	InitialiseYcbcrInverse(pipe_->hw_config.ycbcr, "jpeg");
-	pipe_->dirty_flags_rgb |= RgbEnable::Ycbcr | RgbEnable::Ycbcr_inverse;
+	initialiseYcbcr(pipe_->hwConfig.ycbcr, "jpeg");
+	initialiseYcbcrInverse(pipe_->hwConfig.ycbcr, "jpeg");
+	pipe_->dirtyFlagsRgb |= RgbEnable::Ycbcr | RgbEnable::YcbcrInverse;
 
 	for (unsigned int i = 0; i < variant_.BackEndNumBranches(0); i++)
 	{
 		// Start with a sensible default
-		InitialiseResample(pipe_->hw_config.resample[i], "lanczos3");
-		pipe_->dirty_flags_rgb |= static_cast<RgbEnable>(static_cast<uint32_t>(RgbEnable::Resample0) << i);
+		initialiseResample(pipe_->hwConfig.resample[i], "lanczos3");
+		pipe_->dirtyFlagsRgb |= static_cast<RgbEnable>(static_cast<uint32_t>(RgbEnable::Resample0) << i);
 	}
 }
 

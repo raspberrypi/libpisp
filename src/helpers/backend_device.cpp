@@ -48,14 +48,14 @@ BackendDevice::~BackendDevice()
 void BackendDevice::Setup(unsigned int buffer_count, bool use_opaque_format)
 {
 	BackendConfigAdapter::Global global;
-	be_->GetGlobal(global);
+	be_->getGlobal(global);
 
 	pisp_be_tiles_config config = {};
-	be_->Prepare(&config);
+	be_->prepare(&config);
 
 	nodes_enabled_.clear();
 
-	if ((global.rgb_enables & RgbEnable::Input) || (global.bayer_enables & BayerEnable::Input))
+	if ((global.rgbEnables & RgbEnable::Input) || (global.bayerEnables & BayerEnable::Input))
 	{
 		nodes_.at("pispbe-input").SetFormat(config.config.input_format, use_opaque_format);
 		// Release old/allocate a single buffer.
@@ -64,7 +64,7 @@ void BackendDevice::Setup(unsigned int buffer_count, bool use_opaque_format)
 		nodes_enabled_.emplace("pispbe-input");
 	}
 
-	if (global.rgb_enables & RgbEnable::Output0)
+	if (global.rgbEnables & RgbEnable::Output0)
 	{
 		nodes_.at("pispbe-output0").SetFormat(config.config.output_format[0].image, use_opaque_format);
 		// Release old/allocate a single buffer.
@@ -73,7 +73,7 @@ void BackendDevice::Setup(unsigned int buffer_count, bool use_opaque_format)
 		nodes_enabled_.emplace("pispbe-output0");
 	}
 
-	if (global.rgb_enables & RgbEnable::Output1)
+	if (global.rgbEnables & RgbEnable::Output1)
 	{
 		nodes_.at("pispbe-output1").SetFormat(config.config.output_format[1].image, use_opaque_format);
 		// Release old/allocate a single buffer.
@@ -82,7 +82,7 @@ void BackendDevice::Setup(unsigned int buffer_count, bool use_opaque_format)
 		nodes_enabled_.emplace("pispbe-output1");
 	}
 
-	if (global.bayer_enables & BayerEnable::Tdn_input)
+	if (global.bayerEnables & BayerEnable::TdnInput)
 	{
 		nodes_.at("pispbe-tdn_input").SetFormat(config.config.tdn_input_format, use_opaque_format);
 		// Release old/allocate a single buffer.
@@ -91,7 +91,7 @@ void BackendDevice::Setup(unsigned int buffer_count, bool use_opaque_format)
 		nodes_enabled_.emplace("pispbe-tdn_input");
 	}
 
-	if (global.bayer_enables & BayerEnable::Tdn_output)
+	if (global.bayerEnables & BayerEnable::TdnOutput)
 	{
 		nodes_.at("pispbe-tdn_output").SetFormat(config.config.tdn_output_format, use_opaque_format);
 		// Release old/allocate a single buffer.
@@ -100,7 +100,7 @@ void BackendDevice::Setup(unsigned int buffer_count, bool use_opaque_format)
 		nodes_enabled_.emplace("pispbe-tdn_output");
 	}
 
-	if (global.bayer_enables & BayerEnable::Stitch_input)
+	if (global.bayerEnables & BayerEnable::StitchInput)
 	{
 		nodes_.at("pispbe-stitch_input").SetFormat(config.config.stitch_input_format, use_opaque_format);
 		// Release old/allocate a single buffer.
@@ -109,7 +109,7 @@ void BackendDevice::Setup(unsigned int buffer_count, bool use_opaque_format)
 		nodes_enabled_.emplace("pispbe-stitch_input");
 	}
 
-	if (global.bayer_enables & BayerEnable::Stitch_output)
+	if (global.bayerEnables & BayerEnable::StitchOutput)
 	{
 		nodes_.at("pispbe-stitch_output").SetFormat(config.config.stitch_output_format, use_opaque_format);
 		// Release old/allocate a single buffer.

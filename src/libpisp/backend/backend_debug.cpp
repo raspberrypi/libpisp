@@ -18,7 +18,7 @@ using json = nlohmann::ordered_json;
 namespace
 {
 
-struct config_field
+struct ConfigField
 {
 	std::string name;
 	std::size_t offset;
@@ -26,11 +26,11 @@ struct config_field
 	std::size_t num;
 };
 
-struct config_block
+struct ConfigBlock
 {
 	std::string name;
 	std::size_t offset;
-	std::vector<struct config_field> fields;
+	std::vector<ConfigField> fields;
 };
 
 const std::map<std::size_t, uint32_t> mask {
@@ -43,7 +43,7 @@ const std::map<std::size_t, uint32_t> mask {
 
 // clang-format off
 
-const std::vector<config_block> be_config {
+const std::vector<ConfigBlock> beConfig {
 	{
 		"global", offsetof(pisp_be_config, global),
 		{
@@ -423,7 +423,7 @@ const std::vector<config_block> be_config {
 	/* The "axi" field here is never configured or used; the real BE_AXI register is not part of the config */
 };
 
-const config_block tiles_config {
+const ConfigBlock tilesConfig {
 	"tiles", 0,
 	{
 		{ "edge", offsetof(pisp_tile, edge), sizeof(uint8_t), 1 },
@@ -479,11 +479,11 @@ void write_val(uint8_t *ptr, uint32_t offset, uint32_t size, uint32_t val)
 
 } // namespace
 
-std::string BackEnd::GetJsonConfig(pisp_be_tiles_config *config)
+std::string BackEnd::getJsonConfig(pisp_be_tiles_config *config)
 {
 	json j = { {"version", 1.0}, {"be_revision", variant_.BackEndVersion()} };
 
-	for (auto const &param : be_config)
+	for (auto const &param : beConfig)
 	{
 		json b;
 		for (auto const &field : param.fields)
@@ -504,7 +504,7 @@ std::string BackEnd::GetJsonConfig(pisp_be_tiles_config *config)
 	for (unsigned int t = 0; t < config->num_tiles; t++)
 	{
 		json b;
-		for (auto const &field : tiles_config.fields)
+		for (auto const &field : tilesConfig.fields)
 		{
 			if (field.num == 1)
 			{
@@ -522,12 +522,12 @@ std::string BackEnd::GetJsonConfig(pisp_be_tiles_config *config)
 	return j.dump(4);
 }
 
-void BackEnd::SetJsonConfig(const std::string &json_str)
+void BackEnd::setJsonConfig(const std::string &jsonStr)
 {
-	json j = json::parse(json_str);
+	json j = json::parse(jsonStr);
 
-	pisp_be_config *config = &pipe_->hw_config;
-	for (auto const &param : be_config)
+	pisp_be_config *config = &pipe_->hwConfig;
+	for (auto const &param : beConfig)
 	{
 		for (auto const &field : param.fields)
 		{
@@ -546,12 +546,12 @@ void BackEnd::SetJsonConfig(const std::string &json_str)
 	}
 
 	// Clear any dirty flags so no reconfiguration happens on the next Prepare() call.
-	pipe_->dirty_flags_bayer = BayerEnable::None;
-	pipe_->dirty_flags_rgb = RgbEnable::None;
-	pipe_->dirty_flags_extra = DirtyFlag::None;
+	pipe_->dirtyFlagsBayer = BayerEnable::None;
+	pipe_->dirtyFlagsRgb = RgbEnable::None;
+	pipe_->dirtyFlagsExtra = DirtyFlag::None;
 
 	// But do retile the pipeline to get the tile structures setup correctly.
-	pipe_->retile_ = true;
+	pipe_->retile = true;
 }
 
 // clang-format on

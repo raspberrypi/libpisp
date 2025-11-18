@@ -41,17 +41,17 @@ public:
 			HIGH_PRIORITY = 2 	// Not currently implemented
 		};
 
-		SoftwareConfig(unsigned int _max_stripe_height = 0, unsigned int _max_tile_width = 0, unsigned int _flags = 0,
-			   std::string _defaults_file = {})
-			: max_stripe_height(_max_stripe_height), max_tile_width(_max_tile_width), flags(_flags),
-			  defaults_file(_defaults_file)
+		SoftwareConfig(unsigned int maxStripeHeight = 0, unsigned int maxTileWidth = 0, unsigned int flags = 0,
+			   std::string defaultsFile = {})
+			: maxStripeHeight(maxStripeHeight), maxTileWidth(maxTileWidth), flags(flags),
+			  defaultsFile(defaultsFile)
 		{
 		}
 
-		unsigned int max_stripe_height; // Use zero to get "default behaviour"
-		unsigned int max_tile_width; // Can only go larger than h/w defined limit in simulations
+		unsigned int maxStripeHeight; // Use zero to get "default behaviour"
+		unsigned int maxTileWidth; // Can only go larger than h/w defined limit in simulations
 		unsigned int flags; // An "or" of the Flags above
-		std::string defaults_file; // json file for default IQ settings
+		std::string defaultsFile; // json file for default IQ settings
 	};
 
 	struct SmartResize
@@ -60,128 +60,128 @@ public:
 		uint16_t height;
 	};
 
-	BackEnd(SoftwareConfig const &sw_config, PiSPVariant const &variant, std::span<uint8_t> config_storage = {});
+	BackEnd(SoftwareConfig const &swConfig, PiSPVariant const &variant, std::span<uint8_t> configStorage = {});
 	~BackEnd();
 
-	void SetGlobal(BackendConfigAdapter::Global const &global);
-	void GetGlobal(BackendConfigAdapter::Global &global) const;
-	void SetInputFormat(pisp_image_format_config const &input_format);
-	void GetInputFormat(pisp_image_format_config &input_format) const;
-	void SetDecompress(pisp_decompress_config const &decompress);
-	void GetDecompress(pisp_decompress_config &decompress) const;
-	void SetDpc(pisp_be_dpc_config const &dpc);
-	void GetDpc(pisp_be_dpc_config &dpc) const;
-	void SetGeq(pisp_be_geq_config const &geq);
-	void GetGeq(pisp_be_geq_config &geq) const;
-	void SetTdnInputFormat(pisp_image_format_config const &tdn_input_format);
-	void GetTdnInputFormat(pisp_image_format_config &tdn_input_format) const;
-	void SetTdnDecompress(pisp_decompress_config const &tdn_decompress);
-	void GetTdnDecompress(pisp_decompress_config &tdn_decompress) const;
-	void SetTdn(pisp_be_tdn_config const &tdn);
-	void GetTdn(pisp_be_tdn_config &tdn) const;
-	void SetTdnCompress(pisp_compress_config const &tdn_compress);
-	void GetTdnCompress(pisp_compress_config &tdn_compress) const;
-	void SetTdnOutputFormat(pisp_image_format_config const &tdn_output_format);
-	void GetTdnOutputFormat(pisp_image_format_config &tdn_output_format) const;
-	void SetSdn(pisp_be_sdn_config const &sdn);
-	void GetSdn(pisp_be_sdn_config &sdn) const;
-	void SetBlc(pisp_bla_config const &blc);
-	void GetBlc(pisp_bla_config &blc) const;
-	void SetStitchInputFormat(pisp_image_format_config const &stitch_input_format);
-	void GetStitchInputFormat(pisp_image_format_config &stitch_input_format) const;
-	void SetStitchDecompress(pisp_decompress_config const &stitch_decompress);
-	void GetStitchDecompress(pisp_decompress_config &stitch_decompress) const;
-	void SetStitch(pisp_be_stitch_config const &stitch);
-	void GetStitch(pisp_be_stitch_config &stitch) const;
-	void SetStitchCompress(pisp_compress_config const &stitch_compress);
-	void GetStitchCompress(pisp_compress_config &stitch_compress) const;
-	void SetStitchOutputFormat(pisp_image_format_config const &stitch_output_format);
-	void GetStitchOutputFormat(pisp_image_format_config &stitch_output_format) const;
-	void SetWbg(pisp_wbg_config const &wbg);
-	void GetWbg(pisp_wbg_config &wbg) const;
-	void SetCdn(pisp_be_cdn_config const &cdn);
-	void GetCdn(pisp_be_cdn_config &cdn) const;
-	void SetLsc(pisp_be_lsc_config const &lsc, pisp_be_lsc_extra lsc_extra = { 0, 0 });
-	void GetLsc(pisp_be_lsc_config &lsc, pisp_be_lsc_extra &lsc_extra) const;
-	void SetCac(pisp_be_cac_config const &cac, pisp_be_cac_extra cac_extra = { 0, 0 });
-	void GetCac(pisp_be_cac_config &cac, pisp_be_cac_extra &cac_extra) const;
-	void SetDebin(pisp_be_debin_config const &debin);
-	void GetDebin(pisp_be_debin_config &debin) const;
-	void SetTonemap(pisp_be_tonemap_config const &tonemap);
-	void GetTonemap(pisp_be_tonemap_config &tonemap) const;
-	void SetDemosaic(pisp_be_demosaic_config const &demosaic);
-	void GetDemosaic(pisp_be_demosaic_config &demosaic) const;
-	void SetCcm(pisp_be_ccm_config const &ccm);
-	void GetCcm(pisp_be_ccm_config &ccm) const;
-	void SetSatControl(pisp_be_sat_control_config const &sat_control);
-	void GetSatControl(pisp_be_sat_control_config &sat_control) const;
-	void SetYcbcr(pisp_be_ccm_config const &ycbcr);
-	void GetYcbcr(pisp_be_ccm_config &ccm) const;
-	void SetFalseColour(pisp_be_false_colour_config const &false_colour);
-	void GetFalseColour(pisp_be_false_colour_config &false_colour) const;
-	void SetSharpen(pisp_be_sharpen_config const &sharpen);
-	void GetSharpen(pisp_be_sharpen_config &sharpen) const;
-	void SetShFcCombine(pisp_be_sh_fc_combine_config const &sh_fc_combine);
-	void GetShFcCombine(pisp_be_sh_fc_combine_config &sh_fc_combine) const;
-	void SetYcbcrInverse(pisp_be_ccm_config const &ycbcr_inverse);
-	void GetYcbcrInverse(pisp_be_ccm_config &ycbcr_inverse) const;
-	void SetGamma(pisp_be_gamma_config const &gamma);
-	void GetGamma(pisp_be_gamma_config &gamma) const;
-	void SetCrop(pisp_be_crop_config const &crop);
-	void GetCrop(pisp_be_crop_config &crop) const;
-	void SetCrop(unsigned int i, pisp_be_crop_config const &crop);
-	void GetCrop(unsigned int i, pisp_be_crop_config &crop) const;
-	void SetCsc(unsigned int i, pisp_be_ccm_config const &csc);
-	void GetCsc(unsigned int i, pisp_be_ccm_config &csc) const;
-	void SetOutputFormat(unsigned int i, pisp_be_output_format_config const &output_format);
-	void GetOutputFormat(unsigned int i, pisp_be_output_format_config &output_format) const;
-	void SetResample(unsigned int i, pisp_be_resample_config const &resample,
-					 pisp_be_resample_extra const &resample_extra);
-	void GetResample(unsigned int i, pisp_be_resample_config &resample,
-					 pisp_be_resample_extra &resample_extra) const;
-	void SetResample(unsigned int i, pisp_be_resample_extra const &resample_extra);
-	void GetResample(unsigned int i, pisp_be_resample_extra &resample_extra) const;
-	void SetDownscale(unsigned int i, pisp_be_downscale_config const &downscale,
-					  pisp_be_downscale_extra const &downscale_extra);
-	void GetDownscale(unsigned int i, pisp_be_downscale_config &downscale,
-					  pisp_be_downscale_extra &downscale_extra) const;
-	void SetDownscale(unsigned int i, pisp_be_downscale_extra const &downscale_extra);
-	void GetDownscale(unsigned int i, pisp_be_downscale_extra &downscale_extra) const;
+	void setGlobal(BackendConfigAdapter::Global const &global);
+	void getGlobal(BackendConfigAdapter::Global &global) const;
+	void setInputFormat(pisp_image_format_config const &inputFormat);
+	void getInputFormat(pisp_image_format_config &inputFormat) const;
+	void setDecompress(pisp_decompress_config const &decompress);
+	void getDecompress(pisp_decompress_config &decompress) const;
+	void setDpc(pisp_be_dpc_config const &dpc);
+	void getDpc(pisp_be_dpc_config &dpc) const;
+	void setGeq(pisp_be_geq_config const &geq);
+	void getGeq(pisp_be_geq_config &geq) const;
+	void setTdnInputFormat(pisp_image_format_config const &tdnInputFormat);
+	void getTdnInputFormat(pisp_image_format_config &tdnInputFormat) const;
+	void setTdnDecompress(pisp_decompress_config const &tdnDecompress);
+	void getTdnDecompress(pisp_decompress_config &tdnDecompress) const;
+	void setTdn(pisp_be_tdn_config const &tdn);
+	void getTdn(pisp_be_tdn_config &tdn) const;
+	void setTdnCompress(pisp_compress_config const &tdnCompress);
+	void getTdnCompress(pisp_compress_config &tdnCompress) const;
+	void setTdnOutputFormat(pisp_image_format_config const &tdnOutputFormat);
+	void getTdnOutputFormat(pisp_image_format_config &tdnOutputFormat) const;
+	void setSdn(pisp_be_sdn_config const &sdn);
+	void getSdn(pisp_be_sdn_config &sdn) const;
+	void setBlc(pisp_bla_config const &blc);
+	void getBlc(pisp_bla_config &blc) const;
+	void setStitchInputFormat(pisp_image_format_config const &stitchInputFormat);
+	void getStitchInputFormat(pisp_image_format_config &stitchInputFormat) const;
+	void setStitchDecompress(pisp_decompress_config const &stitchDecompress);
+	void getStitchDecompress(pisp_decompress_config &stitchDecompress) const;
+	void setStitch(pisp_be_stitch_config const &stitch);
+	void getStitch(pisp_be_stitch_config &stitch) const;
+	void setStitchCompress(pisp_compress_config const &stitchCompress);
+	void getStitchCompress(pisp_compress_config &stitchCompress) const;
+	void setStitchOutputFormat(pisp_image_format_config const &stitchOutputFormat);
+	void getStitchOutputFormat(pisp_image_format_config &stitchOutputFormat) const;
+	void setWbg(pisp_wbg_config const &wbg);
+	void getWbg(pisp_wbg_config &wbg) const;
+	void setCdn(pisp_be_cdn_config const &cdn);
+	void getCdn(pisp_be_cdn_config &cdn) const;
+	void setLsc(pisp_be_lsc_config const &lsc, pisp_be_lsc_extra lscExtra = { 0, 0 });
+	void getLsc(pisp_be_lsc_config &lsc, pisp_be_lsc_extra &lscExtra) const;
+	void setCac(pisp_be_cac_config const &cac, pisp_be_cac_extra cacExtra = { 0, 0 });
+	void getCac(pisp_be_cac_config &cac, pisp_be_cac_extra &cacExtra) const;
+	void setDebin(pisp_be_debin_config const &debin);
+	void getDebin(pisp_be_debin_config &debin) const;
+	void setTonemap(pisp_be_tonemap_config const &tonemap);
+	void getTonemap(pisp_be_tonemap_config &tonemap) const;
+	void setDemosaic(pisp_be_demosaic_config const &demosaic);
+	void getDemosaic(pisp_be_demosaic_config &demosaic) const;
+	void setCcm(pisp_be_ccm_config const &ccm);
+	void getCcm(pisp_be_ccm_config &ccm) const;
+	void setSatControl(pisp_be_sat_control_config const &satControl);
+	void getSatControl(pisp_be_sat_control_config &satControl) const;
+	void setYcbcr(pisp_be_ccm_config const &ycbcr);
+	void getYcbcr(pisp_be_ccm_config &ccm) const;
+	void setFalseColour(pisp_be_false_colour_config const &falseColour);
+	void getFalseColour(pisp_be_false_colour_config &falseColour) const;
+	void setSharpen(pisp_be_sharpen_config const &sharpen);
+	void getSharpen(pisp_be_sharpen_config &sharpen) const;
+	void setShFcCombine(pisp_be_sh_fc_combine_config const &shFcCombine);
+	void getShFcCombine(pisp_be_sh_fc_combine_config &shFcCombine) const;
+	void setYcbcrInverse(pisp_be_ccm_config const &ycbcrInverse);
+	void getYcbcrInverse(pisp_be_ccm_config &ycbcrInverse) const;
+	void setGamma(pisp_be_gamma_config const &gamma);
+	void getGamma(pisp_be_gamma_config &gamma) const;
+	void setCrop(pisp_be_crop_config const &crop);
+	void getCrop(pisp_be_crop_config &crop) const;
+	void setCrop(unsigned int i, pisp_be_crop_config const &crop);
+	void getCrop(unsigned int i, pisp_be_crop_config &crop) const;
+	void setCsc(unsigned int i, pisp_be_ccm_config const &csc);
+	void getCsc(unsigned int i, pisp_be_ccm_config &csc) const;
+	void setOutputFormat(unsigned int i, pisp_be_output_format_config const &outputFormat);
+	void getOutputFormat(unsigned int i, pisp_be_output_format_config &outputFormat) const;
+	void setResample(unsigned int i, pisp_be_resample_config const &resample,
+					 pisp_be_resample_extra const &resampleExtra);
+	void getResample(unsigned int i, pisp_be_resample_config &resample,
+					 pisp_be_resample_extra &resampleExtra) const;
+	void setResample(unsigned int i, pisp_be_resample_extra const &resampleExtra);
+	void getResample(unsigned int i, pisp_be_resample_extra &resampleExtra) const;
+	void setDownscale(unsigned int i, pisp_be_downscale_config const &downscale,
+					  pisp_be_downscale_extra const &downscaleExtra);
+	void getDownscale(unsigned int i, pisp_be_downscale_config &downscale,
+					  pisp_be_downscale_extra &downscaleExtra) const;
+	void setDownscale(unsigned int i, pisp_be_downscale_extra const &downscaleExtra);
+	void getDownscale(unsigned int i, pisp_be_downscale_extra &downscaleExtra) const;
 
-	void InitialiseYcbcr(pisp_be_ccm_config &ycbcr, const std::string &colour_space);
-	void InitialiseYcbcrInverse(pisp_be_ccm_config &ycbcr_inverse, const std::string &colour_space);
-	void InitialiseResample(pisp_be_resample_config &resample, const std::string &filter);
-	void InitialiseResample(pisp_be_resample_config &resample, double downscale);
-	void InitialiseSharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc);
+	void initialiseYcbcr(pisp_be_ccm_config &ycbcr, const std::string &colourSpace);
+	void initialiseYcbcrInverse(pisp_be_ccm_config &ycbcrInverse, const std::string &colourSpace);
+	void initialiseResample(pisp_be_resample_config &resample, const std::string &filter);
+	void initialiseResample(pisp_be_resample_config &resample, double downscale);
+	void initialiseSharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc);
 
-	void Prepare(pisp_be_tiles_config *config);
+	void prepare(pisp_be_tiles_config *config);
 
-	bool ComputeOutputImageFormat(unsigned int i, pisp_image_format_config &output_format,
-								  pisp_image_format_config const &input_format) const;
+	bool computeOutputImageFormat(unsigned int i, pisp_image_format_config &outputFormat,
+								  pisp_image_format_config const &inputFormat) const;
 
-	void SetSmartResize(unsigned int i, SmartResize const &smart_resize);
+	void setSmartResize(unsigned int i, SmartResize const &smartResize);
 
-	unsigned int GetMaxDownscale() const;
+	unsigned int getMaxDownscale() const;
 
-	std::string GetJsonConfig(pisp_be_tiles_config *config);
-	void SetJsonConfig(const std::string &json_config);
+	std::string getJsonConfig(pisp_be_tiles_config *config);
+	void setJsonConfig(const std::string &jsonConfig);
 
-	void SetMaxTileWidth(unsigned int width)
+	void setMaxTileWidth(unsigned int width)
 	{
-		sw_.max_tile_width = width;
+		sw_.maxTileWidth = width;
 	}
 
-	void SetMaxStripeHeight(unsigned int height)
+	void setMaxStripeHeight(unsigned int height)
 	{
-		sw_.max_stripe_height = height;
+		sw_.maxStripeHeight = height;
 	}
 
-	const PiSPVariant &GetVariant() const
+	const PiSPVariant &getVariant() const
 	{
 		return variant_;
 	}
 
-	static size_t GetStorageSize([[maybe_unused]] const PiSPVariant &variant)
+	static size_t getStorageSize([[maybe_unused]] const PiSPVariant &variant)
 	{
 		return sizeof(PipelineConfig);
 	}
@@ -201,22 +201,22 @@ private:
 
 	struct PipelineConfig
 	{
-		pisp_be_config hw_config{};
-		BeConfigExtra config_extra{};
+		pisp_be_config hwConfig{};
+		BeConfigExtra configExtra{};
 
-		BayerEnables bayer_enables;
-		RgbEnables rgb_enables;
-		BayerEnables dirty_flags_bayer;
-		RgbEnables dirty_flags_rgb;
-		DirtyFlags dirty_flags_extra;
-		bool retile_ = true;
-		bool finalise_tiling = true;
-		std::array<SmartResize, PISP_BACK_END_NUM_OUTPUTS> smart_resize{};
-		uint32_t smart_resize_dirty = 0;
+		BayerEnables bayerEnables;
+		RgbEnables rgbEnables;
+		BayerEnables dirtyFlagsBayer;
+		RgbEnables dirtyFlagsRgb;
+		DirtyFlags dirtyFlagsExtra;
+		bool retile = true;
+		bool finaliseTiling = true;
+		std::array<SmartResize, PISP_BACK_END_NUM_OUTPUTS> smartResize{};
+		uint32_t smartResizeDirty = 0;
 
 		std::array<pisp_tile, PISP_BACK_END_NUM_TILES> tiles{};
-		unsigned int num_tiles_x = 0;
-		unsigned int num_tiles_y = 0;
+		unsigned int numTilesX = 0;
+		unsigned int numTilesY = 0;
 	};
 
 	static_assert(std::is_standard_layout<PipelineConfig>::value, "PipelineConfig must be a standard layout type");
@@ -231,14 +231,14 @@ private:
 	void finaliseTdn();
 	void finaliseStitch();
 	void finaliseOutput(unsigned int index);
-	void checkTiles(const TilingConfig &tiling_config);
+	void checkTiles(const TilingConfig &tilingConfig);
 	tiling::Length2 calculateInputAlignment() const;
 	void finaliseConfig();
 	void updateSmartResize();
 	void updateTiles();
-	void retilePipeline(TilingConfig const &tiling_config);
+	void retilePipeline(TilingConfig const &tilingConfig);
 	void finaliseTiling();
-	void getOutputSize(int output_num, uint16_t *width, uint16_t *height, pisp_image_format_config const &ifmt) const;
+	void getOutputSize(int outputNum, uint16_t *width, uint16_t *height, pisp_image_format_config const &ifmt) const;
 
 	void initialiseDefaultConfig(const std::string &filename);
 
@@ -255,12 +255,12 @@ private:
 	BackendConfigAdapter adaptor_;
 
 	// Default config
-	std::map<std::string, pisp_be_ccm_config> ycbcr_map_;
-	std::map<std::string, pisp_be_ccm_config> inverse_ycbcr_map_;
-	std::map<std::string, pisp_be_resample_config> resample_filter_map_;
-	std::vector<std::pair<double, std::string>> resample_select_list_;
-	pisp_be_sharpen_config default_sharpen_;
-	pisp_be_sh_fc_combine_config default_shfc_;
+	std::map<std::string, pisp_be_ccm_config> ycbcrMap;
+	std::map<std::string, pisp_be_ccm_config> inverseYcbcrMap;
+	std::map<std::string, pisp_be_resample_config> resampleFilterMap;
+	std::vector<std::pair<double, std::string>> resampleSelectList;
+	pisp_be_sharpen_config defaultSharpen;
+	pisp_be_sh_fc_combine_config defaultShfc;
 };
 
 } // namespace libpisp
