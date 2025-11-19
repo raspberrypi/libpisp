@@ -179,7 +179,7 @@ struct Format
 	std::string format;
 };
 
-Format parseFormat(const std::string &fmt)
+Format parse_format(const std::string &fmt)
 {
 	Format format;
 	size_t pos = 0, start = 0;
@@ -254,14 +254,14 @@ int main(int argc, char *argv[])
 	libpisp::helpers::BackendDevice backendDevice { };
 	std::cerr << "Acquired device " << backendDevice.mediaDev() << std::endl;
 
-	auto inFile = parseFormat(args["input-format"].as<std::string>());
+	auto inFile = parse_format(args["input-format"].as<std::string>());
 	if (!Formats.count(inFile.format))
 	{
 		std::cerr << "Invalid input-format specified" << std::endl;
 		exit(-1);
 	}
 
-	auto outFile = parseFormat(args["output-format"].as<std::string>());
+	auto outFile = parse_format(args["output-format"].as<std::string>());
 	if (!Formats.count(outFile.format))
 	{
 		std::cerr << "Invalid output-format specified" << std::endl;
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
 	libpisp::BackEnd *be = backendDevice.get();
 	libpisp::PiSPVariant variant = be->getVariant();
 
-	libpisp::BackendConfigAdapter::Global global;
+	libpisp::BeGlobal global;
 	be->getGlobal(global);
 	global.bayerEnables = libpisp::BayerEnable::None;
 	global.rgbEnables = libpisp::RgbEnable::Input | libpisp::RgbEnable::Output0;
@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
 		std::cerr << "Backend hardware does not support RGBX input" << std::endl;
 		exit(-1);
 	}
-	pisp_image_format_config i = {};
+	libpisp::ImageFormatConfig i = {};
 	i.width = inFile.width;
 	i.height = inFile.height;
 	i.format = libpisp::getPispImageFormat(inFile.format);
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
 	libpisp::computeOptimalStride(i);
 	be->setInputFormat(i);
 
-	pisp_be_output_format_config o = {};
+	libpisp::BeOutputFormatConfig o = {};
 	if (outFile.format == "RGBX8888" && !variant.backendRgb32Supported(0))
 	{
 		// Hack to generate RGBX even when BE_MINOR_VERSION < 1 using Resample
@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
 		o.image.height = outFile.height;
 		o.image.format = libpisp::getPispImageFormat("UYVY");
 
-		pisp_be_ccm_config csc = {}; // Define a matrix to swap components [0] and [1]
+		libpisp::BeCcmConfig csc = {}; // Define a matrix to swap components [0] and [1]
 		csc.coeffs[1] = 1024;
 		csc.coeffs[3] = 1024;
 		csc.coeffs[8] = 1024;
@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
 
 	if (inFile.format >= "U")
 	{
-		pisp_be_ccm_config csc;
+		libpisp::BeCcmConfig csc;
 		be->initialiseYcbcrInverse(csc, "jpeg");
 		be->setCcm(csc);
 		global.rgbEnables |= libpisp::RgbEnable::Ccm;
@@ -333,7 +333,7 @@ int main(int argc, char *argv[])
 
 	if (outFile.format >= "U")
 	{
-		pisp_be_ccm_config csc;
+		libpisp::BeCcmConfig csc;
 		be->initialiseYcbcr(csc, "jpeg");
 		be->setCsc(0, csc);
 		global.rgbEnables |= libpisp::RgbEnable::PostCsc0;

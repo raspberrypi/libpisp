@@ -381,7 +381,7 @@ void BackEnd::finaliseOutput(unsigned int index)
 		throw std::runtime_error("finaliseOutput: image stride should be at least 16-byte aligned");
 }
 
-void BackEnd::checkTiles(const TilingConfig &tiling_config)
+void BackEnd::checkTiles(const TilingConfig &tilingConfig)
 {
 	for (unsigned int tileNum = 0; tileNum < pipe_->numTilesX * pipe_->numTilesY; tileNum++)
 	{
@@ -407,12 +407,12 @@ void BackEnd::checkTiles(const TilingConfig &tiling_config)
 			// A zero-sized tile is legitimate meaning "no output", but otherwise minimum tile sizes must be respected.
 			if (widthAfterCrop && heightAfterCrop)
 			{
-				bool rh_edge = tile.output_offset_x[i] + tile.output_width[i] == tiling_config.output_image_size[i].dx;
+				bool rh_edge = tile.output_offset_x[i] + tile.output_width[i] == tilingConfig.output_image_size[i].dx;
 
 				if (widthAfterCrop < PISP_BACK_END_MIN_TILE_WIDTH)
 				{
 					PISP_LOG(warning, "Tile narrow after crop: tile " << tileNum << " output " << i
-						 << " input_width " << tile.input_width << " after_crop " << widthAfterCrop
+						 << " InputWidth " << tile.input_width << " after_crop " << widthAfterCrop
 						 << " crop start " << tile.crop_x_start[i] << " end " << tile.crop_x_end[i]);
 					if (!rh_edge)
 						throw std::runtime_error("Tile width too small after crop");
@@ -423,7 +423,7 @@ void BackEnd::checkTiles(const TilingConfig &tiling_config)
 				if (tile.resample_in_width[i] < PISP_BACK_END_MIN_TILE_WIDTH)
 				{
 					PISP_LOG(warning, "Tile narrow after downscale: tile " << tileNum << " output " << i
-						 << " input_width " << tile.input_width << " after_crop " << widthAfterCrop
+						 << " InputWidth " << tile.input_width << " after_crop " << widthAfterCrop
 						 << " after downscale " << tile.resample_in_width[i]);
 					if (!rh_edge)
 						throw std::runtime_error("Tile width too small after downscale");
@@ -571,7 +571,7 @@ void BackEnd::finaliseConfig()
 
 void BackEnd::updateSmartResize()
 {
-	BackendConfigAdapter::Global global = config_->getGlobal();
+	BeGlobal global = config_->getGlobal();
 	std::string filter;
 
 	// Look through the output branches adjusting the scaling blocks where "smart resizing"
@@ -581,23 +581,23 @@ void BackEnd::updateSmartResize()
 		const pisp_image_format_config &inputFormat = config_->getInputFormat();
 
 		// First get the size of the input to the rescalers. The crops are zero when not in use.
-		uint16_t input_width = pipe_->configExtra.crop[i].width;
-		if (!input_width)
-			input_width = inputFormat.width;
-		uint16_t input_height = pipe_->configExtra.crop[i].height;
-		if (!input_height)
-			input_height = inputFormat.height;
+		uint16_t InputWidth = pipe_->configExtra.crop[i].width;
+		if (!InputWidth)
+			InputWidth = inputFormat.width;
+		uint16_t inputHeight = pipe_->configExtra.crop[i].height;
+		if (!inputHeight)
+			inputHeight = inputFormat.height;
 
 		if ((pipe_->smartResizeDirty & (1 << i)) || (pipe_->dirtyFlagsExtra & PISP_BE_DIRTY_CROP))
 		{
 			if (pipe_->smartResize[i].width && pipe_->smartResize[i].height)
 			{
-				uint16_t resampler_input_width = input_width;
-				uint16_t resampler_input_height = input_height;
-				uint16_t resampler_output_width = pipe_->smartResize[i].width;
-				uint16_t resampler_output_height = pipe_->smartResize[i].height;
+				uint16_t resamplerInputWidth = InputWidth;
+				uint16_t resamplerInputHeight = inputHeight;
+				uint16_t resamplerOutputWidth = pipe_->smartResize[i].width;
+				uint16_t resamplerOutputHeight = pipe_->smartResize[i].height;
 
-				PISP_LOG(debug, "Smart resize branch " << i << " input size " << input_width << " x " << input_height
+				PISP_LOG(debug, "Smart resize branch " << i << " input size " << InputWidth << " x " << inputHeight
 													   << " output size " << pipe_->smartResize[i].width << " x "
 													   << pipe_->smartResize[i].height);
 
@@ -605,47 +605,47 @@ void BackEnd::updateSmartResize()
 				// by more than 2x.
 				// \todo - increase this "2x" threshold by using different resampler kernels.
 				if (variant_.backEndDownscalerAvailable(0, i) &&
-					(resampler_output_width * 2 < input_width || resampler_output_height * 2 < input_height))
+					(resamplerOutputWidth * 2 < InputWidth || resamplerOutputHeight * 2 < inputHeight))
 				{
-					uint16_t downscaler_output_width = input_width;
-					uint16_t downscaler_output_height = input_height;
+					uint16_t downscalerOutputWidth = InputWidth;
+					uint16_t downscalerOutputHeight = inputHeight;
 
 					// We treat the width and height the same. Look at the width first.
-					if (resampler_output_width * 2 < input_width)
+					if (resamplerOutputWidth * 2 < InputWidth)
 					{
 						// Try to put 2x downscale into the resampler, everything else into
 						// the downscaler. But remember that it must do *at least* 2x, and no
 						// more than 8x (being careful to round that limit up)..
-						downscaler_output_width = std::clamp(resampler_output_width * 2,
-															 (input_width + 7) / 8,
-															 input_width / 2);
+						downscalerOutputWidth = std::clamp(resamplerOutputWidth * 2,
+															 (InputWidth + 7) / 8,
+															 InputWidth / 2);
 					}
 					// Now the same for the height.
-					if (resampler_output_height * 2 < input_height)
+					if (resamplerOutputHeight * 2 < inputHeight)
 					{
 						// Try to put 2x downscale into the resampler, everything else into
 						// the downscaler. But remember that it must do *at least* 2x and no
 						// more than 8x (being careful to round that limit up)..
-						downscaler_output_height = std::clamp(resampler_output_height * 2,
-															  (input_height + 7) / 8,
-															  input_height / 2);
+						downscalerOutputHeight = std::clamp(resamplerOutputHeight * 2,
+															  (inputHeight + 7) / 8,
+															  inputHeight / 2);
 					}
 
 					PISP_LOG(debug, "Using downscaler, output size "
-							 << downscaler_output_width << " x " <<  downscaler_output_height);
+							 << downscalerOutputWidth << " x " <<  downscalerOutputHeight);
 
 					// Now program up the downscaler.
 					pisp_be_downscale_extra downscale = {};
-					downscale.scaled_width = downscaler_output_width;
-					downscale.scaled_height = downscaler_output_height;
+					downscale.scaled_width = downscalerOutputWidth;
+					downscale.scaled_height = downscalerOutputHeight;
 					setDownscale(i, downscale);
 					global.rgbEnables |= getFlagForBranch(RgbEnable::Downscale0, i);
 
 					// Now adjust the input dimensions that the code below (which
 					// programs the resampler) will see, so that it can, if necessary,
 					// do its PPF coefficient adjustment.
-					resampler_input_width = downscaler_output_width;
-					resampler_input_height = downscaler_output_height;
+					resamplerInputWidth = downscalerOutputWidth;
+					resamplerInputHeight = downscalerOutputHeight;
 				}
 				else
 				{
@@ -653,8 +653,8 @@ void BackEnd::updateSmartResize()
 				}
 
 				// Don't resample by unity: it needlessly reduces bit-depth, and can over-sharpen
-				if (resampler_input_width == resampler_output_width &&
-					resampler_input_height == resampler_output_height)
+				if (resamplerInputWidth == resamplerOutputWidth &&
+					resamplerInputHeight == resamplerOutputHeight)
 				{
 					global.rgbEnables &= ~getFlagForBranch(RgbEnable::Resample0, i);
 					continue;
@@ -670,17 +670,17 @@ void BackEnd::updateSmartResize()
 				// then we can use the PPF as a trapezoidal downscaler by setting up
 				// the filter coefficients (per used phase) correctly. This improves
 				// on image quality for larger downscale factors.
-				double scale_factor_x = (double)(resampler_input_width - 1) / (resampler_output_width - 1);
-				double scale_factor_y = (double)(resampler_input_height - 1) / (resampler_output_height - 1);
+				double scaleFactorX = (double)(resamplerInputWidth - 1) / (resamplerOutputWidth - 1);
+				double scaleFactorY = (double)(resamplerInputHeight - 1) / (resamplerOutputHeight - 1);
 				pisp_be_resample_config resample = {};
 				pisp_be_resample_extra resample_extra = {};
 
-				if (scale_factor_x > 2.1 &&
-					scale_factor_x < scale_factor_y * 1.1 && scale_factor_y < scale_factor_x * 1.1)
+				if (scaleFactorX > 2.1 &&
+					scaleFactorX < scaleFactorY * 1.1 && scaleFactorY < scaleFactorX * 1.1)
 				{
 					PISP_LOG(debug, "Setting the PPF as a trapezoidal filter");
 
-					scale_factor_x = std::min<double>(scale_factor_x, NumTaps - 1);
+					scaleFactorX = std::min<double>(scaleFactorX, NumTaps - 1);
 
 					for (unsigned int p = 0; p < NumPhases; p++)
 					{
@@ -689,13 +689,13 @@ void BackEnd::updateSmartResize()
 						resample.coef[p * NumTaps + 0] =
 							(1 << ResamplePrecision) - (p << ResamplePrecision) / NumPhases;
 
-						resample.coef[p * NumTaps + 0] /= scale_factor_x;
+						resample.coef[p * NumTaps + 0] /= scaleFactorX;
 
-						double scale = scale_factor_x - (1.0 - (double)p / NumPhases);
-						for (unsigned int t = 1; t < 1 + std::ceil(scale_factor_x); t++)
+						double scale = scaleFactorX - (1.0 - (double)p / NumPhases);
+						for (unsigned int t = 1; t < 1 + std::ceil(scaleFactorX); t++)
 						{
 							double s = std::min(1.0, scale);
-							resample.coef[p * NumTaps + t] = s * (1 << ResamplePrecision) / scale_factor_x;
+							resample.coef[p * NumTaps + t] = s * (1 << ResamplePrecision) / scaleFactorX;
 							scale -= s;
 						}
 					}
@@ -707,12 +707,12 @@ void BackEnd::updateSmartResize()
 				{
 					// Let's choose a resampling filter based on the scaling factor.
 					// The selection mapping is defined in the config json file.
-					initialiseResample(resample, scale_factor_x);
+					initialiseResample(resample, scaleFactorX);
 				}
 
 				// Last thing is to set the output dimensions.
-				resample_extra.scaled_width = resampler_output_width;
-				resample_extra.scaled_height = resampler_output_height;
+				resample_extra.scaled_width = resamplerOutputWidth;
+				resample_extra.scaled_height = resamplerOutputHeight;
 				setResample(i, resample_extra);
 				global.rgbEnables |= getFlagForBranch(RgbEnable::Resample0, i);
 			}
@@ -727,17 +727,17 @@ void BackEnd::updateTiles()
 {
 	if (pipe_->retile)
 	{
-		TilingConfig tiling_config;
+		TilingConfig tilingConfig;
 		const BeConfigExtra &ce = pipe_->configExtra;
 		const pisp_image_format_config &inputFormat = config_->getInputFormat();
 		RgbEnables rgbEnables = config_->getGlobal().rgbEnables;
 
 		pipe_->retile = false;
-		tiling_config.input_alignment = calculateInputAlignment();
+		tilingConfig.input_alignment = calculateInputAlignment();
 
-		PISP_LOG(debug, "Input alignments are " << tiling_config.input_alignment << " pixels");
+		PISP_LOG(debug, "Input alignments are " << tilingConfig.input_alignment << " pixels");
 
-		tiling_config.input_image_size = tiling::Length2(inputFormat.width, inputFormat.height);
+		tilingConfig.input_image_size = tiling::Length2(inputFormat.width, inputFormat.height);
 
 		for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 		{
@@ -745,47 +745,47 @@ void BackEnd::updateTiles()
 			const pisp_be_downscale_config &downscale = config_->getDownscale(i);
 			const pisp_be_resample_config &resample = config_->getResample(i);
 
-			tiling_config.crop[i] = tiling::Interval2(tiling::Interval(ce.crop[i].offset_x, ce.crop[i].width),
+			tilingConfig.crop[i] = tiling::Interval2(tiling::Interval(ce.crop[i].offset_x, ce.crop[i].width),
 													  tiling::Interval(ce.crop[i].offset_y, ce.crop[i].height));
 
-			if (tiling_config.crop[i].x.length == 0 || tiling_config.crop[i].y.length == 0)
-				tiling_config.crop[i] = tiling::Interval2(tiling::Interval(0, inputFormat.width),
+			if (tilingConfig.crop[i].x.length == 0 || tilingConfig.crop[i].y.length == 0)
+				tilingConfig.crop[i] = tiling::Interval2(tiling::Interval(0, inputFormat.width),
 														  tiling::Interval(0, inputFormat.height));
 
-			tiling_config.output_h_mirror[i] = outputFormat.transform & PISP_BE_TRANSFORM_HFLIP;
-			tiling_config.downscale_factor[i] =
+			tilingConfig.output_h_mirror[i] = outputFormat.transform & PISP_BE_TRANSFORM_HFLIP;
+			tilingConfig.downscale_factor[i] =
 				tiling::Length2(downscale.scale_factor_h, downscale.scale_factor_v);
-			tiling_config.resample_factor[i] =
+			tilingConfig.resample_factor[i] =
 				tiling::Length2(resample.scale_factor_h, resample.scale_factor_v);
-			tiling_config.downscale_image_size[i] =
+			tilingConfig.downscale_image_size[i] =
 				tiling::Length2(ce.downscale[i].scaled_width, ce.downscale[i].scaled_height);
-			tiling_config.output_image_size[i] =
+			tilingConfig.output_image_size[i] =
 				tiling::Length2(outputFormat.image.width, outputFormat.image.height);
-			tiling_config.output_max_alignment[i] =
+			tilingConfig.output_max_alignment[i] =
 				calculateOutputAlignment(outputFormat.image.format, PISP_BACK_END_OUTPUT_MAX_ALIGN);
-			tiling_config.output_min_alignment[i] =
+			tilingConfig.output_min_alignment[i] =
 				calculateOutputAlignment(outputFormat.image.format, PISP_BACK_END_OUTPUT_MIN_ALIGN);
 		}
 
-		tiling_config.max_tile_size.dx = sw_.maxTileWidth ? sw_.maxTileWidth : variant_.backEndMaxTileWidth(0);
-		tiling_config.max_tile_size.dy = sw_.maxStripeHeight ? sw_.maxStripeHeight : MaxStripeHeight;
-		tiling_config.min_tile_size = tiling::Length2(PISP_BACK_END_MIN_TILE_WIDTH, PISP_BACK_END_MIN_TILE_HEIGHT);
+		tilingConfig.max_tile_size.dx = sw_.maxTileWidth ? sw_.maxTileWidth : variant_.backEndMaxTileWidth(0);
+		tilingConfig.max_tile_size.dy = sw_.maxStripeHeight ? sw_.maxStripeHeight : MaxStripeHeight;
+		tilingConfig.min_tile_size = tiling::Length2(PISP_BACK_END_MIN_TILE_WIDTH, PISP_BACK_END_MIN_TILE_HEIGHT);
 
-		tiling_config.resample_enables = tiling_config.downscale_enables = 0;
+		tilingConfig.resample_enables = tilingConfig.downscale_enables = 0;
 		if (rgbEnables & RgbEnable::Resample0)
-			tiling_config.resample_enables = 1;
+			tilingConfig.resample_enables = 1;
 		if (rgbEnables & RgbEnable::Resample1)
-			tiling_config.resample_enables |= (1 << 1);
+			tilingConfig.resample_enables |= (1 << 1);
 		if (rgbEnables & RgbEnable::Downscale0)
-			tiling_config.downscale_enables = 1;
+			tilingConfig.downscale_enables = 1;
 		if (rgbEnables & RgbEnable::Downscale1)
-			tiling_config.downscale_enables |= (1 << 1);
+			tilingConfig.downscale_enables |= (1 << 1);
 
 		// Set compressed_input to false as otherwise the tiling would pad tiles up to multiples of 8 pixels even when these lie
 		// outside the actual image width (and we've chosen not to handle compression like that).
-		tiling_config.compressed_input = false;
-		retilePipeline(tiling_config);
-		checkTiles(tiling_config);
+		tilingConfig.compressed_input = false;
+		retilePipeline(tilingConfig);
+		checkTiles(tilingConfig);
 		pipe_->finaliseTiling = true;
 	}
 
@@ -796,13 +796,13 @@ void BackEnd::updateTiles()
 	}
 }
 
-void BackEnd::retilePipeline(TilingConfig const &tiling_config)
+void BackEnd::retilePipeline(TilingConfig const &tilingConfig)
 {
 	// The tiling library provides tiles in a SW Tile structure.
 	Tile tiles[PISP_BACK_END_NUM_TILES];
 	tiling::Length2 grid;
 
-	tile_pipeline(tiling_config, tiles, PISP_BACK_END_NUM_TILES, &grid);
+	tile_pipeline(tilingConfig, tiles, PISP_BACK_END_NUM_TILES, &grid);
 	pipe_->numTilesX = grid.dx;
 	pipe_->numTilesY = grid.dy;
 
@@ -852,7 +852,7 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 				continue;
 			}
 
-			tiling::Crop2 downscale_crop;
+			tiling::Crop2 downscaleCrop;
 			tiling::Interval2 resample_size = tiles[i].crop[j].output;
 			resample_size.x = resample_size.x - tiles[i].resample[j].crop.x;
 			resample_size.y = resample_size.y - tiles[i].resample[j].crop.y;
@@ -861,23 +861,23 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 			// next block. Also there will be no extra crop necessary for the resize operation.
 			if (rgbEnables & getFlagForBranch(RgbEnable::Downscale0, j))
 			{
-				downscale_crop = tiles[i].downscale[j].crop + tiles[i].crop[j].crop;
+				downscaleCrop = tiles[i].downscale[j].crop + tiles[i].crop[j].crop;
 				// Size of the tile going into the resample block needs to be set here.
 				resample_size = tiles[i].downscale[j].output;
 			}
 			else if (rgbEnables & getFlagForBranch(RgbEnable::Resample0, j))
 			{
-				downscale_crop = tiles[i].resample[j].crop + tiles[i].crop[j].crop;
+				downscaleCrop = tiles[i].resample[j].crop + tiles[i].crop[j].crop;
 			}
 			else
 			{
-				downscale_crop = tiles[i].output[j].crop + tiles[i].crop[j].crop;
+				downscaleCrop = tiles[i].output[j].crop + tiles[i].crop[j].crop;
 			}
 
-			t.crop_x_start[j] = downscale_crop.x.start;
-			t.crop_x_end[j] = downscale_crop.x.end;
-			t.crop_y_start[j] = downscale_crop.y.start;
-			t.crop_y_end[j] = downscale_crop.y.end;
+			t.crop_x_start[j] = downscaleCrop.x.start;
+			t.crop_x_end[j] = downscaleCrop.x.end;
+			t.crop_y_start[j] = downscaleCrop.y.start;
+			t.crop_y_end[j] = downscaleCrop.y.end;
 			t.resample_in_width[j] = resample_size.x.length;
 			t.resample_in_height[j] = resample_size.y.length;
 			t.output_offset_x[j] = tiles[i].output[j].output.x.offset;

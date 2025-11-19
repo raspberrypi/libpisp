@@ -106,7 +106,7 @@ struct BeGlobal
 	uint8_t bayerOrder;
 };
 
-// Type aliases for C struct types
+// Identical to the current HW structures
 using ImageFormatConfig = struct pisp_image_format_config;
 using DecompressConfig = struct pisp_decompress_config;
 using CompressConfig = struct pisp_compress_config;
@@ -133,11 +133,20 @@ using BeDemosaicConfig = struct pisp_be_demosaic_config;
 using BeGammaConfig = struct pisp_be_gamma_config;
 using BeResampleConfig = struct pisp_be_resample_config;
 using BeGlobalConfig = struct pisp_be_global_config;
+using BeCropConfig = struct pisp_be_crop_config;
+using BeLscExtra = struct pisp_be_lsc_extra;
+using BeCacExtra = struct pisp_be_cac_extra;
+using BeResampleExtra = struct pisp_be_resample_extra;
+using BeDownscaleExtra = struct pisp_be_downscale_extra;
+using BeTilesConfig = struct pisp_be_tiles_config;
 
 class BackendConfigAdapter
 {
 public:
-	BackendConfigAdapter(std::variant<pisp_be_config, pisp_be_config2> config)
+
+	using HwConfigVariant = std::variant<pisp_be_config*,  pisp_be_config2*>;
+
+	BackendConfigAdapter(HwConfigVariant config)
 		: config_(config)
 	{
 	}
@@ -272,8 +281,7 @@ public:
 	BeGlobalConfig globalToHw(const BeGlobal &global) const;
 
 private:
-	std::variant<pisp_be_config, pisp_be_config2> config_;
+	HwConfigVariant config_;
 };
 
 } // namespace libpisp
-

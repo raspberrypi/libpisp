@@ -88,14 +88,14 @@ uint32_t BackendConfigAdapter::rgbEnablesToHw(RgbEnables rgbEnables) const
 
 	visit(
 		overloaded {
-			[&](BeConfig *)
+			[&](pisp_be_config *)
 			{
 				for (auto &[enable, map] : rgbEnableMap)
 					if ((rgbEnables) & enable && map.v1)
 						hwEnables |= map.v1;
 			},
 
-			[&](BeConfig2 *)
+			[&](pisp_be_config2 *)
 			{
 				for (auto &[enable, map] : rgbEnableMap)
 					if ((rgbEnables & enable) && map.v2)
@@ -113,14 +113,14 @@ uint32_t BackendConfigAdapter::bayerEnablesToHw(BayerEnables bayerEnables) const
 
 	visit(
 		overloaded {
-			[&](BeConfig *)
+			[&](pisp_be_config *)
 			{
 				for (auto &[enable, map] : bayerEnableMap)
 					if ((bayerEnables) & enable && map.v1)
 						hwEnables |= map.v1;
 			},
 
-			[&](BeConfig2 *)
+			[&](pisp_be_config2 *)
 			{
 				for (auto &[enable, map] : bayerEnableMap)
 					if ((bayerEnables & enable) && map.v2)
@@ -138,14 +138,14 @@ RgbEnables BackendConfigAdapter::hwToRgbEnables(uint32_t hwEnables) const
 
 	visit(
 		overloaded {
-			[&](BeConfig *)
+			[&](pisp_be_config *)
 			{
 				for (auto &[enable, map] : rgbEnableMap)
 					if ((hwEnables & map.v1) && map.v1)
 						enables = static_cast<RgbEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
 			},
 
-			[&](BeConfig2 *)
+			[&](pisp_be_config2 *)
 			{
 				for (auto &[enable, map] : rgbEnableMap)
 					if ((hwEnables & map.v2) && map.v2)
@@ -163,14 +163,14 @@ BayerEnables BackendConfigAdapter::hwToBayerEnables(uint32_t hwEnables) const
 
 	visit(
 		overloaded {
-			[&](BeConfig *)
+			[&](pisp_be_config *)
 			{
 				for (auto &[enable, map] : bayerEnableMap)
 					if ((hwEnables & map.v1) && map.v1)
 						enables = static_cast<BayerEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
 			},
 
-			[&](BeConfig2 *)
+			[&](pisp_be_config2 *)
 			{
 				for (auto &[enable, map] : bayerEnableMap)
 					if ((hwEnables & map.v2) && map.v2)
@@ -485,16 +485,16 @@ BeCcmConfig &BackendConfigAdapter::getYcbcrInverse()
 void BackendConfigAdapter::setCsc(unsigned int i, const BeCcmConfig &csc)
 {
 	visit(overloaded {
-		[&csc, i](BeConfig *cfg) { cfg->csc[i] = csc; },
-		[&csc, i](BeConfig2 *cfg) { cfg->post_csc[i] = csc; }
+		[&csc, i](pisp_be_config *cfg) { cfg->csc[i] = csc; },
+		[&csc, i](pisp_be_config2 *cfg) { cfg->post_csc[i] = csc; }
 	});
 }
 
 BeCcmConfig &BackendConfigAdapter::getCsc(unsigned int i)
 {
 	return std::visit(overloaded {
-		[i](BeConfig *cfg) -> BeCcmConfig & { return cfg->csc[i]; },
-		[i](BeConfig2 *cfg) -> BeCcmConfig & { return cfg->post_csc[i]; }
+		[i](pisp_be_config *cfg) -> BeCcmConfig & { return cfg->csc[i]; },
+		[i](pisp_be_config2 *cfg) -> BeCcmConfig & { return cfg->post_csc[i]; }
 	}, config_);
 }
 
@@ -522,10 +522,10 @@ BeOutputFormatConfig &BackendConfigAdapter::getOutputFormat(unsigned int i)
 void BackendConfigAdapter::setTdn(const BeTdnConfig &tdn)
 {
 	visit(overloaded {
-		[&tdn](BeConfig *cfg) {
+		[&tdn](pisp_be_config *cfg) {
 			cfg->tdn = tdn;
 		},
-		[&tdn]([[maybe_unused]] BeConfig2 *cfg) {
+		[&tdn]([[maybe_unused]] pisp_be_config2 *cfg) {
 			// v2 uses pisp_be_tdn2_config, conversion not implemented
 		}
 	});
@@ -535,10 +535,10 @@ BeTdnConfig &BackendConfigAdapter::getTdn()
 {
 	static BeTdnConfig defaultTdn{};
 	return std::visit(overloaded {
-		[](BeConfig *cfg) -> BeTdnConfig & {
+		[](pisp_be_config *cfg) -> BeTdnConfig & {
 			return cfg->tdn;
 		},
-		[]([[maybe_unused]] BeConfig2 *cfg) -> BeTdnConfig & {
+		[]([[maybe_unused]] pisp_be_config2 *cfg) -> BeTdnConfig & {
 			// v2 uses pisp_be_tdn2_config, conversion not implemented
 			return defaultTdn;
 		}
@@ -548,10 +548,10 @@ BeTdnConfig &BackendConfigAdapter::getTdn()
 void BackendConfigAdapter::setStitch(const BeStitchConfig &stitch)
 {
 	visit(overloaded {
-		[&stitch](BeConfig *cfg) {
+		[&stitch](pisp_be_config *cfg) {
 			cfg->stitch = stitch;
 		},
-		[&stitch]([[maybe_unused]] BeConfig2 *cfg) {
+		[&stitch]([[maybe_unused]] pisp_be_config2 *cfg) {
 			// v2 uses pisp_be_tdn2_config for stitch, conversion not implemented
 		}
 	});
@@ -561,10 +561,10 @@ BeStitchConfig &BackendConfigAdapter::getStitch()
 {
 	static BeStitchConfig defaultStitch{};
 	return std::visit(overloaded {
-		[](BeConfig *cfg) -> BeStitchConfig & {
+		[](pisp_be_config *cfg) -> BeStitchConfig & {
 			return cfg->stitch;
 		},
-		[]([[maybe_unused]] BeConfig2 *cfg) -> BeStitchConfig & {
+		[]([[maybe_unused]] pisp_be_config2 *cfg) -> BeStitchConfig & {
 			// v2 uses pisp_be_tdn2_config, conversion not implemented
 			return defaultStitch;
 		}
@@ -574,10 +574,10 @@ BeStitchConfig &BackendConfigAdapter::getStitch()
 void BackendConfigAdapter::setTonemap(const BeTonemapConfig &tonemap)
 {
 	visit(overloaded {
-		[&tonemap](BeConfig *cfg) {
+		[&tonemap](pisp_be_config *cfg) {
 			cfg->tonemap = tonemap;
 		},
-		[&tonemap]([[maybe_unused]] BeConfig2 *cfg) {
+		[&tonemap]([[maybe_unused]] pisp_be_config2 *cfg) {
 			// v2 uses tonemap2 (pisp_be_tonemap2_config), conversion not implemented
 		}
 	});
@@ -587,10 +587,10 @@ BeTonemapConfig &BackendConfigAdapter::getTonemap()
 {
 	static BeTonemapConfig defaultTonemap{};
 	return std::visit(overloaded {
-		[](BeConfig *cfg) -> BeTonemapConfig & {
+		[](pisp_be_config *cfg) -> BeTonemapConfig & {
 			return cfg->tonemap;
 		},
-		[]([[maybe_unused]] BeConfig2 *cfg) -> BeTonemapConfig & {
+		[]([[maybe_unused]] pisp_be_config2 *cfg) -> BeTonemapConfig & {
 			// v2 uses tonemap2, conversion not implemented
 			return defaultTonemap;
 		}
@@ -600,10 +600,10 @@ BeTonemapConfig &BackendConfigAdapter::getTonemap()
 void BackendConfigAdapter::setDemosaic(const BeDemosaicConfig &demosaic)
 {
 	visit(overloaded {
-		[&demosaic](BeConfig *cfg) {
+		[&demosaic](pisp_be_config *cfg) {
 			cfg->demosaic = demosaic;
 		},
-		[&demosaic](BeConfig2 *cfg) {
+		[&demosaic](pisp_be_config2 *cfg) {
 			// v2 uses pisp_be_demosaic2_config - copy compatible fields
 			cfg->demosaic.sharper = demosaic.sharper;
 			cfg->demosaic.fc_mode = demosaic.fc_mode;
@@ -615,10 +615,10 @@ BeDemosaicConfig &BackendConfigAdapter::getDemosaic()
 {
 	static BeDemosaicConfig defaultDemosaic{};
 	return std::visit(overloaded {
-		[](BeConfig *cfg) -> BeDemosaicConfig & {
+		[](pisp_be_config *cfg) -> BeDemosaicConfig & {
 			return cfg->demosaic;
 		},
-		[](BeConfig2 *cfg) -> BeDemosaicConfig & {
+		[](pisp_be_config2 *cfg) -> BeDemosaicConfig & {
 			// Convert from v2 to v1
 			defaultDemosaic.sharper = cfg->demosaic.sharper;
 			defaultDemosaic.fc_mode = cfg->demosaic.fc_mode;
@@ -630,10 +630,10 @@ BeDemosaicConfig &BackendConfigAdapter::getDemosaic()
 void BackendConfigAdapter::setGamma(const BeGammaConfig &gamma)
 {
 	visit(overloaded {
-		[&gamma](BeConfig *cfg) {
+		[&gamma](pisp_be_config *cfg) {
 			cfg->gamma = gamma;
 		},
-		[&gamma](BeConfig2 *cfg) {
+		[&gamma](pisp_be_config2 *cfg) {
 			// v2 uses array of pisp_be_gamma2_config
 			// Copy to first element
 			for (unsigned int i = 0; i < PISP_BE_GAMMA2_LUT_SIZE && i < PISP_BE_GAMMA_LUT_SIZE; i++) {
@@ -647,10 +647,10 @@ BeGammaConfig &BackendConfigAdapter::getGamma()
 {
 	static BeGammaConfig defaultGamma{};
 	return std::visit(overloaded {
-		[](BeConfig *cfg) -> BeGammaConfig & {
+		[](pisp_be_config *cfg) -> BeGammaConfig & {
 			return cfg->gamma;
 		},
-		[](BeConfig2 *cfg) -> BeGammaConfig & {
+		[](pisp_be_config2 *cfg) -> BeGammaConfig & {
 			// Convert from v2 array to v1 single
 			for (unsigned int i = 0; i < PISP_BE_GAMMA_LUT_SIZE && i < PISP_BE_GAMMA2_LUT_SIZE; i++) {
 				defaultGamma.lut[i] = cfg->gamma[0].lut[i];
@@ -663,10 +663,10 @@ BeGammaConfig &BackendConfigAdapter::getGamma()
 void BackendConfigAdapter::setResample(unsigned int i, const BeResampleConfig &resample)
 {
 	visit(overloaded {
-		[&resample, i](BeConfig *cfg) {
+		[&resample, i](pisp_be_config *cfg) {
 			cfg->resample[i] = resample;
 		},
-		[&resample, i](BeConfig2 *cfg) {
+		[&resample, i](pisp_be_config2 *cfg) {
 			// v2 uses pisp_be_resample2_config
 			cfg->resample[i].scale_factor_h = resample.scale_factor_h;
 			cfg->resample[i].scale_factor_v = resample.scale_factor_v;
@@ -683,10 +683,10 @@ BeResampleConfig &BackendConfigAdapter::getResample(unsigned int i)
 {
 	static BeResampleConfig defaultResample[2]{};
 	return std::visit(overloaded {
-		[i](BeConfig *cfg) -> BeResampleConfig & {
+		[i](pisp_be_config *cfg) -> BeResampleConfig & {
 			return cfg->resample[i];
 		},
-		[i](BeConfig2 *cfg) -> BeResampleConfig & {
+		[i](pisp_be_config2 *cfg) -> BeResampleConfig & {
 			// Convert from v2 to v1
 			defaultResample[i].scale_factor_h = cfg->resample[i].scale_factor_h;
 			defaultResample[i].scale_factor_v = cfg->resample[i].scale_factor_v;
