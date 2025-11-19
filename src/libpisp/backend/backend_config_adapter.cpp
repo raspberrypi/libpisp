@@ -86,9 +86,8 @@ uint32_t BackendConfigAdapter::rgbEnablesToHw(RgbEnables rgbEnables) const
 {
 	uint32_t hwEnables = 0;
 
-	std::visit(
-		overloaded
-		{
+	be_->config_.visit(
+		overloaded {
 			[&](pisp_be_config *)
 			{
 				for (auto &[enable, map] : rgbEnableMap)
@@ -102,8 +101,8 @@ uint32_t BackendConfigAdapter::rgbEnablesToHw(RgbEnables rgbEnables) const
 					if ((rgbEnables & enable) && map.v2)
 						hwEnables |= map.v2;
 			}
-		},
-		be_->config_.config);
+		}
+	);
 
 	return hwEnables;
 }
@@ -112,7 +111,7 @@ uint32_t BackendConfigAdapter::bayerEnablesToHw(BayerEnables bayerEnables) const
 {
 	uint32_t hwEnables = 0;
 
-	std::visit(
+	be_->config_.visit(
 		overloaded {
 			[&](pisp_be_config *)
 			{
@@ -127,8 +126,8 @@ uint32_t BackendConfigAdapter::bayerEnablesToHw(BayerEnables bayerEnables) const
 					if ((bayerEnables & enable) && map.v2)
 						hwEnables |= map.v2;
 			}
-		},
-		be_->config_.config);
+		}
+	);
 
 	return hwEnables;
 }
@@ -137,9 +136,8 @@ RgbEnables BackendConfigAdapter::hwToRgbEnables(uint32_t hwEnables) const
 {
 	RgbEnables enables = static_cast<RgbEnables>(0);
 
-	std::visit(
-		overloaded
-		{
+	be_->config_.visit(
+		overloaded {
 			[&](pisp_be_config *)
 			{
 				for (auto &[enable, map] : rgbEnableMap)
@@ -153,8 +151,8 @@ RgbEnables BackendConfigAdapter::hwToRgbEnables(uint32_t hwEnables) const
 					if ((hwEnables & map.v2) && map.v2)
 						enables = static_cast<RgbEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
 			}
-		},
-		be_->config_.config);
+		}
+	);
 
 	return enables;
 }
@@ -163,7 +161,7 @@ BayerEnables BackendConfigAdapter::hwToBayerEnables(uint32_t hwEnables) const
 {
 	BayerEnables enables = static_cast<BayerEnables>(0);
 
-	std::visit(
+	be_->config_.visit(
 		overloaded {
 			[&](pisp_be_config *)
 			{
@@ -178,8 +176,8 @@ BayerEnables BackendConfigAdapter::hwToBayerEnables(uint32_t hwEnables) const
 					if ((hwEnables & map.v2) && map.v2)
 						enables = static_cast<BayerEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
 			}
-		},
-		be_->config_.config);
+		}
+	);
 
 	return enables;
 }

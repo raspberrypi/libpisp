@@ -134,6 +134,12 @@ public:
 
 		// Entry point for ->
 		Proxy operator->() { return Proxy { &config }; }
+
+		template <typename F>
+		auto visit(F &&f)
+		{
+			return std::visit(std::forward<F>(f), config);
+		}
 	};
 
 	struct Global
