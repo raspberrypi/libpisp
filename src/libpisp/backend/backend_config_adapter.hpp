@@ -98,10 +98,46 @@ T getFlagForBranch(const T field, unsigned int branch)
 
 class BackEnd;
 
+// Global config is special case between variants!
+struct BeGlobal
+{
+	BayerEnables bayerEnables;
+	RgbEnables rgbEnables;
+	uint8_t bayerOrder;
+};
+
+// Type aliases for C struct types
+using ImageFormatConfig = struct pisp_image_format_config;
+using DecompressConfig = struct pisp_decompress_config;
+using CompressConfig = struct pisp_compress_config;
+using BeDpcConfig = struct pisp_be_dpc_config;
+using BeGeqConfig = struct pisp_be_geq_config;
+using BeSdnConfig = struct pisp_be_sdn_config;
+using BlaConfig = struct pisp_bla_config;
+using BeLscConfig = struct pisp_be_lsc_config;
+using WbgConfig = struct pisp_wbg_config;
+using BeCdnConfig = struct pisp_be_cdn_config;
+using BeCacConfig = struct pisp_be_cac_config;
+using BeDebinConfig = struct pisp_be_debin_config;
+using BeCcmConfig = struct pisp_be_ccm_config;
+using BeSatControlConfig = struct pisp_be_sat_control_config;
+using BeFalseColourConfig = struct pisp_be_false_colour_config;
+using BeSharpenConfig = struct pisp_be_sharpen_config;
+using BeShFcCombineConfig = struct pisp_be_sh_fc_combine_config;
+using BeDownscaleConfig = struct pisp_be_downscale_config;
+using BeOutputFormatConfig = struct pisp_be_output_format_config;
+using BeTdnConfig = struct pisp_be_tdn_config;
+using BeStitchConfig = struct pisp_be_stitch_config;
+using BeTonemapConfig = struct pisp_be_tonemap_config;
+using BeDemosaicConfig = struct pisp_be_demosaic_config;
+using BeGammaConfig = struct pisp_be_gamma_config;
+using BeResampleConfig = struct pisp_be_resample_config;
+using BeGlobalConfig = struct pisp_be_global_config;
+
 class BackendConfigAdapter
 {
 public:
-	BackendConfigAdapter(std::variant<pisp_be_config *, pisp_be_config2 *> config)
+	BackendConfigAdapter(std::variant<pisp_be_config, pisp_be_config2> config)
 		: config_(config)
 	{
 	}
@@ -118,133 +154,125 @@ public:
 		return std::visit(std::forward<F>(f), config_);
 	}
 
-	// global config is special case between variants!
-	struct Global
-	{
-		BayerEnables bayerEnables;
-		RgbEnables rgbEnables;
-		uint8_t bayerOrder;
-	};
+	void setGlobal(const BeGlobal &global);
+	BeGlobal getGlobal() const;
 
-	void setGlobal(const Global &global);
-	Global getGlobal() const;
+	void setInputFormat(const ImageFormatConfig &inputFormat);
+	ImageFormatConfig &getInputFormat();
 
-	void setInputFormat(const pisp_image_format_config &inputFormat);
-	pisp_image_format_config &getInputFormat();
+	void setDecompress(const DecompressConfig &decompress);
+	DecompressConfig &getDecompress();
 
-	void setDecompress(const pisp_decompress_config &decompress);
-	pisp_decompress_config &getDecompress();
+	void setDpc(const BeDpcConfig &dpc);
+	BeDpcConfig &getDpc();
 
-	void setDpc(const pisp_be_dpc_config &dpc);
-	pisp_be_dpc_config &getDpc();
+	void setGeq(const BeGeqConfig &geq);
+	BeGeqConfig &getGeq();
 
-	void setGeq(const pisp_be_geq_config &geq);
-	pisp_be_geq_config &getGeq();
+	void setTdnInputFormat(const ImageFormatConfig &tdnInputFormat);
+	ImageFormatConfig &getTdnInputFormat();
 
-	void setTdnInputFormat(const pisp_image_format_config &tdnInputFormat);
-	pisp_image_format_config &getTdnInputFormat();
+	void setTdnDecompress(const DecompressConfig &tdnDecompress);
+	DecompressConfig &getTdnDecompress();
 
-	void setTdnDecompress(const pisp_decompress_config &tdnDecompress);
-	pisp_decompress_config &getTdnDecompress();
+	void setTdnCompress(const CompressConfig &tdnCompress);
+	CompressConfig &getTdnCompress();
 
-	void setTdnCompress(const pisp_compress_config &tdnCompress);
-	pisp_compress_config &getTdnCompress();
+	void setTdnOutputFormat(const ImageFormatConfig &tdnOutputFormat);
+	ImageFormatConfig &getTdnOutputFormat();
 
-	void setTdnOutputFormat(const pisp_image_format_config &tdnOutputFormat);
-	pisp_image_format_config &getTdnOutputFormat();
+	void setSdn(const BeSdnConfig &sdn);
+	BeSdnConfig &getSdn();
 
-	void setSdn(const pisp_be_sdn_config &sdn);
-	pisp_be_sdn_config &getSdn();
+	void setBlc(const BlaConfig &blc);
+	BlaConfig &getBlc();
 
-	void setBlc(const pisp_bla_config &blc);
-	pisp_bla_config &getBlc();
+	void setStitchInputFormat(const ImageFormatConfig &stitchInputFormat);
+	ImageFormatConfig &getStitchInputFormat();
 
-	void setStitchInputFormat(const pisp_image_format_config &stitchInputFormat);
-	pisp_image_format_config &getStitchInputFormat();
+	void setStitchDecompress(const DecompressConfig &stitchDecompress);
+	DecompressConfig &getStitchDecompress();
 
-	void setStitchDecompress(const pisp_decompress_config &stitchDecompress);
-	pisp_decompress_config &getStitchDecompress();
+	void setStitchCompress(const CompressConfig &stitchCompress);
+	CompressConfig &getStitchCompress();
 
-	void setStitchCompress(const pisp_compress_config &stitchCompress);
-	pisp_compress_config &getStitchCompress();
+	void setStitchOutputFormat(const ImageFormatConfig &stitchOutputFormat);
+	ImageFormatConfig &getStitchOutputFormat();
 
-	void setStitchOutputFormat(const pisp_image_format_config &stitchOutputFormat);
-	pisp_image_format_config &getStitchOutputFormat();
+	void setLsc(const BeLscConfig &lsc);
+	BeLscConfig &getLsc();
 
-	void setLsc(const pisp_be_lsc_config &lsc);
-	pisp_be_lsc_config &getLsc();
+	void setWbg(const WbgConfig &wbg);
+	WbgConfig &getWbg();
 
-	void setWbg(const pisp_wbg_config &wbg);
-	pisp_wbg_config &getWbg();
+	void setCdn(const BeCdnConfig &cdn);
+	BeCdnConfig &getCdn();
 
-	void setCdn(const pisp_be_cdn_config &cdn);
-	pisp_be_cdn_config &getCdn();
+	void setCac(const BeCacConfig &cac);
+	BeCacConfig &getCac();
 
-	void setCac(const pisp_be_cac_config &cac);
-	pisp_be_cac_config &getCac();
+	void setDebin(const BeDebinConfig &debin);
+	BeDebinConfig &getDebin();
 
-	void setDebin(const pisp_be_debin_config &debin);
-	pisp_be_debin_config &getDebin();
+	void setCcm(const BeCcmConfig &ccm);
+	BeCcmConfig &getCcm();
 
-	void setCcm(const pisp_be_ccm_config &ccm);
-	pisp_be_ccm_config &getCcm();
+	void setSatControl(const BeSatControlConfig &satControl);
+	BeSatControlConfig &getSatControl();
 
-	void setSatControl(const pisp_be_sat_control_config &satControl);
-	pisp_be_sat_control_config &getSatControl();
+	void setYcbcr(const BeCcmConfig &ycbcr);
+	BeCcmConfig &getYcbcr();
 
-	void setYcbcr(const pisp_be_ccm_config &ycbcr);
-	pisp_be_ccm_config &getYcbcr();
+	void setFalseColour(const BeFalseColourConfig &falseColour);
+	BeFalseColourConfig &getFalseColour();
 
-	void setFalseColour(const pisp_be_false_colour_config &falseColour);
-	pisp_be_false_colour_config &getFalseColour();
+	void setSharpen(const BeSharpenConfig &sharpen);
+	BeSharpenConfig &getSharpen();
 
-	void setSharpen(const pisp_be_sharpen_config &sharpen);
-	pisp_be_sharpen_config &getSharpen();
+	void setShFcCombine(const BeShFcCombineConfig &shFcCombine);
+	BeShFcCombineConfig &getShFcCombine();
 
-	void setShFcCombine(const pisp_be_sh_fc_combine_config &shFcCombine);
-	pisp_be_sh_fc_combine_config &getShFcCombine();
-
-	void setYcbcrInverse(const pisp_be_ccm_config &ycbcrInverse);
-	pisp_be_ccm_config &getYcbcrInverse();
+	void setYcbcrInverse(const BeCcmConfig &ycbcrInverse);
+	BeCcmConfig &getYcbcrInverse();
 
 	// Array fields
-	void setCsc(unsigned int i, const pisp_be_ccm_config &csc);
-	pisp_be_ccm_config &getCsc(unsigned int i);
+	void setCsc(unsigned int i, const BeCcmConfig &csc);
+	BeCcmConfig &getCsc(unsigned int i);
 
-	void setDownscale(unsigned int i, const pisp_be_downscale_config &downscale);
-	pisp_be_downscale_config &getDownscale(unsigned int i);
+	void setDownscale(unsigned int i, const BeDownscaleConfig &downscale);
+	BeDownscaleConfig &getDownscale(unsigned int i);
 
-	void setOutputFormat(unsigned int i, const pisp_be_output_format_config &outputFormat);
-	pisp_be_output_format_config &getOutputFormat(unsigned int i);
+	void setOutputFormat(unsigned int i, const BeOutputFormatConfig &outputFormat);
+	BeOutputFormatConfig &getOutputFormat(unsigned int i);
 
 	// Variant-specific fields - use visit
-	void setTdn(const pisp_be_tdn_config &tdn);
-	pisp_be_tdn_config &getTdn();
+	void setTdn(const BeTdnConfig &tdn);
+	BeTdnConfig &getTdn();
 
-	void setStitch(const pisp_be_stitch_config &stitch);
-	pisp_be_stitch_config &getStitch();
+	void setStitch(const BeStitchConfig &stitch);
+	BeStitchConfig &getStitch();
 
-	void setTonemap(const pisp_be_tonemap_config &tonemap);
-	pisp_be_tonemap_config &getTonemap();
+	void setTonemap(const BeTonemapConfig &tonemap);
+	BeTonemapConfig &getTonemap();
 
-	void setDemosaic(const pisp_be_demosaic_config &demosaic);
-	pisp_be_demosaic_config &getDemosaic();
+	void setDemosaic(const BeDemosaicConfig &demosaic);
+	BeDemosaicConfig &getDemosaic();
 
-	void setGamma(const pisp_be_gamma_config &gamma);
-	pisp_be_gamma_config &getGamma();
+	void setGamma(const BeGammaConfig &gamma);
+	BeGammaConfig &getGamma();
 
-	void setResample(unsigned int i, const pisp_be_resample_config &resample);
-	pisp_be_resample_config &getResample(unsigned int i);
+	void setResample(unsigned int i, const BeResampleConfig &resample);
+	BeResampleConfig &getResample(unsigned int i);
 
 	uint32_t rgbEnablesToHw(RgbEnables rgbEnables) const;
 	RgbEnables hwToRgbEnables(uint32_t hwEnables) const;
 	uint32_t bayerEnablesToHw(BayerEnables bayerEnables) const;
 	BayerEnables hwToBayerEnables(uint32_t hwEnables) const;
-	Global hwToGlobal(const pisp_be_global_config &hwGlobal) const;
-	pisp_be_global_config globalToHw(const Global &global) const;
+	BeGlobal hwToGlobal(const BeGlobalConfig &hwGlobal) const;
+	BeGlobalConfig globalToHw(const BeGlobal &global) const;
 
 private:
-	std::variant<pisp_be_config *, pisp_be_config2 *> config_;
+	std::variant<pisp_be_config, pisp_be_config2> config_;
 };
 
 } // namespace libpisp
