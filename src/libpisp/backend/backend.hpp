@@ -10,6 +10,7 @@
 #include <array>
 #include <cstdint>
 #include <map>
+#include <memory>
 #include <span>
 #include <string>
 #include <type_traits>
@@ -186,8 +187,6 @@ public:
 		return sizeof(PipelineConfig);
 	}
 
-	friend class BackendConfigAdapter;
-
 private:
 	struct BeConfigExtra
 	{
@@ -249,8 +248,7 @@ private:
 	// Internal storage use
 	PipelineConfig internal_pipeline_config_;
 
-	BackendConfigAdapter adaptor_;
-	BackendConfigAdapter::Config config_;
+	std::unique_ptr<BackendConfigAdapter> config_;
 
 	// Default config
 	std::map<std::string, pisp_be_ccm_config> ycbcrMap_;

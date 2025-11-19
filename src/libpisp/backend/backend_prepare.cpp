@@ -556,7 +556,7 @@ void BackEnd::finaliseConfig()
 
 void BackEnd::updateSmartResize()
 {
-	BackendConfigAdapter::Global global = adaptor_.hwToGlobal(pipe_->hwConfig.global);
+	BackendConfigAdapter::Global global = config_->hwToGlobal(pipe_->hwConfig.global);
 	std::string filter;
 
 	// Look through the output branches adjusting the scaling blocks where "smart resizing"
