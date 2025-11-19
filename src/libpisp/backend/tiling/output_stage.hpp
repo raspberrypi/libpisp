@@ -16,27 +16,27 @@ class OutputStage : public BasicStage
 public:
 	struct Config
 	{
-		Config(Length2 const &_max_alignment, Length2 const &_min_alignment, bool _x_mirrored)
-			: max_alignment(_max_alignment), min_alignment(_min_alignment), x_mirrored(_x_mirrored)
+		Config(Length2 const &maxAlignment, Length2 const &minAlignment, bool xMirrored)
+			: maxAlignment(maxAlignment), minAlignment(minAlignment), xMirrored(xMirrored)
 		{
 		}
-		Length2 max_alignment;
-		Length2 min_alignment;
-		bool x_mirrored;
+		Length2 maxAlignment;
+		Length2 minAlignment;
+		bool xMirrored;
 	};
-	OutputStage(char const *name, Stage *upstream, Config const &config, int struct_offset);
-	virtual Interval GetOutputInterval() const;
-	virtual void PushStartUp(int output_start, Dir dir);
-	virtual int PushEndDown(int input_end, Dir dir);
-	virtual void PushEndUp(int output_end, Dir dir);
-	virtual void PushCropDown(Interval interval, Dir dir);
-	virtual void Reset();
-	bool GetBranchComplete() const;
-	void SetBranchComplete();
+	OutputStage(char const *name, Stage *upstream, Config const &config, int structOffset);
+	virtual Interval getOutputInterval() const;
+	virtual void pushStartUp(int outputStart, Dir dir);
+	virtual int pushEndDown(int inputEnd, Dir dir);
+	virtual void pushEndUp(int outputEnd, Dir dir);
+	virtual void pushCropDown(Interval interval, Dir dir);
+	virtual void reset();
+	bool getBranchComplete() const;
+	void setBranchComplete();
 
 private:
 	Config config_;
-	bool branch_complete_;
+	bool branchComplete_;
 };
 
 } // namespace tiling

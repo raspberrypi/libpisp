@@ -407,7 +407,7 @@ void BackEnd::checkTiles(const TilingConfig &tilingConfig)
 			// A zero-sized tile is legitimate meaning "no output", but otherwise minimum tile sizes must be respected.
 			if (widthAfterCrop && heightAfterCrop)
 			{
-				bool rh_edge = tile.output_offset_x[i] + tile.output_width[i] == tilingConfig.output_image_size[i].dx;
+				bool rh_edge = tile.output_offset_x[i] + tile.output_width[i] == tilingConfig.outputImageSize[i].dx;
 
 				if (widthAfterCrop < PISP_BACK_END_MIN_TILE_WIDTH)
 				{
@@ -733,11 +733,11 @@ void BackEnd::updateTiles()
 		RgbEnables rgbEnables = config_->getGlobal().rgbEnables;
 
 		pipe_->retile = false;
-		tilingConfig.input_alignment = calculateInputAlignment();
+		tilingConfig.inputAlignment = calculateInputAlignment();
 
-		PISP_LOG(debug, "Input alignments are " << tilingConfig.input_alignment << " pixels");
+		PISP_LOG(debug, "Input alignments are " << tilingConfig.inputAlignment << " pixels");
 
-		tilingConfig.input_image_size = tiling::Length2(inputFormat.width, inputFormat.height);
+		tilingConfig.inputImageSize = tiling::Length2(inputFormat.width, inputFormat.height);
 
 		for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 		{
@@ -752,38 +752,38 @@ void BackEnd::updateTiles()
 				tilingConfig.crop[i] = tiling::Interval2(tiling::Interval(0, inputFormat.width),
 														  tiling::Interval(0, inputFormat.height));
 
-			tilingConfig.output_h_mirror[i] = outputFormat.transform & PISP_BE_TRANSFORM_HFLIP;
-			tilingConfig.downscale_factor[i] =
+			tilingConfig.outputHMirror[i] = outputFormat.transform & PISP_BE_TRANSFORM_HFLIP;
+			tilingConfig.downscaleFactor[i] =
 				tiling::Length2(downscale.scale_factor_h, downscale.scale_factor_v);
-			tilingConfig.resample_factor[i] =
+			tilingConfig.resampleFactor[i] =
 				tiling::Length2(resample.scale_factor_h, resample.scale_factor_v);
-			tilingConfig.downscale_image_size[i] =
+			tilingConfig.downscaleImageSize[i] =
 				tiling::Length2(ce.downscale[i].scaled_width, ce.downscale[i].scaled_height);
-			tilingConfig.output_image_size[i] =
+			tilingConfig.outputImageSize[i] =
 				tiling::Length2(outputFormat.image.width, outputFormat.image.height);
-			tilingConfig.output_max_alignment[i] =
+			tilingConfig.outputMaxAlignment[i] =
 				calculateOutputAlignment(outputFormat.image.format, PISP_BACK_END_OUTPUT_MAX_ALIGN);
-			tilingConfig.output_min_alignment[i] =
+			tilingConfig.outputMinAlignment[i] =
 				calculateOutputAlignment(outputFormat.image.format, PISP_BACK_END_OUTPUT_MIN_ALIGN);
 		}
 
-		tilingConfig.max_tile_size.dx = sw_.maxTileWidth ? sw_.maxTileWidth : variant_.backEndMaxTileWidth(0);
-		tilingConfig.max_tile_size.dy = sw_.maxStripeHeight ? sw_.maxStripeHeight : MaxStripeHeight;
-		tilingConfig.min_tile_size = tiling::Length2(PISP_BACK_END_MIN_TILE_WIDTH, PISP_BACK_END_MIN_TILE_HEIGHT);
+		tilingConfig.maxTileSize.dx = sw_.maxTileWidth ? sw_.maxTileWidth : variant_.backEndMaxTileWidth(0);
+		tilingConfig.maxTileSize.dy = sw_.maxStripeHeight ? sw_.maxStripeHeight : MaxStripeHeight;
+		tilingConfig.minTileSize = tiling::Length2(PISP_BACK_END_MIN_TILE_WIDTH, PISP_BACK_END_MIN_TILE_HEIGHT);
 
-		tilingConfig.resample_enables = tilingConfig.downscale_enables = 0;
+		tilingConfig.resampleEnables = tilingConfig.downscaleEnables = 0;
 		if (rgbEnables & RgbEnable::Resample0)
-			tilingConfig.resample_enables = 1;
+			tilingConfig.resampleEnables = 1;
 		if (rgbEnables & RgbEnable::Resample1)
-			tilingConfig.resample_enables |= (1 << 1);
+			tilingConfig.resampleEnables |= (1 << 1);
 		if (rgbEnables & RgbEnable::Downscale0)
-			tilingConfig.downscale_enables = 1;
+			tilingConfig.downscaleEnables = 1;
 		if (rgbEnables & RgbEnable::Downscale1)
-			tilingConfig.downscale_enables |= (1 << 1);
+			tilingConfig.downscaleEnables |= (1 << 1);
 
 		// Set compressed_input to false as otherwise the tiling would pad tiles up to multiples of 8 pixels even when these lie
 		// outside the actual image width (and we've chosen not to handle compression like that).
-		tilingConfig.compressed_input = false;
+		tilingConfig.compressedInput = false;
 		retilePipeline(tilingConfig);
 		checkTiles(tilingConfig);
 		pipe_->finaliseTiling = true;
@@ -802,7 +802,7 @@ void BackEnd::retilePipeline(TilingConfig const &tilingConfig)
 	Tile tiles[PISP_BACK_END_NUM_TILES];
 	tiling::Length2 grid;
 
-	tile_pipeline(tilingConfig, tiles, PISP_BACK_END_NUM_TILES, &grid);
+	tilePipeline(tilingConfig, tiles, PISP_BACK_END_NUM_TILES, &grid);
 	pipe_->numTilesX = grid.dx;
 	pipe_->numTilesY = grid.dy;
 

@@ -19,13 +19,13 @@ public:
 		Config(Interval2 const &_crop) : crop(_crop) {}
 		Interval2 crop;
 	};
-	CropStage(char const *name, Stage *upstream, Config const &config, int struct_offset);
-	virtual Length2 GetOutputImageSize() const override;
-	virtual void PushStartUp(int output_start, Dir dir) override;
-	virtual int PushEndDown(int input_end, Dir dir) override;
-	virtual void PushEndUp(int output_end, Dir dir) override;
-	virtual void PushCropDown(Interval interval, Dir dir) override;
-	bool GetBranchInactive() const override;
+	CropStage(char const *name, Stage *upstream, Config const &config, int structOffset);
+	virtual Length2 getOutputImageSize() const override;
+	virtual void pushStartUp(int outputStart, Dir dir) override;
+	virtual int pushEndDown(int inputEnd, Dir dir) override;
+	virtual void pushEndUp(int outputEnd, Dir dir) override;
+	virtual void pushCropDown(Interval interval, Dir dir) override;
+	bool getBranchInactive() const override;
 
 private:
 	Config config_;

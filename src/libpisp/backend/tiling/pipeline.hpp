@@ -23,31 +23,31 @@ class Pipeline
 public:
 	struct Config
 	{
-		Config(Length2 const &_max_tile_size, Length2 const &_min_tile_size)
-			: max_tile_size(_max_tile_size), min_tile_size(_min_tile_size)
+		Config(Length2 const &maxTileSize, Length2 const &minTileSize)
+			: maxTileSize(maxTileSize), minTileSize(minTileSize)
 		{
 		}
-		Length2 max_tile_size;
-		Length2 min_tile_size;
+		Length2 maxTileSize;
+		Length2 minTileSize;
 	};
 
 	Pipeline(char const *name, Config const &config);
-	Config const &GetConfig() const;
-	void AddStage(Stage *stage);
-	void AddInputStage(InputStage *input_stage);
-	void AddOutputStage(OutputStage *output_stage);
-	void Tile(void *mem, size_t num_items, size_t item_size, Length2 *grid);
-	bool FirstTile() const { return first_tile_; }
+	Config const &getConfig() const;
+	void addStage(Stage *stage);
+	void addInputStage(InputStage *inputStage);
+	void addOutputStage(OutputStage *outputStage);
+	void tile(void *mem, size_t numItems, size_t itemSize, Length2 *grid);
+	bool firstTile() const { return firstTile_; }
 
 private:
-	int tileDirection(Dir dir, void *mem, size_t num_items, size_t item_size);
+	int tileDirection(Dir dir, void *mem, size_t numItems, size_t itemSize);
 	void reset();
 	std::string name_;
 	Config config_;
 	std::vector<Stage *> stages_;
 	std::vector<InputStage *> inputs_;
 	std::vector<OutputStage *> outputs_;
-	bool first_tile_;
+	bool firstTile_;
 };
 
 } // namespace tiling

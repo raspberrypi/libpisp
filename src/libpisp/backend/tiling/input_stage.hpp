@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021 - 2023, Raspberry Pi Ltd
  *
- * input_stage.hpp - Tiling library component for input stages
+ * inputStage.hpp - Tiling library component for input stages
  */
 #pragma once
 
@@ -16,21 +16,21 @@ class InputStage : public BasicStage
 public:
 	struct Config
 	{
-		Config(Length2 const &_input_image_size, Length2 const &_alignment, int _compression_alignment = 0)
-			: input_image_size(_input_image_size), alignment(_alignment), compression_alignment(_compression_alignment)
+		Config(Length2 const &inputImageSize, Length2 const &alignment, int compressionAlignment = 0)
+			: inputImageSize(inputImageSize), alignment(alignment), compressionAlignment(compressionAlignment)
 		{
 		}
-		Length2 input_image_size;
+		Length2 inputImageSize;
 		Length2 alignment;
-		int compression_alignment;
+		int compressionAlignment;
 	};
-	InputStage(char const *name, Pipeline *pipeline, Config const &config, int struct_offset);
-	virtual Length2 GetInputImageSize() const;
-	virtual Interval GetInputInterval() const;
-	virtual void PushStartUp(int output_start, Dir dir);
-	virtual int PushEndDown(int input_end, Dir dir);
-	virtual void PushEndUp(int output_end, Dir dir);
-	virtual void PushCropDown(Interval interval, Dir dir);
+	InputStage(char const *name, Pipeline *pipeline, Config const &config, int structOffset);
+	virtual Length2 getInputImageSize() const;
+	virtual Interval getInputInterval() const;
+	virtual void pushStartUp(int outputStart, Dir dir);
+	virtual int pushEndDown(int inputEnd, Dir dir);
+	virtual void pushEndUp(int outputEnd, Dir dir);
+	virtual void pushCropDown(Interval interval, Dir dir);
 
 private:
 	Config config_;

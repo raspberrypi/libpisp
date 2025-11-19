@@ -179,7 +179,7 @@ struct Format
 	std::string format;
 };
 
-Format parse_format(const std::string &fmt)
+Format parseFormat(const std::string &fmt)
 {
 	Format format;
 	size_t pos = 0, start = 0;
@@ -254,14 +254,14 @@ int main(int argc, char *argv[])
 	libpisp::helpers::BackendDevice backendDevice { };
 	std::cerr << "Acquired device " << backendDevice.mediaDev() << std::endl;
 
-	auto inFile = parse_format(args["input-format"].as<std::string>());
+	auto inFile = parseFormat(args["input-format"].as<std::string>());
 	if (!Formats.count(inFile.format))
 	{
 		std::cerr << "Invalid input-format specified" << std::endl;
 		exit(-1);
 	}
 
-	auto outFile = parse_format(args["output-format"].as<std::string>());
+	auto outFile = parseFormat(args["output-format"].as<std::string>());
 	if (!Formats.count(outFile.format))
 	{
 		std::cerr << "Invalid output-format specified" << std::endl;

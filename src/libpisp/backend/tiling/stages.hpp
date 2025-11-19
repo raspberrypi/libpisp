@@ -24,26 +24,26 @@ public:
 class Stage
 {
 public:
-	Stage(char const *name, Pipeline *pipeline, int struct_offset);
+	Stage(char const *name, Pipeline *pipeline, int structOffset);
 	virtual ~Stage() {}
-	Pipeline *GetPipeline() const;
-	virtual Length2 GetInputImageSize() const = 0;
-	virtual Length2 GetOutputImageSize() const = 0;
-	virtual void SetDownstream(Stage *downstream) = 0;
-	virtual void Reset() = 0;
-	virtual void PushStartUp(int output_start, Dir dir) = 0;
-	virtual int PushEndDown(int input_end, Dir dir) = 0;
-	virtual void PushEndUp(int output_end, Dir dir) = 0;
-	virtual void PushCropDown(Interval interval, Dir dir) = 0;
-	virtual void CopyOut(void *dest, Dir dir) = 0;
-	virtual bool GetBranchComplete() const = 0;
-	virtual bool GetBranchInactive() const = 0;
-	void MergeRegions(void *dest, void *x_src, void *y_src) const;
+	Pipeline *getPipeline() const;
+	virtual Length2 getInputImageSize() const = 0;
+	virtual Length2 getOutputImageSize() const = 0;
+	virtual void setDownstream(Stage *downstream) = 0;
+	virtual void reset() = 0;
+	virtual void pushStartUp(int outputStart, Dir dir) = 0;
+	virtual int pushEndDown(int inputEnd, Dir dir) = 0;
+	virtual void pushEndUp(int outputEnd, Dir dir) = 0;
+	virtual void pushCropDown(Interval interval, Dir dir) = 0;
+	virtual void copyOut(void *dest, Dir dir) = 0;
+	virtual bool getBranchComplete() const = 0;
+	virtual bool getBranchInactive() const = 0;
+	void mergeRegions(void *dest, void *xSrc, void *ySrc) const;
 
 protected:
 	std::string name_;
 	Pipeline *pipeline_;
-	int struct_offset_;
+	int structOffset_;
 };
 
 // BasicStage is a Stage that has a single upstream and a single downstream stage (though they can be NULL).
@@ -51,21 +51,21 @@ protected:
 class BasicStage : public Stage
 {
 public:
-	BasicStage(char const *name, Pipeline *pipeline, Stage *upstream, int struct_offset);
-	virtual Length2 GetInputImageSize() const;
-	virtual Length2 GetOutputImageSize() const;
-	virtual void SetDownstream(Stage *downstream);
-	virtual void Reset();
-	virtual void CopyOut(void *dest, Dir dir);
-	virtual bool GetBranchComplete() const;
-	virtual bool GetBranchInactive() const;
+	BasicStage(char const *name, Pipeline *pipeline, Stage *upstream, int structOffset);
+	virtual Length2 getInputImageSize() const;
+	virtual Length2 getOutputImageSize() const;
+	virtual void setDownstream(Stage *downstream);
+	virtual void reset();
+	virtual void copyOut(void *dest, Dir dir);
+	virtual bool getBranchComplete() const;
+	virtual bool getBranchInactive() const;
 
 protected:
 	Stage *upstream_;
 	Stage *downstream_;
-	Interval input_interval_;
+	Interval inputInterval_;
 	Crop crop_;
-	Interval output_interval_;
+	Interval outputInterval_;
 };
 
 } // namespace tiling

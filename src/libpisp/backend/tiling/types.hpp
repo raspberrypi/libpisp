@@ -58,20 +58,20 @@ struct Interval
 	Interval(int _offset, int _length) : offset(_offset), length(_length) {}
 	explicit Interval(int _offset) : offset(_offset), length(0) {}
 	int offset, length;
-	int End() const { return offset + length; }
-	void SetStart(int start) { length += (offset - start), offset = start; } // leave End unchanged
-	void SetEnd(int end) { length = end - offset; }
+	int end() const { return offset + length; }
+	void setStart(int start) { length += (offset - start), offset = start; } // leave end unchanged
+	void setEnd(int end) { length = end - offset; }
 	bool operator==(Interval const &other) const { return offset == other.offset && length == other.length; }
 	Interval operator-(Crop const &crop) const { return Interval(offset - crop.start, length - crop.start - crop.end); }
-	Crop operator-(Interval const &other) { return Crop(other.offset - offset, End() - other.End()); }
-	bool operator>(Interval const &other) { return offset <= other.offset && End() >= other.End(); } // contains
-	bool operator<(Interval const &other) { return offset >= other.offset && End() <= other.End(); } // is contained
+	Crop operator-(Interval const &other) { return Crop(other.offset - offset, end() - other.end()); }
+	bool operator>(Interval const &other) { return offset <= other.offset && end() >= other.end(); } // contains
+	bool operator<(Interval const &other) { return offset >= other.offset && end() <= other.end(); } // is contained
 	Interval &operator|=(int off)
 	{
 		if (off < offset)
-			SetStart(off);
-		else if (off > End())
-			SetEnd(off);
+			setStart(off);
+		else if (off > end())
+			setEnd(off);
 		return *this;
 	}
 };
