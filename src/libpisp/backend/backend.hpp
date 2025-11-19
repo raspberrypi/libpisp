@@ -203,13 +203,13 @@ private:
 		pisp_be_config hwConfig{};
 		BeConfigExtra configExtra{};
 
-		BayerEnables bayerEnables;
-		RgbEnables rgbEnables;
 		BayerEnables dirtyFlagsBayer;
 		RgbEnables dirtyFlagsRgb;
 		DirtyFlags dirtyFlagsExtra;
+
 		bool retile = true;
 		bool finaliseTiling = true;
+
 		std::array<SmartResize, PISP_BACK_END_NUM_OUTPUTS> smartResize{};
 		uint32_t smartResizeDirty = 0;
 
@@ -246,7 +246,7 @@ private:
 	const PiSPVariant variant_;
 
 	// Internal storage use
-	PipelineConfig internal_pipeline_config_;
+	PipelineConfig internalPipelineConfig_;
 
 	std::unique_ptr<BackendConfigAdapter> config_;
 

@@ -127,14 +127,14 @@ void BackEnd::finaliseInputs() const
 	const pisp_be_config &config = pipe_->hwConfig;
 
 	// Not so much finalising, just checking that input dimensions and strides are OK.
-	if (pipe_->bayerEnables & BayerEnable::Input)
+	if (config_->getGlobal().bayerEnables & BayerEnable::Input)
 	{
 		if ((config.input_format.width & 1) || (config.input_format.height & 1))
 			throw std::runtime_error("finaliseInputs: Bayer pipe image dimensions must be even");
 		if (config.input_format.stride & 15)
 			throw std::runtime_error("finaliseInputs: input stride should be at least 16-byte aligned");
 	}
-	else if (pipe_->rgbEnables & RgbEnable::Input)
+	else if (config_->getGlobal().rgbEnables & RgbEnable::Input)
 	{
 		if (PISP_IMAGE_FORMAT_SAMPLING_420(config.input_format.format) && (config.input_format.width & 1))
 			throw std::runtime_error("finaliseInputs: 420 input height must be even");
@@ -231,7 +231,7 @@ void BackEnd::finaliseDownscale(unsigned int index, uint16_t width, uint16_t hei
 void BackEnd::finaliseDecompression() const
 {
 	uint32_t fmt = pipe_->hwConfig.input_format.format;
-	BayerEnables bayerEnables = pipe_->bayerEnables;
+	BayerEnables bayerEnables = config_->getGlobal().bayerEnables;
 
 	if (PISP_IMAGE_FORMAT_COMPRESSED(fmt) && !(bayerEnables & BayerEnable::Decompress))
 		throw std::runtime_error("BackEnd::finalise: input compressed but decompression not enabled");
@@ -246,11 +246,13 @@ void BackEnd::finaliseDecompression() const
 void BackEnd::finaliseTdn()
 {
 	pisp_be_config &config = pipe_->hwConfig;
-	int tdnEnabled = pipe_->bayerEnables & BayerEnable::Tdn;
-	int tdnInputEnabled = pipe_->bayerEnables & BayerEnable::TdnInput;
-	int tdnDecompressEnabled = pipe_->bayerEnables & BayerEnable::TdnDecompress;
-	int tdnCompressEnabled = pipe_->bayerEnables & BayerEnable::TdnCompress;
-	int tdnOutputEnabled = pipe_->bayerEnables & BayerEnable::TdnOutput;
+	BayerEnables bayerEnables = config_->getGlobal().bayerEnables;
+	
+	int tdnEnabled = bayerEnables & BayerEnable::Tdn;
+	int tdnInputEnabled = bayerEnables & BayerEnable::TdnInput;
+	int tdnDecompressEnabled = bayerEnables & BayerEnable::TdnDecompress;
+	int tdnCompressEnabled = bayerEnables & BayerEnable::TdnCompress;
+	int tdnOutputEnabled = bayerEnables & BayerEnable::TdnOutput;
 	uint32_t fmt = config.tdn_output_format.format;
 
 	if (tdnEnabled && !tdnOutputEnabled)
@@ -301,11 +303,13 @@ void BackEnd::finaliseTdn()
 void BackEnd::finaliseStitch()
 {
 	pisp_be_config &config = pipe_->hwConfig;
-	bool stitchEnabled = pipe_->bayerEnables & BayerEnable::Stitch;
-	bool stitchInputEnabled = pipe_->bayerEnables & BayerEnable::StitchInput;
-	bool stitchDecompressEnabled = pipe_->bayerEnables & BayerEnable::StitchDecompress;
-	bool stitchCompressEnabled = pipe_->bayerEnables & BayerEnable::StitchCompress;
-	bool stitchOutputEnabled = pipe_->bayerEnables & BayerEnable::StitchOutput;
+	BayerEnables bayerEnables = config_->getGlobal().bayerEnables;
+	
+	bool stitchEnabled = bayerEnables & BayerEnable::Stitch;
+	bool stitchInputEnabled = bayerEnables & BayerEnable::StitchInput;
+	bool stitchDecompressEnabled = bayerEnables & BayerEnable::StitchDecompress;
+	bool stitchCompressEnabled = bayerEnables & BayerEnable::StitchCompress;
+	bool stitchOutputEnabled = bayerEnables & BayerEnable::StitchOutput;
 	uint32_t inputFmt = config.stitch_input_format.format;
 	uint32_t outputFmt = config.stitch_output_format.format;
 
@@ -385,7 +389,7 @@ void BackEnd::checkTiles(const TilingConfig &tiling_config)
 
 		for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 		{
-			if ((pipe_->rgbEnables & getFlagForBranch(RgbEnable::Output0, i)) == 0)
+			if ((config_->getGlobal().rgbEnables & getFlagForBranch(RgbEnable::Output0, i)) == 0)
 				continue;
 
 			unsigned int width_after_crop = tile.input_width - tile.crop_x_start[i] - tile.crop_x_end[i];
@@ -437,8 +441,9 @@ void BackEnd::checkTiles(const TilingConfig &tiling_config)
 tiling::Length2 BackEnd::calculateInputAlignment() const
 {
 	const pisp_be_config &config = pipe_->hwConfig;
+	BayerEnables bayerEnables = config_->getGlobal().bayerEnables;
 
-	if (pipe_->rgbEnables & RgbEnable::Input)
+	if (config_->getGlobal().rgbEnables & RgbEnable::Input)
 	{
 		PISP_LOG(debug, "RGB input enabled");
 		// Need 4 byte alignment AND even number of pixels. Height must be 2 row aligned only for 420 input.
@@ -451,17 +456,17 @@ tiling::Length2 BackEnd::calculateInputAlignment() const
 
 	// If any input is compressed, we need 8 *pixel* alignment.
 	if (PISP_IMAGE_FORMAT_COMPRESSED(config.input_format.format) ||
-		((pipe_->bayerEnables & BayerEnable::TdnInput) &&
+		((bayerEnables & BayerEnable::TdnInput) &&
 		 PISP_IMAGE_FORMAT_COMPRESSED(config.tdn_input_format.format)) ||
-		((pipe_->bayerEnables & BayerEnable::StitchInput) &&
+		((bayerEnables & BayerEnable::StitchInput) &&
 		 PISP_IMAGE_FORMAT_COMPRESSED(config.stitch_input_format.format)))
 		pixelAlignment = lcm(pixelAlignment, PISP_BACK_END_COMPRESSED_ALIGN);
 
 	// If any of the Bayer outputs are enabled, those need 16 *byte* alignment. (This already covers the outputs being compressed.)
-	if (pipe_->bayerEnables & BayerEnable::TdnOutput)
+	if (bayerEnables & BayerEnable::TdnOutput)
 		pixelAlignment =
 			lcm(pixelAlignment, getPixelAlignment(config.tdn_output_format.format, PISP_BACK_END_OUTPUT_MIN_ALIGN));
-	if (pipe_->bayerEnables & BayerEnable::StitchOutput)
+	if (bayerEnables & BayerEnable::StitchOutput)
 		pixelAlignment = lcm(pixelAlignment,
 							  getPixelAlignment(config.stitch_output_format.format, PISP_BACK_END_OUTPUT_MIN_ALIGN));
 
@@ -470,10 +475,11 @@ tiling::Length2 BackEnd::calculateInputAlignment() const
 
 void BackEnd::finaliseConfig()
 {
-	BayerEnables dirty_flags_bayer = pipe_->dirtyFlagsBayer &
-								 	 pipe_->bayerEnables; // only finalise blocks that are dirty *and* enabled
-	RgbEnables dirty_flags_rgb = pipe_->dirtyFlagsRgb &
-								 pipe_->rgbEnables; // only finalise blocks that are dirty *and* enabled
+	BayerEnables bayerEnables = config_->getGlobal().bayerEnables;
+	RgbEnables rgbEnables = config_->getGlobal().rgbEnables;
+
+	BayerEnables dirty_flags_bayer = pipe_->dirtyFlagsBayer & bayerEnables; // only finalise blocks that are dirty *and* enabled
+	RgbEnables dirty_flags_rgb = pipe_->dirtyFlagsRgb & rgbEnables; // only finalise blocks that are dirty *and* enabled
 
 	if ((dirty_flags_bayer & BayerEnable::Input) || (dirty_flags_rgb & RgbEnable::Input))
 		finaliseBayerRgbInputs();
@@ -506,7 +512,7 @@ void BackEnd::finaliseConfig()
 
 	for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++)
 	{
-		bool enabled = pipe_->rgbEnables & getFlagForBranch(RgbEnable::Output0, j);
+		bool enabled = rgbEnables & getFlagForBranch(RgbEnable::Output0, j);
 
 		if (enabled)
 		{
@@ -524,7 +530,7 @@ void BackEnd::finaliseConfig()
 					throw std::runtime_error("Downscale is not available in output branch " + std::to_string(j));
 			}
 
-			if (pipe_->rgbEnables & getFlagForBranch(RgbEnable::Downscale0, j))
+			if (rgbEnables & getFlagForBranch(RgbEnable::Downscale0, j))
 			{
 				// If the downscale is enabled, we update the input width/height for the resample stage.
 				w = pipe_->configExtra.downscale[j].scaled_width;
@@ -539,16 +545,16 @@ void BackEnd::finaliseConfig()
 		}
 	}
 	// Finally check for a sane collection of enable bits.
-	if (!((pipe_->bayerEnables & BayerEnable::Input) || (pipe_->bayerEnables == BayerEnable::None)))
+	if (!((bayerEnables & BayerEnable::Input) || (bayerEnables== BayerEnable::None)))
 		throw std::runtime_error("BackEnd::finalise: Bayer input disabled but Bayer pipe active");
 
-	if (!(pipe_->bayerEnables & BayerEnable::Input) && !(pipe_->rgbEnables & RgbEnable::Input))
+	if (!(bayerEnables & BayerEnable::Input) && !(rgbEnables & RgbEnable::Input))
 		throw std::runtime_error("BackEnd::finalise: exactly one of Bayer and RGB inputs should be enabled");
 
-	BayerEnables bayer_output_enables = pipe_->bayerEnables & (BayerEnable::TdnOutput | BayerEnable::StitchOutput);
+	BayerEnables bayer_output_enables = bayerEnables & (BayerEnable::TdnOutput | BayerEnable::StitchOutput);
 	RgbEnables rgb_output_enables = RgbEnable::None;
 	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
-		rgb_output_enables |= pipe_->rgbEnables & getFlagForBranch(RgbEnable::Output0, i);
+		rgb_output_enables |= rgbEnables & getFlagForBranch(RgbEnable::Output0, i);
 
 	if (rgb_output_enables == RgbEnable::None && bayer_output_enables == BayerEnable::None)
 		throw std::runtime_error("BackEnd::finalise: PiSP not configured to do anything");
@@ -556,7 +562,7 @@ void BackEnd::finaliseConfig()
 
 void BackEnd::updateSmartResize()
 {
-	BackendConfigAdapter::Global global = config_->hwToGlobal(pipe_->hwConfig.global);
+	BackendConfigAdapter::Global global = config_->getGlobal();
 	std::string filter;
 
 	// Look through the output branches adjusting the scaling blocks where "smart resizing"
@@ -713,6 +719,7 @@ void BackEnd::updateTiles()
 		TilingConfig tiling_config;
 		pisp_be_config const &c = pipe_->hwConfig;
 		BeConfigExtra const &ce = pipe_->configExtra;
+		RgbEnables rgbEnables = config_->getGlobal().rgbEnables;
 
 		pipe_->retile = false;
 		tiling_config.input_alignment = calculateInputAlignment();
@@ -750,13 +757,13 @@ void BackEnd::updateTiles()
 		tiling_config.min_tile_size = tiling::Length2(PISP_BACK_END_MIN_TILE_WIDTH, PISP_BACK_END_MIN_TILE_HEIGHT);
 
 		tiling_config.resample_enables = tiling_config.downscale_enables = 0;
-		if (pipe_->rgbEnables & RgbEnable::Resample0)
+		if (rgbEnables & RgbEnable::Resample0)
 			tiling_config.resample_enables = 1;
-		if (pipe_->rgbEnables & RgbEnable::Resample1)
+		if (rgbEnables & RgbEnable::Resample1)
 			tiling_config.resample_enables |= (1 << 1);
-		if (pipe_->rgbEnables & RgbEnable::Downscale0)
+		if (rgbEnables & RgbEnable::Downscale0)
 			tiling_config.downscale_enables = 1;
-		if (pipe_->rgbEnables & RgbEnable::Downscale1)
+		if (rgbEnables & RgbEnable::Downscale1)
 			tiling_config.downscale_enables |= (1 << 1);
 
 		// Set compressed_input to false as otherwise the tiling would pad tiles up to multiples of 8 pixels even when these lie
@@ -787,6 +794,8 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 	// Finally convert the Tiles into pisp_tiles.
 	for (unsigned int i = 0; i < pipe_->numTilesX * pipe_->numTilesY; i++)
 	{
+		RgbEnables rgbEnables = config_->getGlobal().rgbEnables;
+
 		pisp_tile &t = pipe_->tiles[i];
 
 		memset(&t, 0, sizeof(pisp_tile));
@@ -810,7 +819,7 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 
 		for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++)
 		{
-			bool enabled = (pipe_->rgbEnables & getFlagForBranch(RgbEnable::Output0, j));
+			bool enabled = (rgbEnables & getFlagForBranch(RgbEnable::Output0, j));
 			if (enabled && (tiles[i].output[j].output.x.length == 0 || tiles[i].output[j].output.y.length == 0))
 			{
 				// If a tile produces no output there's no point sending anything down this branch, so ensure the crop
@@ -835,13 +844,13 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 
 			// When a resize stage is disabled, the tile size after the stage is found from the input of the
 			// next block. Also there will be no extra crop necessary for the resize operation.
-			if (pipe_->rgbEnables & getFlagForBranch(RgbEnable::Downscale0, j))
+			if (rgbEnables & getFlagForBranch(RgbEnable::Downscale0, j))
 			{
 				downscale_crop = tiles[i].downscale[j].crop + tiles[i].crop[j].crop;
 				// Size of the tile going into the resample block needs to be set here.
 				resample_size = tiles[i].downscale[j].output;
 			}
-			else if (pipe_->rgbEnables & getFlagForBranch(RgbEnable::Resample0, j))
+			else if (rgbEnables & getFlagForBranch(RgbEnable::Resample0, j))
 			{
 				downscale_crop = tiles[i].resample[j].crop + tiles[i].crop[j].crop;
 			}
@@ -864,7 +873,7 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 			for (int p = 0; p < 3; p++)
 			{
 				// Calculate x/y initial downsampler/resampler phases per-plane.
-				if (pipe_->rgbEnables & getFlagForBranch(RgbEnable::Downscale0, j))
+				if (rgbEnables & getFlagForBranch(RgbEnable::Downscale0, j))
 				{
 					unsigned int frac_x = (resample_size.x.offset * pipe_->hwConfig.downscale[j].scale_factor_h) &
 										  ((1 << ScalePrecision) - 1);
@@ -875,7 +884,7 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 					t.downscale_phase_y[p * variant_.backEndNumBranches(0) + j] = (UnityPhase - frac_y);
 				}
 
-				if (pipe_->rgbEnables & getFlagForBranch(RgbEnable::Resample0, j))
+				if (rgbEnables & getFlagForBranch(RgbEnable::Resample0, j))
 				{
 					// Location of the output pixel in the interpolated (input) image.
 					unsigned int interpolated_pix_x =
@@ -899,7 +908,7 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 			}
 
 			// Phase difference between planes cannot be > 0.5 pixels on the output dimenstions.
-			if (pipe_->rgbEnables & getFlagForBranch(RgbEnable::Resample0, j))
+			if (rgbEnables & getFlagForBranch(RgbEnable::Resample0, j))
 			{
 				int phase_max = (pipe_->hwConfig.resample[j].scale_factor_h * UnityPhase / 2) >> ScalePrecision;
 				if (std::abs(t.resample_phase_x[0 * variant_.backEndNumBranches(0) + j] -
@@ -946,13 +955,13 @@ void BackEnd::finaliseTiling()
 		PISP_LOG(debug, "Input offsets " << t.input_offset_x << "," << t.input_offset_y << " address offsets "
 										 << t.input_addr_offset << " and " << t.input_addr_offset2);
 
-		if (pipe_->bayerEnables & BayerEnable::Lsc)
+		if (config_->getGlobal().bayerEnables & BayerEnable::Lsc)
 		{
 			t.lsc_grid_offset_x = (t.input_offset_x + pipe_->configExtra.lsc.offset_x) * pipe_->hwConfig.lsc.grid_step_x;
 			t.lsc_grid_offset_y = (t.input_offset_y + pipe_->configExtra.lsc.offset_y) * pipe_->hwConfig.lsc.grid_step_y;
 		}
 
-		if (pipe_->bayerEnables & BayerEnable::Cac)
+		if (config_->getGlobal().bayerEnables & BayerEnable::Cac)
 		{
 			t.cac_grid_offset_x = (t.input_offset_x + pipe_->configExtra.cac.offset_x) * pipe_->hwConfig.cac.grid_step_x;
 			t.cac_grid_offset_y = (t.input_offset_y + pipe_->configExtra.cac.offset_y) * pipe_->hwConfig.cac.grid_step_y;
@@ -984,9 +993,9 @@ void BackEnd::getOutputSize(int i, uint16_t *width, uint16_t *height, pisp_image
 	// This internal version doesn't check if the output is enabled
 	if (pipe_->smartResize[i].width && pipe_->smartResize[i].height)
 		*width = pipe_->smartResize[i].width, *height = pipe_->smartResize[i].height;
-	else if (pipe_->rgbEnables & getFlagForBranch(RgbEnable::Resample0, i))
+	else if (config_->getGlobal().rgbEnables & getFlagForBranch(RgbEnable::Resample0, i))
 		*width = pipe_->configExtra.resample[i].scaled_width, *height = pipe_->configExtra.resample[i].scaled_height;
-	else if (pipe_->rgbEnables & getFlagForBranch(RgbEnable::Downscale0, i))
+	else if (config_->getGlobal().rgbEnables & getFlagForBranch(RgbEnable::Downscale0, i))
 		*width = pipe_->configExtra.downscale[i].scaled_width, *height = pipe_->configExtra.downscale[i].scaled_height;
 	else if (pipe_->configExtra.crop[i].width) // crop width and height will be zero when crop disabled
 		*width = pipe_->configExtra.crop[i].width, *height = pipe_->configExtra.crop[i].height;
@@ -1002,7 +1011,7 @@ bool BackEnd::computeOutputImageFormat(unsigned int i, pisp_image_format_config 
 	if (&fmt != &pipe_->hwConfig.output_format[i].image)
 		fmt = pipe_->hwConfig.output_format[i].image;
 
-	if (pipe_->rgbEnables & getFlagForBranch(RgbEnable::Output0, i))
+	if (config_->getGlobal().rgbEnables & getFlagForBranch(RgbEnable::Output0, i))
 {
 		getOutputSize(i, &fmt.width, &fmt.height, ifmt);
 		if (!fmt.stride)
@@ -1023,13 +1032,16 @@ bool BackEnd::computeOutputImageFormat(unsigned int i, pisp_image_format_config 
 
 void BackEnd::prepare(pisp_be_tiles_config *config)
 {
+	BayerEnables bayerEnables = config_->getGlobal().bayerEnables;
+	RgbEnables rgbEnables = config_->getGlobal().rgbEnables;
+
 	PISP_LOG(debug, "New frame!");
 
 	// On every start-of-frame we:
 	// 1. Check the input configuration appears sensible.
-	if (!(pipe_->bayerEnables & BayerEnable::Input) && !(pipe_->rgbEnables & RgbEnable::Input))
+	if (!(bayerEnables & BayerEnable::Input) && !(rgbEnables & RgbEnable::Input))
 		throw std::runtime_error("BackEnd::preFrameUpdate: neither Bayer nor RGB inputs are enabled");
-	else if ((pipe_->bayerEnables & BayerEnable::Input) && (pipe_->rgbEnables & RgbEnable::Input))
+	else if ((bayerEnables & BayerEnable::Input) && (rgbEnables & RgbEnable::Input))
 		throw std::runtime_error("BackEnd::preFrameUpdate: both Bayer and RGB inputs are enabled");
 
 	// 2. Also check the output configuration is all filled in and looks sensible. Again, addresses must be

@@ -26,7 +26,7 @@ BackEnd::BackEnd(SoftwareConfig const &swConfig, PiSPVariant const &variant, std
 	if (configStorage.data() && configStorage.size() >= sizeof(PipelineConfig))
 		pipe_ = reinterpret_cast<PipelineConfig *>(configStorage.data());
 	else
-		pipe_ = &internal_pipeline_config_;
+		pipe_ = &internalPipelineConfig_;
 	
 	config_ = std::make_unique<BackendConfigAdapter>(&pipe_->hwConfig);
 
@@ -40,20 +40,19 @@ BackEnd::~BackEnd()
 
 void BackEnd::setGlobal(BackendConfigAdapter::Global const &global)
 {
-	RgbEnables changedRgbEnables(global.rgbEnables ^ pipe_->rgbEnables);
+	RgbEnables currentRgbEnables = config_->getGlobal().rgbEnables;
+	BayerEnables currentBayerEnables = config_->getGlobal().bayerEnables;
+
+	RgbEnables changedRgbEnables(global.rgbEnables ^ currentRgbEnables);
 
 	if (changedRgbEnables & (RgbEnable::Downscale0 | RgbEnable::Downscale1 |
 							 RgbEnable::Resample0 | RgbEnable::Resample1))
 		pipe_->retile = true; // must retile when rescale change
 
-	pipe_->dirtyFlagsBayer |= (global.bayerEnables & ~pipe_->bayerEnables); // label anything newly enabled as dirty
-	pipe_->dirtyFlagsRgb |= (global.rgbEnables & ~pipe_->rgbEnables); // label anything newly enabled as dirty
+	pipe_->dirtyFlagsBayer |= (global.bayerEnables & ~currentBayerEnables); // label anything newly enabled as dirty
+	pipe_->dirtyFlagsRgb |= (global.rgbEnables & ~currentRgbEnables); // label anything newly enabled as dirty
 	pipe_->dirtyFlagsExtra |= DirtyFlag::Global;
 	config_->setGlobal(global);
-
-	// For convenience:
-	pipe_->bayerEnables = global.bayerEnables;
-	pipe_->rgbEnables = global.rgbEnables;
 }
 
 void BackEnd::getGlobal(BackendConfigAdapter::Global &global) const
