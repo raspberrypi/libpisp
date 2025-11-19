@@ -113,10 +113,9 @@ void calculateInputAddrOffset(int x, int y, pisp_image_format_config const &inpu
 
 } // namespace
 
-
 void BackEnd::finaliseBayerRgbInputs() const 
 {
-	const pisp_image_format_config &config = pipe_->hwConfig.input_format;
+	const pisp_image_format_config &config = config_->getInputFormat();
 
 	if (config.width < PISP_BACK_END_MIN_TILE_WIDTH || config.height < PISP_BACK_END_MIN_TILE_HEIGHT)
 		throw std::runtime_error("finaliseBayerRgbInputs: input image too small");
@@ -124,39 +123,39 @@ void BackEnd::finaliseBayerRgbInputs() const
 
 void BackEnd::finaliseInputs() const
 {
-	const pisp_be_config &config = pipe_->hwConfig;
+	const pisp_image_format_config &input_format = config_->getInputFormat();
 
 	// Not so much finalising, just checking that input dimensions and strides are OK.
 	if (config_->getGlobal().bayerEnables & BayerEnable::Input)
 	{
-		if ((config.input_format.width & 1) || (config.input_format.height & 1))
+		if ((input_format.width & 1) || (input_format.height & 1))
 			throw std::runtime_error("finaliseInputs: Bayer pipe image dimensions must be even");
-		if (config.input_format.stride & 15)
+		if (input_format.stride & 15)
 			throw std::runtime_error("finaliseInputs: input stride should be at least 16-byte aligned");
 	}
 	else if (config_->getGlobal().rgbEnables & RgbEnable::Input)
 	{
-		if (PISP_IMAGE_FORMAT_SAMPLING_420(config.input_format.format) && (config.input_format.width & 1))
+		if (PISP_IMAGE_FORMAT_SAMPLING_420(input_format.format) && (input_format.width & 1))
 			throw std::runtime_error("finaliseInputs: 420 input height must be even");
-		else if ((PISP_IMAGE_FORMAT_SAMPLING_420(config.input_format.format) ||
-				  PISP_IMAGE_FORMAT_SAMPLING_422(config.input_format.format)) &&
-				 (config.input_format.width & 1))
+		else if ((PISP_IMAGE_FORMAT_SAMPLING_420(input_format.format) ||
+				  PISP_IMAGE_FORMAT_SAMPLING_422(input_format.format)) &&
+				 (input_format.width & 1))
 			throw std::runtime_error("finaliseInputs: 420/422 input width must be even");
-		if (PISP_IMAGE_FORMAT_WALLPAPER(config.input_format.format))
+		if (PISP_IMAGE_FORMAT_WALLPAPER(input_format.format))
 		{
-			if ((config.input_format.stride & 127) || (config.input_format.stride2 & 127))
+			if ((input_format.stride & 127) || (input_format.stride2 & 127))
 				throw std::runtime_error("finaliseInputs: wallpaper format strides must be at least 128-byte aligned");
 		}
-		else if ((config.input_format.stride & 15) || (config.input_format.stride2 & 15))
+		else if ((input_format.stride & 15) || (input_format.stride2 & 15))
 			throw std::runtime_error("finaliseInputs: input strides must be at least 16-byte aligned");
 	}
 }
 
 void BackEnd::finaliseLsc()
 {
-	pisp_be_lsc_config &lsc = pipe_->hwConfig.lsc;
-	pisp_be_lsc_extra &lscExtra = pipe_->configExtra.lsc;
-	uint16_t width = pipe_->hwConfig.input_format.width, height = pipe_->hwConfig.input_format.height;
+	pisp_be_lsc_config &lsc = config_->getLsc();
+	const pisp_be_lsc_extra &lscExtra = pipe_->configExtra.lsc;
+	uint16_t width = config_->getInputFormat().width, height = config_->getInputFormat().height;
 
 	// Just a warning that ACLS algorithms might want the grid calculations here to match the AWB/ACLS stats.
 	static const int P = PISP_BE_LSC_STEP_PRECISION;
@@ -172,9 +171,9 @@ void BackEnd::finaliseLsc()
 
 void BackEnd::finaliseCac()
 {
-	pisp_be_cac_config &cac = pipe_->hwConfig.cac;
-	pisp_be_cac_extra &cacExtra = pipe_->configExtra.cac;
-	uint16_t width = pipe_->hwConfig.input_format.width, height = pipe_->hwConfig.input_format.height;
+	pisp_be_cac_config &cac = config_->getCac();
+	const pisp_be_cac_extra &cacExtra = pipe_->configExtra.cac;
+	uint16_t width = config_->getInputFormat().width, height = config_->getInputFormat().height;
 
 	static const int P = PISP_BE_CAC_STEP_PRECISION;
 
@@ -189,8 +188,8 @@ void BackEnd::finaliseCac()
 
 void BackEnd::finaliseResample(unsigned int index, uint16_t width, uint16_t height)
 {
-	pisp_be_resample_config &resample = pipe_->hwConfig.resample[index];
-	pisp_be_resample_extra &resampleExtra = pipe_->configExtra.resample[index];
+	pisp_be_resample_config &resample =	config_->getResample(index);
+	const pisp_be_resample_extra &resampleExtra = pipe_->configExtra.resample[index];
 
 	uint32_t scaleFactorH = ((width - 1) << ScalePrecision) / (resampleExtra.scaled_width - 1);
 	uint32_t scaleFactorV = ((height - 1) << ScalePrecision) / (resampleExtra.scaled_height - 1);
@@ -206,8 +205,8 @@ void BackEnd::finaliseResample(unsigned int index, uint16_t width, uint16_t heig
 
 void BackEnd::finaliseDownscale(unsigned int index, uint16_t width, uint16_t height)
 {
-	pisp_be_downscale_config &downscale = pipe_->hwConfig.downscale[index];
-	pisp_be_downscale_extra &downscaleExtra = pipe_->configExtra.downscale[index];
+	pisp_be_downscale_config &downscale = config_->getDownscale(index);
+	const pisp_be_downscale_extra &downscaleExtra = pipe_->configExtra.downscale[index];
 
 	PISP_LOG(debug, "width " << width << " scaled_width " << downscaleExtra.scaled_width);
 	PISP_LOG(debug, "height " << height << " scaled_height " << downscaleExtra.scaled_height);
@@ -230,7 +229,7 @@ void BackEnd::finaliseDownscale(unsigned int index, uint16_t width, uint16_t hei
 
 void BackEnd::finaliseDecompression() const
 {
-	uint32_t fmt = pipe_->hwConfig.input_format.format;
+	uint32_t fmt = config_->getInputFormat().format;
 	BayerEnables bayerEnables = config_->getGlobal().bayerEnables;
 
 	if (PISP_IMAGE_FORMAT_COMPRESSED(fmt) && !(bayerEnables & BayerEnable::Decompress))
@@ -245,15 +244,18 @@ void BackEnd::finaliseDecompression() const
 
 void BackEnd::finaliseTdn()
 {
-	pisp_be_config &config = pipe_->hwConfig;
-	BayerEnables bayerEnables = config_->getGlobal().bayerEnables;
+	const pisp_image_format_config &inputFormat = config_->getInputFormat();
+	const pisp_be_tdn_config &tdn = config_->getTdn();
+	pisp_image_format_config &tdnInputFormat = config_->getTdnInputFormat();
+	pisp_image_format_config &tdnOutputFormat = config_->getTdnOutputFormat();
+	const BayerEnables bayerEnables = config_->getGlobal().bayerEnables;
 	
 	int tdnEnabled = bayerEnables & BayerEnable::Tdn;
 	int tdnInputEnabled = bayerEnables & BayerEnable::TdnInput;
 	int tdnDecompressEnabled = bayerEnables & BayerEnable::TdnDecompress;
 	int tdnCompressEnabled = bayerEnables & BayerEnable::TdnCompress;
 	int tdnOutputEnabled = bayerEnables & BayerEnable::TdnOutput;
-	uint32_t fmt = config.tdn_output_format.format;
+	uint32_t fmt = tdnOutputFormat.format;
 
 	if (tdnEnabled && !tdnOutputEnabled)
 		throw std::runtime_error("finaliseTdn: TDN output not enabled when TDN enabled");
@@ -268,10 +270,10 @@ void BackEnd::finaliseTdn()
 		throw std::runtime_error("finaliseTdn: TDN output does not match compression mode");
 
 	if (tdnOutputEnabled)
-          checkRawioFormat(config.tdn_output_format, config.input_format.width, config.input_format.height);
+          checkRawioFormat(tdnOutputFormat, inputFormat.width, inputFormat.height);
 
 	if (tdnInputEnabled)
-		checkRawioFormat(config.tdn_input_format, config.input_format.width, config.input_format.height);
+		checkRawioFormat(tdnOutputFormat, inputFormat.width, inputFormat.height);
 
 	if (!tdnEnabled)
 	{
@@ -279,7 +281,7 @@ void BackEnd::finaliseTdn()
 			throw std::runtime_error("finaliseTdn: TDN input enabled but TDN not enabled");
 		// I suppose there is a weird (and entirely pointless) case where TDN is not enabled but TDN output is, which we allow.
 	}
-	else if (config.tdn.reset)
+	else if (tdn.reset)
 	{
 		if (tdnInputEnabled)
 			throw std::runtime_error("finaliseTdn: TDN input enabled but TDN being reset");
@@ -289,8 +291,8 @@ void BackEnd::finaliseTdn()
 		if (!tdnInputEnabled)
 			throw std::runtime_error("finaliseTdn: TDN input not enabled but TDN not being reset");
 		// Make the TDN input match the output if it's unset. Usually this will be the sensible thing to do.
-		if (config.tdn_input_format.width == 0 && config.tdn_input_format.height == 0)
-			config.tdn_input_format = config.tdn_output_format;
+		if (tdnInputFormat.width == 0 && tdnInputFormat.height == 0)
+			tdnInputFormat = tdnOutputFormat;
 		if (PISP_IMAGE_FORMAT_COMPRESSED(fmt) && !tdnDecompressEnabled)
 			throw std::runtime_error("finaliseTdn: TDN input compressed but decompression not enabled");
 		if (!PISP_IMAGE_FORMAT_COMPRESSED(fmt) && tdnDecompressEnabled)
@@ -302,16 +304,19 @@ void BackEnd::finaliseTdn()
 
 void BackEnd::finaliseStitch()
 {
-	pisp_be_config &config = pipe_->hwConfig;
-	BayerEnables bayerEnables = config_->getGlobal().bayerEnables;
+	const pisp_image_format_config &inputFormat = config_->getInputFormat();
+	pisp_be_stitch_config &stitch = config_->getStitch();
+	pisp_image_format_config &stitchInputFormat = config_->getStitchInputFormat();
+	pisp_image_format_config &stitchOutputFormat = config_->getStitchOutputFormat();
+	const BayerEnables bayerEnables = config_->getGlobal().bayerEnables;
 	
 	bool stitchEnabled = bayerEnables & BayerEnable::Stitch;
 	bool stitchInputEnabled = bayerEnables & BayerEnable::StitchInput;
 	bool stitchDecompressEnabled = bayerEnables & BayerEnable::StitchDecompress;
 	bool stitchCompressEnabled = bayerEnables & BayerEnable::StitchCompress;
 	bool stitchOutputEnabled = bayerEnables & BayerEnable::StitchOutput;
-	uint32_t inputFmt = config.stitch_input_format.format;
-	uint32_t outputFmt = config.stitch_output_format.format;
+	uint32_t inputFmt = stitchInputFormat.format;
+	uint32_t outputFmt = stitchOutputFormat.format;
 
 	if (stitchEnabled != stitchInputEnabled)
 		throw std::runtime_error("BackEnd::finalise: stitch and stitch_input should be enabled/disabled together");
@@ -329,26 +334,26 @@ void BackEnd::finaliseStitch()
 		throw std::runtime_error("BackEnd::finalise: stitch output does not match compression mode");
 
 	if (stitchOutputEnabled)
-		checkRawioFormat(config.stitch_output_format, config.input_format.width, config.input_format.height);
+		checkRawioFormat(stitchOutputFormat, inputFormat.width, inputFormat.height);
 
 	if (stitchInputEnabled)
-		checkRawioFormat(config.stitch_input_format, config.input_format.width, config.input_format.height);
+		checkRawioFormat(stitchInputFormat, inputFormat.width, inputFormat.height);
 
 	// Compute the motion_threshold reciprocal if it hasn't been done.
-	if (config.stitch.motion_threshold_recip == 0)
+	if (stitch.motion_threshold_recip == 0)
 	{
-		if (config.stitch.motion_threshold_256 == 0)
-			config.stitch.motion_threshold_recip = 255;
+		if (stitch.motion_threshold_256 == 0)
+			stitch.motion_threshold_recip = 255;
 		else
 			// We round the result up where possible as the block may work (ever so slightly) better like this.
-			config.stitch.motion_threshold_recip =
-				std::min(255, (256 + (int)config.stitch.motion_threshold_256 - 1) / config.stitch.motion_threshold_256);
+			stitch.motion_threshold_recip =
+				std::min(255, (256 + (int)stitch.motion_threshold_256 - 1) / stitch.motion_threshold_256);
 	}
 }
 
 void BackEnd::finaliseOutput(unsigned int index)
 {
-	pisp_be_output_format_config &config = pipe_->hwConfig.output_format[index];
+	pisp_be_output_format_config &config = config_->getOutputFormat(index);
 
 	// If the high clipping bound is zero assume it wasn't set and the intention is that no clipping occurs.
 	if (config.hi == 0)
@@ -378,9 +383,9 @@ void BackEnd::finaliseOutput(unsigned int index)
 
 void BackEnd::checkTiles(const TilingConfig &tiling_config)
 {
-	for (unsigned int tile_num = 0; tile_num < pipe_->numTilesX * pipe_->numTilesY; tile_num++)
+	for (unsigned int tileNum = 0; tileNum < pipe_->numTilesX * pipe_->numTilesY; tileNum++)
 	{
-		const pisp_tile &tile = pipe_->tiles[tile_num];
+		const pisp_tile &tile = pipe_->tiles[tileNum];
 
 		PISP_ASSERT(tile.input_width && tile.input_height); // zero inputs shouldn't be possible
 
@@ -392,33 +397,33 @@ void BackEnd::checkTiles(const TilingConfig &tiling_config)
 			if ((config_->getGlobal().rgbEnables & getFlagForBranch(RgbEnable::Output0, i)) == 0)
 				continue;
 
-			unsigned int width_after_crop = tile.input_width - tile.crop_x_start[i] - tile.crop_x_end[i];
-			unsigned int height_after_crop = tile.input_height - tile.crop_y_start[i] - tile.crop_y_end[i];
+			unsigned int widthAfterCrop = tile.input_width - tile.crop_x_start[i] - tile.crop_x_end[i];
+			unsigned int heightAfterCrop = tile.input_height - tile.crop_y_start[i] - tile.crop_y_end[i];
 
 			// A tile that gets cropped away completely can't produce output, and vice versa.
-			PISP_ASSERT((width_after_crop * height_after_crop == 0) ==
+			PISP_ASSERT((widthAfterCrop * heightAfterCrop == 0) ==
 						(tile.output_width[i] * tile.output_height[i] == 0));
 
 			// A zero-sized tile is legitimate meaning "no output", but otherwise minimum tile sizes must be respected.
-			if (width_after_crop && height_after_crop)
+			if (widthAfterCrop && heightAfterCrop)
 			{
 				bool rh_edge = tile.output_offset_x[i] + tile.output_width[i] == tiling_config.output_image_size[i].dx;
 
-				if (width_after_crop < PISP_BACK_END_MIN_TILE_WIDTH)
+				if (widthAfterCrop < PISP_BACK_END_MIN_TILE_WIDTH)
 				{
-					PISP_LOG(warning, "Tile narrow after crop: tile " << tile_num << " output " << i
-						 << " input_width " << tile.input_width << " after_crop " << width_after_crop
+					PISP_LOG(warning, "Tile narrow after crop: tile " << tileNum << " output " << i
+						 << " input_width " << tile.input_width << " after_crop " << widthAfterCrop
 						 << " crop start " << tile.crop_x_start[i] << " end " << tile.crop_x_end[i]);
 					if (!rh_edge)
 						throw std::runtime_error("Tile width too small after crop");
 				}
-				if (height_after_crop < PISP_BACK_END_MIN_TILE_HEIGHT)
+				if (heightAfterCrop < PISP_BACK_END_MIN_TILE_HEIGHT)
 					throw std::runtime_error("Tile height too small after crop");
 
 				if (tile.resample_in_width[i] < PISP_BACK_END_MIN_TILE_WIDTH)
 				{
-					PISP_LOG(warning, "Tile narrow after downscale: tile " << tile_num << " output " << i
-						 << " input_width " << tile.input_width << " after_crop " << width_after_crop
+					PISP_LOG(warning, "Tile narrow after downscale: tile " << tileNum << " output " << i
+						 << " input_width " << tile.input_width << " after_crop " << widthAfterCrop
 						 << " after downscale " << tile.resample_in_width[i]);
 					if (!rh_edge)
 						throw std::runtime_error("Tile width too small after downscale");
@@ -433,42 +438,46 @@ void BackEnd::checkTiles(const TilingConfig &tiling_config)
 					throw std::runtime_error("Tile height too small at output");
 			}
 		}
-		tile_num++;
+		tileNum++;
 	}
 }
 
 
 tiling::Length2 BackEnd::calculateInputAlignment() const
 {
-	const pisp_be_config &config = pipe_->hwConfig;
+	const pisp_image_format_config &inputFormat = config_->getInputFormat();
+	const pisp_image_format_config &tdnInputFormat = config_->getTdnInputFormat();
+	const pisp_image_format_config &tdnOutputFormat = config_->getTdnOutputFormat();
+	const pisp_image_format_config &stitchInputFormat = config_->getStitchInputFormat();
+	const pisp_image_format_config &stitchOutputFormat = config_->getStitchOutputFormat();
 	BayerEnables bayerEnables = config_->getGlobal().bayerEnables;
 
 	if (config_->getGlobal().rgbEnables & RgbEnable::Input)
 	{
 		PISP_LOG(debug, "RGB input enabled");
 		// Need 4 byte alignment AND even number of pixels. Height must be 2 row aligned only for 420 input.
-		return tiling::Length2(lcm(getPixelAlignment(config.input_format.format, PISP_BACK_END_INPUT_ALIGN), 2),
-							   PISP_IMAGE_FORMAT_SAMPLING_420(config.input_format.format) ? 2 : 1);
+		return tiling::Length2(lcm(getPixelAlignment(inputFormat.format, PISP_BACK_END_INPUT_ALIGN), 2),
+							   PISP_IMAGE_FORMAT_SAMPLING_420(inputFormat.format) ? 2 : 1);
 	}
 
 	// For starters, we need 4 *byte* alignment (this automatically cover 2 *pixel* alignment for all the raw formats).
-	int pixelAlignment = getPixelAlignment(config.input_format.format, PISP_BACK_END_INPUT_ALIGN);
+	int pixelAlignment = getPixelAlignment(inputFormat.format, PISP_BACK_END_INPUT_ALIGN);
 
 	// If any input is compressed, we need 8 *pixel* alignment.
-	if (PISP_IMAGE_FORMAT_COMPRESSED(config.input_format.format) ||
+	if (PISP_IMAGE_FORMAT_COMPRESSED(inputFormat.format) ||
 		((bayerEnables & BayerEnable::TdnInput) &&
-		 PISP_IMAGE_FORMAT_COMPRESSED(config.tdn_input_format.format)) ||
+		 PISP_IMAGE_FORMAT_COMPRESSED(tdnInputFormat.format)) ||
 		((bayerEnables & BayerEnable::StitchInput) &&
-		 PISP_IMAGE_FORMAT_COMPRESSED(config.stitch_input_format.format)))
+		 PISP_IMAGE_FORMAT_COMPRESSED(stitchInputFormat.format)))
 		pixelAlignment = lcm(pixelAlignment, PISP_BACK_END_COMPRESSED_ALIGN);
 
 	// If any of the Bayer outputs are enabled, those need 16 *byte* alignment. (This already covers the outputs being compressed.)
 	if (bayerEnables & BayerEnable::TdnOutput)
 		pixelAlignment =
-			lcm(pixelAlignment, getPixelAlignment(config.tdn_output_format.format, PISP_BACK_END_OUTPUT_MIN_ALIGN));
+			lcm(pixelAlignment, getPixelAlignment(tdnOutputFormat.format, PISP_BACK_END_OUTPUT_MIN_ALIGN));
 	if (bayerEnables & BayerEnable::StitchOutput)
 		pixelAlignment = lcm(pixelAlignment,
-							  getPixelAlignment(config.stitch_output_format.format, PISP_BACK_END_OUTPUT_MIN_ALIGN));
+							 getPixelAlignment(stitchOutputFormat.format, PISP_BACK_END_OUTPUT_MIN_ALIGN));
 
 	return tiling::Length2(pixelAlignment, 2); // Bayer input rows always in pairs
 }
@@ -510,6 +519,8 @@ void BackEnd::finaliseConfig()
 	if (dirty_flags_bayer & BayerEnable::Cac)
 		finaliseCac();
 
+	const pisp_image_format_config &inputFormat = config_->getInputFormat();
+
 	for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++)
 	{
 		bool enabled = rgbEnables & getFlagForBranch(RgbEnable::Output0, j);
@@ -517,10 +528,8 @@ void BackEnd::finaliseConfig()
 		if (enabled)
 		{
 			// crop is enabled when it contains non-zero width/height
-			uint16_t w = pipe_->configExtra.crop[j].width ? pipe_->configExtra.crop[j].width
-														 : pipe_->hwConfig.input_format.width;
-			uint16_t h = pipe_->configExtra.crop[j].width ? pipe_->configExtra.crop[j].height
-														 : pipe_->hwConfig.input_format.height;
+			uint16_t w = pipe_->configExtra.crop[j].width ? pipe_->configExtra.crop[j].width : inputFormat.width;
+			uint16_t h = pipe_->configExtra.crop[j].width ? pipe_->configExtra.crop[j].height : inputFormat.height;
 
 			if (dirty_flags_rgb & getFlagForBranch(RgbEnable::Downscale0, j))
 			{
@@ -569,13 +578,15 @@ void BackEnd::updateSmartResize()
 	// has been requested.
 	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 	{
+		const pisp_image_format_config &inputFormat = config_->getInputFormat();
+
 		// First get the size of the input to the rescalers. The crops are zero when not in use.
 		uint16_t input_width = pipe_->configExtra.crop[i].width;
 		if (!input_width)
-			input_width = pipe_->hwConfig.input_format.width;
+			input_width = inputFormat.width;
 		uint16_t input_height = pipe_->configExtra.crop[i].height;
 		if (!input_height)
-			input_height = pipe_->hwConfig.input_format.height;
+			input_height = inputFormat.height;
 
 		if ((pipe_->smartResizeDirty & (1 << i)) || (pipe_->dirtyFlagsExtra & PISP_BE_DIRTY_CROP))
 		{
@@ -717,8 +728,8 @@ void BackEnd::updateTiles()
 	if (pipe_->retile)
 	{
 		TilingConfig tiling_config;
-		pisp_be_config const &c = pipe_->hwConfig;
-		BeConfigExtra const &ce = pipe_->configExtra;
+		const BeConfigExtra &ce = pipe_->configExtra;
+		const pisp_image_format_config &inputFormat = config_->getInputFormat();
 		RgbEnables rgbEnables = config_->getGlobal().rgbEnables;
 
 		pipe_->retile = false;
@@ -726,30 +737,34 @@ void BackEnd::updateTiles()
 
 		PISP_LOG(debug, "Input alignments are " << tiling_config.input_alignment << " pixels");
 
-		tiling_config.input_image_size = tiling::Length2(c.input_format.width, c.input_format.height);
+		tiling_config.input_image_size = tiling::Length2(inputFormat.width, inputFormat.height);
 
 		for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 		{
+			const pisp_be_output_format_config &outputFormat = config_->getOutputFormat(i);
+			const pisp_be_downscale_config &downscale = config_->getDownscale(i);
+			const pisp_be_resample_config &resample = config_->getResample(i);
+
 			tiling_config.crop[i] = tiling::Interval2(tiling::Interval(ce.crop[i].offset_x, ce.crop[i].width),
 													  tiling::Interval(ce.crop[i].offset_y, ce.crop[i].height));
 
 			if (tiling_config.crop[i].x.length == 0 || tiling_config.crop[i].y.length == 0)
-				tiling_config.crop[i] = tiling::Interval2(tiling::Interval(0, c.input_format.width),
-														  tiling::Interval(0, c.input_format.height));
+				tiling_config.crop[i] = tiling::Interval2(tiling::Interval(0, inputFormat.width),
+														  tiling::Interval(0, inputFormat.height));
 
-			tiling_config.output_h_mirror[i] = pipe_->hwConfig.output_format[i].transform & PISP_BE_TRANSFORM_HFLIP;
+			tiling_config.output_h_mirror[i] = outputFormat.transform & PISP_BE_TRANSFORM_HFLIP;
 			tiling_config.downscale_factor[i] =
-				tiling::Length2(c.downscale[i].scale_factor_h, c.downscale[i].scale_factor_v);
+				tiling::Length2(downscale.scale_factor_h, downscale.scale_factor_v);
 			tiling_config.resample_factor[i] =
-				tiling::Length2(c.resample[i].scale_factor_h, c.resample[i].scale_factor_v);
+				tiling::Length2(resample.scale_factor_h, resample.scale_factor_v);
 			tiling_config.downscale_image_size[i] =
 				tiling::Length2(ce.downscale[i].scaled_width, ce.downscale[i].scaled_height);
 			tiling_config.output_image_size[i] =
-				tiling::Length2(c.output_format[i].image.width, c.output_format[i].image.height);
+				tiling::Length2(outputFormat.image.width, outputFormat.image.height);
 			tiling_config.output_max_alignment[i] =
-				calculateOutputAlignment(c.output_format[i].image.format, PISP_BACK_END_OUTPUT_MAX_ALIGN);
+				calculateOutputAlignment(outputFormat.image.format, PISP_BACK_END_OUTPUT_MAX_ALIGN);
 			tiling_config.output_min_alignment[i] =
-				calculateOutputAlignment(c.output_format[i].image.format, PISP_BACK_END_OUTPUT_MIN_ALIGN);
+				calculateOutputAlignment(outputFormat.image.format, PISP_BACK_END_OUTPUT_MIN_ALIGN);
 		}
 
 		tiling_config.max_tile_size.dx = sw_.maxTileWidth ? sw_.maxTileWidth : variant_.backEndMaxTileWidth(0);
@@ -875,9 +890,10 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 				// Calculate x/y initial downsampler/resampler phases per-plane.
 				if (rgbEnables & getFlagForBranch(RgbEnable::Downscale0, j))
 				{
-					unsigned int frac_x = (resample_size.x.offset * pipe_->hwConfig.downscale[j].scale_factor_h) &
+					const pisp_be_downscale_config &downscale = config_->getDownscale(j);
+					unsigned int frac_x = (resample_size.x.offset * downscale.scale_factor_h) &
 										  ((1 << ScalePrecision) - 1);
-					unsigned int frac_y = (resample_size.y.offset * pipe_->hwConfig.downscale[j].scale_factor_v) &
+					unsigned int frac_y = (resample_size.y.offset * downscale.scale_factor_v) &
 										  ((1 << ScalePrecision) - 1);
 					// Fractional component of the input required to generate the output pixel.
 					t.downscale_phase_x[p * variant_.backEndNumBranches(0) + j] = (UnityPhase - frac_x);
@@ -886,11 +902,12 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 
 				if (rgbEnables & getFlagForBranch(RgbEnable::Resample0, j))
 				{
+					const pisp_be_resample_config &resample = config_->getResample(j);
 					// Location of the output pixel in the interpolated (input) image.
 					unsigned int interpolated_pix_x =
-						(t.output_offset_x[j] * NumPhases * pipe_->hwConfig.resample[j].scale_factor_h) >> ScalePrecision;
+						(t.output_offset_x[j] * NumPhases * resample.scale_factor_h) >> ScalePrecision;
 					unsigned int interpolated_pix_y =
-						(t.output_offset_y[j] * NumPhases * pipe_->hwConfig.resample[j].scale_factor_v) >> ScalePrecision;
+						(t.output_offset_y[j] * NumPhases * resample.scale_factor_v) >> ScalePrecision;
 					// Phase of the interpolated input pixel.
 					t.resample_phase_x[p * variant_.backEndNumBranches(0) + j] =
 						((interpolated_pix_x % NumPhases) << ScalePrecision) / NumPhases;
@@ -910,7 +927,8 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 			// Phase difference between planes cannot be > 0.5 pixels on the output dimenstions.
 			if (rgbEnables & getFlagForBranch(RgbEnable::Resample0, j))
 			{
-				int phase_max = (pipe_->hwConfig.resample[j].scale_factor_h * UnityPhase / 2) >> ScalePrecision;
+				const pisp_be_resample_config &resample = config_->getResample(j);
+				int phase_max = (resample.scale_factor_h * UnityPhase / 2) >> ScalePrecision;
 				if (std::abs(t.resample_phase_x[0 * variant_.backEndNumBranches(0) + j] -
 							 t.resample_phase_x[1 * variant_.backEndNumBranches(0) + j]) > phase_max ||
 					std::abs(t.resample_phase_x[1 * variant_.backEndNumBranches(0) + j] -
@@ -920,7 +938,7 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 				{
 					throw std::runtime_error("Resample phase x for tile is > 0.5 pixels on the output dimensions.");
 				}
-				phase_max = (pipe_->hwConfig.resample[j].scale_factor_v * UnityPhase / 2) >> ScalePrecision;
+				phase_max = (resample.scale_factor_v * UnityPhase / 2) >> ScalePrecision;
 				if (std::abs(t.resample_phase_y[0 * variant_.backEndNumBranches(0) + j] -
 							 t.resample_phase_y[1 * variant_.backEndNumBranches(0) + j]) > phase_max ||
 					std::abs(t.resample_phase_y[1 * variant_.backEndNumBranches(0) + j] -
@@ -938,48 +956,52 @@ void BackEnd::retilePipeline(TilingConfig const &tiling_config)
 void BackEnd::finaliseTiling()
 {
 	// Update tile parameters (offsets/strides) from on the BE pipeline configuration.
-	for (unsigned int tile_num = 0; tile_num < pipe_->numTilesX * pipe_->numTilesY; tile_num++)
+	for (unsigned int tileNum = 0; tileNum < pipe_->numTilesX * pipe_->numTilesY; tileNum++)
 	{
-		pisp_tile &t = pipe_->tiles[tile_num];
+		const pisp_be_lsc_config &lsc = config_->getLsc();
+		const pisp_be_cac_config &cac = config_->getCac();
 
-		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, pipe_->hwConfig.input_format,
+		pisp_tile &t = pipe_->tiles[tileNum];
+
+		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, config_->getInputFormat(),
 									&t.input_addr_offset, &t.input_addr_offset2);
-		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, pipe_->hwConfig.tdn_input_format,
+		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, config_->getTdnInputFormat(),
 									&t.tdn_input_addr_offset);
-		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, pipe_->hwConfig.tdn_output_format,
+		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, config_->getTdnOutputFormat(),
 									&t.tdn_output_addr_offset);
-		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, pipe_->hwConfig.stitch_input_format,
+		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, config_->getStitchInputFormat(),
 									&t.stitch_input_addr_offset);
-		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, pipe_->hwConfig.stitch_output_format,
+		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, config_->getStitchOutputFormat(),
 									&t.stitch_output_addr_offset);
 		PISP_LOG(debug, "Input offsets " << t.input_offset_x << "," << t.input_offset_y << " address offsets "
 										 << t.input_addr_offset << " and " << t.input_addr_offset2);
 
 		if (config_->getGlobal().bayerEnables & BayerEnable::Lsc)
 		{
-			t.lsc_grid_offset_x = (t.input_offset_x + pipe_->configExtra.lsc.offset_x) * pipe_->hwConfig.lsc.grid_step_x;
-			t.lsc_grid_offset_y = (t.input_offset_y + pipe_->configExtra.lsc.offset_y) * pipe_->hwConfig.lsc.grid_step_y;
+			t.lsc_grid_offset_x = (t.input_offset_x + pipe_->configExtra.lsc.offset_x) * lsc.grid_step_x;
+			t.lsc_grid_offset_y = (t.input_offset_y + pipe_->configExtra.lsc.offset_y) * lsc.grid_step_y;
 		}
 
 		if (config_->getGlobal().bayerEnables & BayerEnable::Cac)
 		{
-			t.cac_grid_offset_x = (t.input_offset_x + pipe_->configExtra.cac.offset_x) * pipe_->hwConfig.cac.grid_step_x;
-			t.cac_grid_offset_y = (t.input_offset_y + pipe_->configExtra.cac.offset_y) * pipe_->hwConfig.cac.grid_step_y;
+			t.cac_grid_offset_x = (t.input_offset_x + pipe_->configExtra.cac.offset_x) * cac.grid_step_x;
+			t.cac_grid_offset_y = (t.input_offset_y + pipe_->configExtra.cac.offset_y) * cac.grid_step_y;
 		}
 
 		for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++)
 		{
+			const pisp_be_output_format_config &outputFormat = config_->getOutputFormat(j);
 			int output_offset_x_unflipped = t.output_offset_x[j], output_offset_y_unflipped = t.output_offset_y[j];
 
-			if (pipe_->hwConfig.output_format[j].transform & PISP_BE_TRANSFORM_HFLIP)
+			if (outputFormat.transform & PISP_BE_TRANSFORM_HFLIP)
 				t.output_offset_x[j] =
-					pipe_->hwConfig.output_format[j].image.width - output_offset_x_unflipped - t.output_width[j];
+					outputFormat.image.width - output_offset_x_unflipped - t.output_width[j];
 
-			if (pipe_->hwConfig.output_format[j].transform & PISP_BE_TRANSFORM_VFLIP)
-				t.output_offset_y[j] = pipe_->hwConfig.output_format[j].image.height - output_offset_y_unflipped - 1;
+			if (outputFormat.transform & PISP_BE_TRANSFORM_VFLIP)
+				t.output_offset_y[j] = outputFormat.image.height - output_offset_y_unflipped - 1;
 
-			computeAddrOffset(pipe_->hwConfig.output_format[j].image, t.output_offset_x[j], t.output_offset_y[j],
-								&t.output_addr_offset[j], &t.output_addr_offset2[j]);
+			computeAddrOffset(outputFormat.image, t.output_offset_x[j], t.output_offset_y[j], &t.output_addr_offset[j],
+							  &t.output_addr_offset2[j]);
 
 			PISP_LOG(debug, "Branch " << j << " output offsets " << t.output_offset_x[j] << "," << t.output_offset_y[j]
 									  << " address offsets " << t.output_addr_offset[j] << " and "
@@ -1008,8 +1030,8 @@ bool BackEnd::computeOutputImageFormat(unsigned int i, pisp_image_format_config 
 {
 	PISP_ASSERT(i < PISP_BACK_END_NUM_OUTPUTS);
 
-	if (&fmt != &pipe_->hwConfig.output_format[i].image)
-		fmt = pipe_->hwConfig.output_format[i].image;
+	if (&fmt != &config_->getOutputFormat(i).image)
+		fmt = config_->getOutputFormat(i).image;
 
 	if (config_->getGlobal().rgbEnables & getFlagForBranch(RgbEnable::Output0, i))
 {
@@ -1048,10 +1070,10 @@ void BackEnd::prepare(pisp_be_tiles_config *config)
 	// left to the HAL.
 	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 	{
-		pisp_image_format_config &image_config = pipe_->hwConfig.output_format[i].image;
-		computeOutputImageFormat(i, image_config, pipe_->hwConfig.input_format);
+		pisp_image_format_config &imageConfig = config_->getOutputFormat(i).image;
+		computeOutputImageFormat(i, imageConfig, config_->getInputFormat());
 
-		if (image_config.format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE)
+		if (imageConfig.format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE)
 		{
 			throw std::runtime_error("Integral images are not supported.");
 		}

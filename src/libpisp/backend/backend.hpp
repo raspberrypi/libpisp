@@ -191,17 +191,17 @@ private:
 	struct BeConfigExtra
 	{
 		// Non-register fields:
-		pisp_be_lsc_extra lsc;
-		pisp_be_cac_extra cac;
-		pisp_be_downscale_extra downscale[PISP_BACK_END_NUM_OUTPUTS];
-		pisp_be_resample_extra resample[PISP_BACK_END_NUM_OUTPUTS];
-		pisp_be_crop_config crop[PISP_BACK_END_NUM_OUTPUTS];
+		pisp_be_lsc_extra lsc {};
+		pisp_be_cac_extra cac {};
+		pisp_be_downscale_extra downscale[PISP_BACK_END_NUM_OUTPUTS] {};
+		pisp_be_resample_extra resample[PISP_BACK_END_NUM_OUTPUTS] {};
+		pisp_be_crop_config crop[PISP_BACK_END_NUM_OUTPUTS] {};
 	};
 
 	struct PipelineConfig
 	{
-		pisp_be_config hwConfig{};
-		BeConfigExtra configExtra{};
+		pisp_be_config hwConfig {};
+		BeConfigExtra configExtra {};
 
 		BayerEnables dirtyFlagsBayer;
 		RgbEnables dirtyFlagsRgb;
@@ -210,10 +210,10 @@ private:
 		bool retile = true;
 		bool finaliseTiling = true;
 
-		std::array<SmartResize, PISP_BACK_END_NUM_OUTPUTS> smartResize{};
+		std::array<SmartResize, PISP_BACK_END_NUM_OUTPUTS> smartResize {};
 		uint32_t smartResizeDirty = 0;
 
-		std::array<pisp_tile, PISP_BACK_END_NUM_TILES> tiles{};
+		std::array<pisp_tile, PISP_BACK_END_NUM_TILES> tiles {};
 		unsigned int numTilesX = 0;
 		unsigned int numTilesY = 0;
 	};
