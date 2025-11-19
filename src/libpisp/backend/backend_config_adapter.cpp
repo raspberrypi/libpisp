@@ -244,7 +244,10 @@ DecompressConfig &BackendConfigAdapter::getDecompress()
 
 void BackendConfigAdapter::setDpc(const BeDpcConfig &dpc)
 {
-	visit([&dpc](auto *cfg) { cfg->dpc = dpc; });
+	visit([&dpc](auto *cfg) {
+		cfg->dpc = dpc;
+		cfg->dpc.pad = 0;
+	});
 }
 
 BeDpcConfig &BackendConfigAdapter::getDpc()
@@ -304,7 +307,10 @@ ImageFormatConfig &BackendConfigAdapter::getTdnOutputFormat()
 
 void BackendConfigAdapter::setSdn(const BeSdnConfig &sdn)
 {
-	visit([&sdn](auto *cfg) { cfg->sdn = sdn; });
+	visit([&sdn](auto *cfg) {
+		cfg->sdn = sdn;
+		cfg->sdn.pad = 0;
+	});
 }
 
 BeSdnConfig &BackendConfigAdapter::getSdn()
@@ -314,7 +320,10 @@ BeSdnConfig &BackendConfigAdapter::getSdn()
 
 void BackendConfigAdapter::setBlc(const BlaConfig &blc)
 {
-	visit([&blc](auto *cfg) { cfg->blc = blc; });
+	visit([&blc](auto *cfg) {
+		cfg->blc = blc;
+		cfg->blc.pad[0] = cfg->blc.pad[1] = 0;
+	});
 }
 
 BlaConfig &BackendConfigAdapter::getBlc()
@@ -374,7 +383,10 @@ BeLscConfig &BackendConfigAdapter::getLsc()
 
 void BackendConfigAdapter::setWbg(const WbgConfig &wbg)
 {
-	visit([&wbg](auto *cfg) { cfg->wbg = wbg; });
+	visit([&wbg](auto *cfg) {
+		cfg->wbg = wbg;
+		cfg->wbg.pad[0] = cfg->wbg.pad[1] = 0;
+	});
 }
 
 WbgConfig &BackendConfigAdapter::getWbg()
@@ -404,7 +416,10 @@ BeCacConfig &BackendConfigAdapter::getCac()
 
 void BackendConfigAdapter::setDebin(const BeDebinConfig &debin)
 {
-	visit([&debin](auto *cfg) { cfg->debin = debin; });
+	visit([&debin](auto *cfg) {
+		cfg->debin = debin;
+		cfg->debin.pad[0] = cfg->debin.pad[1] = 0;
+	});
 }
 
 BeDebinConfig &BackendConfigAdapter::getDebin()
@@ -414,7 +429,10 @@ BeDebinConfig &BackendConfigAdapter::getDebin()
 
 void BackendConfigAdapter::setCcm(const BeCcmConfig &ccm)
 {
-	visit([&ccm](auto *cfg) { cfg->ccm = ccm; });
+	visit([&ccm](auto *cfg) {
+		cfg->ccm = ccm;
+		cfg->ccm.pad[0] = cfg->ccm.pad[1] = 0;
+	});
 }
 
 BeCcmConfig &BackendConfigAdapter::getCcm()
@@ -424,7 +442,10 @@ BeCcmConfig &BackendConfigAdapter::getCcm()
 
 void BackendConfigAdapter::setSatControl(const BeSatControlConfig &satControl)
 {
-	visit([&satControl](auto *cfg) { cfg->sat_control = satControl; });
+	visit([&satControl](auto *cfg) {
+		cfg->sat_control = satControl;
+		cfg->sat_control.pad = 0;
+	});
 }
 
 BeSatControlConfig &BackendConfigAdapter::getSatControl()
@@ -434,7 +455,10 @@ BeSatControlConfig &BackendConfigAdapter::getSatControl()
 
 void BackendConfigAdapter::setYcbcr(const BeCcmConfig &ycbcr)
 {
-	visit([&ycbcr](auto *cfg) { cfg->ycbcr = ycbcr; });
+	visit([&ycbcr](auto *cfg) {
+		cfg->ycbcr = ycbcr;
+		cfg->ycbcr.pad[0] = cfg->ycbcr.pad[1] = 0;
+	});
 }
 
 BeCcmConfig &BackendConfigAdapter::getYcbcr()
@@ -444,7 +468,10 @@ BeCcmConfig &BackendConfigAdapter::getYcbcr()
 
 void BackendConfigAdapter::setFalseColour(const BeFalseColourConfig &falseColour)
 {
-	visit([&falseColour](auto *cfg) { cfg->false_colour = falseColour; });
+	visit([&falseColour](auto *cfg) {
+		cfg->false_colour = falseColour;
+		cfg->false_colour.pad[0] = cfg->false_colour.pad[1] = cfg->false_colour.pad[2] = 0;
+	});
 }
 
 BeFalseColourConfig &BackendConfigAdapter::getFalseColour()
@@ -454,7 +481,16 @@ BeFalseColourConfig &BackendConfigAdapter::getFalseColour()
 
 void BackendConfigAdapter::setSharpen(const BeSharpenConfig &sharpen)
 {
-	visit([&sharpen](auto *cfg) { cfg->sharpen = sharpen; });
+	visit([&sharpen](auto *cfg) {
+		cfg->sharpen = sharpen;
+		cfg->sharpen.pad0[0] = cfg->sharpen.pad0[1] = cfg->sharpen.pad0[2] = 0;
+		cfg->sharpen.pad1[0] = cfg->sharpen.pad1[1] = cfg->sharpen.pad1[2] = 0;
+		cfg->sharpen.pad2[0] = cfg->sharpen.pad2[1] = cfg->sharpen.pad2[2] = 0;
+		cfg->sharpen.pad3[0] = cfg->sharpen.pad3[1] = cfg->sharpen.pad3[2] = 0;
+		cfg->sharpen.pad4[0] = cfg->sharpen.pad4[1] = cfg->sharpen.pad4[2] = 0;
+		cfg->sharpen.pad5 = cfg->sharpen.pad6 = cfg->sharpen.pad7 = cfg->sharpen.pad8 =
+			cfg->sharpen.pad9 = 0;
+	});
 }
 
 BeSharpenConfig &BackendConfigAdapter::getSharpen()
@@ -464,7 +500,10 @@ BeSharpenConfig &BackendConfigAdapter::getSharpen()
 
 void BackendConfigAdapter::setShFcCombine(const BeShFcCombineConfig &shFcCombine)
 {
-	visit([&shFcCombine](auto *cfg) { cfg->sh_fc_combine = shFcCombine; });
+	visit([&shFcCombine](auto *cfg) {
+		cfg->sh_fc_combine = shFcCombine;
+		cfg->sh_fc_combine.pad = 0;
+	});
 }
 
 BeShFcCombineConfig &BackendConfigAdapter::getShFcCombine()
@@ -474,7 +513,10 @@ BeShFcCombineConfig &BackendConfigAdapter::getShFcCombine()
 
 void BackendConfigAdapter::setYcbcrInverse(const BeCcmConfig &ycbcrInverse)
 {
-	visit([&ycbcrInverse](auto *cfg) { cfg->ycbcr_inverse = ycbcrInverse; });
+	visit([&ycbcrInverse](auto *cfg) {
+		cfg->ycbcr_inverse = ycbcrInverse;
+		cfg->ycbcr_inverse.pad[0] = cfg->ycbcr_inverse.pad[1] = 0;
+	});
 }
 
 BeCcmConfig &BackendConfigAdapter::getYcbcrInverse()
@@ -485,8 +527,14 @@ BeCcmConfig &BackendConfigAdapter::getYcbcrInverse()
 void BackendConfigAdapter::setCsc(unsigned int i, const BeCcmConfig &csc)
 {
 	visit(overloaded {
-		[&csc, i](pisp_be_config *cfg) { cfg->csc[i] = csc; },
-		[&csc, i](pisp_be_config2 *cfg) { cfg->post_csc[i] = csc; }
+		[&csc, i](pisp_be_config *cfg) {
+			cfg->csc[i] = csc;
+			cfg->csc[i].pad[0] = cfg->csc[i].pad[1] = 0;
+		},
+		[&csc, i](pisp_be_config2 *cfg) {
+			cfg->post_csc[i] = csc;
+			cfg->post_csc[i].pad[0] = cfg->post_csc[i].pad[1] = 0;
+		}
 	});
 }
 
@@ -524,6 +572,7 @@ void BackendConfigAdapter::setTdn(const BeTdnConfig &tdn)
 	visit(overloaded {
 		[&tdn](pisp_be_config *cfg) {
 			cfg->tdn = tdn;
+			cfg->tdn.pad = 0;
 		},
 		[&tdn]([[maybe_unused]] pisp_be_config2 *cfg) {
 			// v2 uses pisp_be_tdn2_config, conversion not implemented
@@ -602,6 +651,7 @@ void BackendConfigAdapter::setDemosaic(const BeDemosaicConfig &demosaic)
 	visit(overloaded {
 		[&demosaic](pisp_be_config *cfg) {
 			cfg->demosaic = demosaic;
+			cfg->demosaic.pad[0] = cfg->demosaic.pad[1] = 0;
 		},
 		[&demosaic](pisp_be_config2 *cfg) {
 			// v2 uses pisp_be_demosaic2_config - copy compatible fields

@@ -83,9 +83,7 @@ void BackEnd::setDecompress(DecompressConfig const &decompress)
 
 void BackEnd::setDpc(BeDpcConfig const &dpc)
 {
-	BeDpcConfig dpc_copy = dpc;
-	dpc_copy.pad = 0;
-	config_->setDpc(dpc_copy);
+	config_->setDpc(dpc);
 	pipe_->dirtyFlagsBayer |= BayerEnable::Dpc;
 }
 
@@ -117,9 +115,7 @@ void BackEnd::setTdnDecompress(DecompressConfig const &tdn_decompress)
 
 void BackEnd::setTdn(BeTdnConfig const &tdn)
 {
-	BeTdnConfig tdn_copy = tdn;
-	tdn_copy.pad = 0;
-	config_->setTdn(tdn_copy);
+	config_->setTdn(tdn);
 	pipe_->dirtyFlagsBayer |= BayerEnable::Tdn;
 }
 
@@ -148,17 +144,13 @@ void BackEnd::getTdnOutputFormat(ImageFormatConfig &tdn_output_format) const
 
 void BackEnd::setSdn(BeSdnConfig const &sdn)
 {
-	BeSdnConfig sdn_copy = sdn;
-	sdn_copy.pad = 0;
-	config_->setSdn(sdn_copy);
+	config_->setSdn(sdn);
 	pipe_->dirtyFlagsBayer |= BayerEnable::Sdn;
 }
 
 void BackEnd::setBlc(BlaConfig const &blc)
 {
-	BlaConfig blc_copy = blc;
-	blc_copy.pad[0] = blc_copy.pad[1] = 0;
-	config_->setBlc(blc_copy);
+	config_->setBlc(blc);
 	pipe_->dirtyFlagsBayer |= BayerEnable::Blc;
 }
 
@@ -218,9 +210,7 @@ void BackEnd::setCdn(BeCdnConfig const &cdn)
 
 void BackEnd::setWbg(WbgConfig const &wbg)
 {
-	WbgConfig wbg_copy = wbg;
-	wbg_copy.pad[0] = wbg_copy.pad[1] = 0;
-	config_->setWbg(wbg_copy);
+	config_->setWbg(wbg);
 	pipe_->dirtyFlagsBayer |= BayerEnable::Wbg;
 }
 
@@ -250,9 +240,7 @@ void BackEnd::setCac(BeCacConfig const &cac, BeCacExtra cac_extra)
 
 void BackEnd::setDebin(BeDebinConfig const &debin)
 {
-	BeDebinConfig debin_copy = debin;
-	debin_copy.pad[0] = debin_copy.pad[1] = 0;
-	config_->setDebin(debin_copy);
+	config_->setDebin(debin);
 	pipe_->dirtyFlagsBayer |= BayerEnable::Debin;
 }
 
@@ -269,9 +257,7 @@ void BackEnd::setTonemap(BeTonemapConfig const &tonemap)
 
 void BackEnd::setDemosaic(BeDemosaicConfig const &demosaic)
 {
-	BeDemosaicConfig demosaic_copy = demosaic;
-	demosaic_copy.pad[0] = demosaic_copy.pad[1] = 0;
-	config_->setDemosaic(demosaic_copy);
+	config_->setDemosaic(demosaic);
 	pipe_->dirtyFlagsBayer |= BayerEnable::Demosaic;
 }
 
@@ -282,25 +268,19 @@ void BackEnd::getDemosaic(BeDemosaicConfig &demosaic) const
 
 void BackEnd::setCcm(BeCcmConfig const &ccm)
 {
-	BeCcmConfig ccm_copy = ccm;
-	ccm_copy.pad[0] = ccm_copy.pad[1] = 0;
-	config_->setCcm(ccm_copy);
+	config_->setCcm(ccm);
 	pipe_->dirtyFlagsRgb |= RgbEnable::Ccm;
 }
 
 void BackEnd::setSatControl(BeSatControlConfig const &sat_control)
 {
-	BeSatControlConfig sat_control_copy = sat_control;
-	sat_control_copy.pad = 0;
-	config_->setSatControl(sat_control_copy);
+	config_->setSatControl(sat_control);
 	pipe_->dirtyFlagsRgb |= RgbEnable::SatControl;
 }
 
 void BackEnd::setYcbcr(BeCcmConfig const &ycbcr)
 {
-	BeCcmConfig ycbcr_copy = ycbcr;
-	ycbcr_copy.pad[0] = ycbcr_copy.pad[1] = 0;
-	config_->setYcbcr(ycbcr_copy);
+	config_->setYcbcr(ycbcr);
 	pipe_->dirtyFlagsRgb |= RgbEnable::Ycbcr;
 }
 
@@ -311,23 +291,13 @@ void BackEnd::getYcbcr(BeCcmConfig &ycbcr) const
 
 void BackEnd::setFalseColour(BeFalseColourConfig const &false_colour)
 {
-	BeFalseColourConfig false_colour_copy = false_colour;
-	false_colour_copy.pad[0] = false_colour_copy.pad[1] = false_colour_copy.pad[2] = 0;
-	config_->setFalseColour(false_colour_copy);
+	config_->setFalseColour(false_colour);
 	pipe_->dirtyFlagsRgb |= RgbEnable::FalseColour;
 }
 
 void BackEnd::setSharpen(BeSharpenConfig const &sharpen)
 {
-	BeSharpenConfig sharpen_copy = sharpen;
-	sharpen_copy.pad0[0] = sharpen_copy.pad0[1] = sharpen_copy.pad0[2] = 0;
-	sharpen_copy.pad1[0] = sharpen_copy.pad1[1] = sharpen_copy.pad1[2] = 0;
-	sharpen_copy.pad2[0] = sharpen_copy.pad2[1] = sharpen_copy.pad2[2] = 0;
-	sharpen_copy.pad3[0] = sharpen_copy.pad3[1] = sharpen_copy.pad3[2] = 0;
-	sharpen_copy.pad4[0] = sharpen_copy.pad4[1] = sharpen_copy.pad4[2] = 0;
-	sharpen_copy.pad5 = sharpen_copy.pad6 = sharpen_copy.pad7 = sharpen_copy.pad8 =
-		sharpen_copy.pad9 = 0;
-	config_->setSharpen(sharpen_copy);
+	config_->setSharpen(sharpen);
 	pipe_->dirtyFlagsRgb |= RgbEnable::Sharpen;
 }
 
@@ -338,17 +308,13 @@ void BackEnd::getSharpen(BeSharpenConfig &sharpen) const
 
 void BackEnd::setShFcCombine(BeShFcCombineConfig const &sh_fc_combine)
 {
-	BeShFcCombineConfig sh_fc_combine_copy = sh_fc_combine;
-	sh_fc_combine_copy.pad = 0;
-	config_->setShFcCombine(sh_fc_combine_copy);
+	config_->setShFcCombine(sh_fc_combine);
 	pipe_->dirtyFlagsExtra |= DirtyFlag::ShFcCombine;
 }
 
 void BackEnd::setYcbcrInverse(BeCcmConfig const &ycbcr_inverse)
 {
-	BeCcmConfig ycbcr_inverse_copy = ycbcr_inverse;
-	ycbcr_inverse_copy.pad[0] = ycbcr_inverse_copy.pad[1] = 0;
-	config_->setYcbcrInverse(ycbcr_inverse_copy);
+	config_->setYcbcrInverse(ycbcr_inverse);
 	pipe_->dirtyFlagsRgb |= RgbEnable::YcbcrInverse;
 }
 
