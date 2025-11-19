@@ -249,10 +249,8 @@ private:
 	// Internal storage use
 	PipelineConfig internal_pipeline_config_;
 
-	// Variant to manage different backend hardware variants
-	using BackEndConfig = std::variant<pisp_be_config *, pisp_be_config2 *>;
-	BackEndConfig config_;
 	BackendConfigAdapter adaptor_;
+	BackendConfigAdapter::Config config_;
 
 	// Default config
 	std::map<std::string, pisp_be_ccm_config> ycbcrMap_;

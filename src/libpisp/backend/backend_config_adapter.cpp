@@ -103,7 +103,7 @@ uint32_t BackendConfigAdapter::rgbEnablesToHw(RgbEnables rgbEnables) const
 						hwEnables |= map.v2;
 			}
 		},
-		be_->config_);
+		be_->config_.config);
 
 	return hwEnables;
 }
@@ -128,7 +128,7 @@ uint32_t BackendConfigAdapter::bayerEnablesToHw(BayerEnables bayerEnables) const
 						hwEnables |= map.v2;
 			}
 		},
-		be_->config_);
+		be_->config_.config);
 
 	return hwEnables;
 }
@@ -154,7 +154,7 @@ RgbEnables BackendConfigAdapter::hwToRgbEnables(uint32_t hwEnables) const
 						enables = static_cast<RgbEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
 			}
 		},
-		be_->config_);
+		be_->config_.config);
 
 	return enables;
 }
@@ -179,7 +179,7 @@ BayerEnables BackendConfigAdapter::hwToBayerEnables(uint32_t hwEnables) const
 						enables = static_cast<BayerEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
 			}
 		},
-		be_->config_);
+		be_->config_.config);
 
 	return enables;
 }

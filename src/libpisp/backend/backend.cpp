@@ -27,6 +27,8 @@ BackEnd::BackEnd(SoftwareConfig const &swConfig, PiSPVariant const &variant, std
 		pipe_ = reinterpret_cast<PipelineConfig *>(configStorage.data());
 	else
 		pipe_ = &internal_pipeline_config_;
+	
+	config_.config = &pipe_->hwConfig;
 
 	const char *env = std::getenv("LIBPISP_BE_CONFIG_FILE");
 	initialiseDefaultConfig(env ? std::string(env) : swConfig.defaultsFile);

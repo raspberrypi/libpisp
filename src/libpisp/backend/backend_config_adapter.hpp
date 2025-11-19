@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <type_traits>
+#include <variant>
 
 #include "bitfield.hpp"
 #include "pisp_be_config.h"
@@ -104,6 +105,36 @@ public:
 		: be_ (be)
 	{
 	}
+
+	struct Config
+	{
+		std::variant<pisp_be_config *, pisp_be_config2 *> config;
+
+		struct Pointer
+		{
+			void *ptr;
+			// Called by -> on the helper
+			template <typename T>
+			operator T *() const
+			{
+				return static_cast<T *>(ptr);
+			}
+		};
+
+		struct Proxy
+		{
+			std::variant<pisp_be_config *, pisp_be_config2 *> *variant;
+
+			// First operator-> returns a helper object
+			auto operator->() const
+			{
+				return std::visit([](auto *ptr) { return Pointer { ptr }; }, *variant);
+			}
+		};
+
+		// Entry point for ->
+		Proxy operator->() { return Proxy { &config }; }
+	};
 
 	struct Global
 	{
