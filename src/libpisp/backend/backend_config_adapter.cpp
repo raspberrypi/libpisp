@@ -3,7 +3,6 @@
  * Copyright (C) 2025, Raspberry Pi Ltd
  */
 
-#include "backend.hpp"
 #include "backend_config_adapter.hpp"
 
 #include <cstring>
@@ -413,12 +412,19 @@ BeCdnConfig BackendConfigAdapter::getCdn() const
 
 void BackendConfigAdapter::setCac(const BeCacConfig &cac)
 {
-	visit([&cac](auto *cfg) { cfg->cac = cac; });
+	visit([&cac](auto *cfg) { 
+		cfg->cac.grid_step_x = cac.grid_step_x;
+		cfg->cac.grid_step_y = cac.grid_step_y;
+		std::memcpy(cfg->cac.lut, cac.lut, sizeof(cfg->cac.lut));
+	});
+
+	// Store the extras as well!
+	extras_->cac = cac;
 }
 
 BeCacConfig BackendConfigAdapter::getCac() const
 {
-	return visit([](auto *cfg) -> BeCacConfig { return cfg->cac; });
+	return extras_->cac;
 }
 
 void BackendConfigAdapter::setDebin(const BeDebinConfig &debin)

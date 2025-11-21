@@ -154,7 +154,6 @@ void BackEnd::finaliseInputs() const
 void BackEnd::finaliseLsc()
 {
 	BeLscConfig lsc = config_->getLsc();
-	const BeLscExtra &lscExtra = pipe_->configExtra.lsc;
 	uint16_t width = config_->getInputFormat().width, height = config_->getInputFormat().height;
 
 	// Just a warning that ACLS algorithms might want the grid calculations here to match the AWB/ACLS stats.
@@ -165,8 +164,8 @@ void BackEnd::finaliseLsc()
 	if (lsc.grid_step_y == 0)
 		lsc.grid_step_y = (PISP_BE_LSC_GRID_SIZE << P) / height;
 
-	PISP_ASSERT(lsc.grid_step_x * (width + lscExtra.offset_x - 1) < (PISP_BE_LSC_GRID_SIZE << P));
-	PISP_ASSERT(lsc.grid_step_y * (height + lscExtra.offset_y - 1) < (PISP_BE_LSC_GRID_SIZE << P));
+	PISP_ASSERT(lsc.grid_step_x * (width + lsc.offset_x - 1) < (PISP_BE_LSC_GRID_SIZE << P));
+	PISP_ASSERT(lsc.grid_step_y * (height + lsc.offset_y - 1) < (PISP_BE_LSC_GRID_SIZE << P));
 	
 	config_->setLsc(lsc);
 }
@@ -174,7 +173,6 @@ void BackEnd::finaliseLsc()
 void BackEnd::finaliseCac()
 {
 	BeCacConfig cac = config_->getCac();
-	const BeCacExtra &cacExtra = pipe_->configExtra.cac;
 	uint16_t width = config_->getInputFormat().width, height = config_->getInputFormat().height;
 
 	static const int P = PISP_BE_CAC_STEP_PRECISION;
@@ -184,8 +182,8 @@ void BackEnd::finaliseCac()
 	if (cac.grid_step_y == 0)
 		cac.grid_step_y = (PISP_BE_CAC_GRID_SIZE << P) / height;
 
-	PISP_ASSERT(cac.grid_step_x * (width + cacExtra.offset_x - 1) < (PISP_BE_CAC_GRID_SIZE << P));
-	PISP_ASSERT(cac.grid_step_y * (height + cacExtra.offset_y - 1) < (PISP_BE_CAC_GRID_SIZE << P));
+	PISP_ASSERT(cac.grid_step_x * (width + cac.offset_x - 1) < (PISP_BE_CAC_GRID_SIZE << P));
+	PISP_ASSERT(cac.grid_step_y * (height + cac.offset_y - 1) < (PISP_BE_CAC_GRID_SIZE << P));
 	
 	config_->setCac(cac);
 }

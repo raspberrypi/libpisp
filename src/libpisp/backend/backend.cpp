@@ -228,12 +228,11 @@ void BackEnd::setLsc(BeLscConfig const &lsc)
 	pipe_->dirtyFlagsBayer |= BayerEnable::Lsc;
 }
 
-void BackEnd::setCac(BeCacConfig const &cac, BeCacExtra cac_extra)
+void BackEnd::setCac(BeCacConfig const &cac)
 {
 	pipe_->finaliseTiling |= config_->getCac().grid_step_x != cac.grid_step_x ||
 							config_->getCac().grid_step_y != cac.grid_step_y;
 	config_->setCac(cac);
-	pipe_->configExtra.cac = cac_extra;
 	pipe_->dirtyFlagsBayer |= BayerEnable::Cac;
 }
 

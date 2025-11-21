@@ -104,13 +104,21 @@ struct BeGlobal
 	uint8_t bayerOrder;
 };
 
-// LSC has extra non-register fields
+// LSC and CAC have extra non-register fields
 struct BeLscConfig {
-	uint16_t grid_step_x;
-	uint16_t grid_step_y;
-	uint32_t lut_packed[PISP_BE_LSC_LUT_SIZE][PISP_BE_LSC_LUT_SIZE];
-	uint16_t offset_x; 	// Non-register field
-	uint16_t offset_y; 	// Non-register field
+	uint16_t grid_step_x = 0;
+	uint16_t grid_step_y = 0;
+	uint32_t lut_packed[PISP_BE_LSC_LUT_SIZE][PISP_BE_LSC_LUT_SIZE] {};
+	uint16_t offset_x = 0; 	// Non-register field
+	uint16_t offset_y = 0; 	// Non-register field
+};
+
+struct BeCacConfig {
+	uint16_t grid_step_x = 0;
+	uint16_t grid_step_y = 0;
+	int8_t lut[PISP_BE_CAC_LUT_SIZE][PISP_BE_CAC_LUT_SIZE][2][2] {};
+	uint16_t offset_x = 0;
+	uint16_t offset_y = 0;
 };
 
 // Identical to the current HW structures
@@ -123,7 +131,6 @@ using BeSdnConfig = struct pisp_be_sdn_config;
 using BlaConfig = struct pisp_bla_config;
 using WbgConfig = struct pisp_wbg_config;
 using BeCdnConfig = struct pisp_be_cdn_config;
-using BeCacConfig = struct pisp_be_cac_config;
 using BeDebinConfig = struct pisp_be_debin_config;
 using BeCcmConfig = struct pisp_be_ccm_config;
 using BeSatControlConfig = struct pisp_be_sat_control_config;
@@ -140,13 +147,19 @@ using BeGammaConfig = struct pisp_be_gamma_config;
 using BeResampleConfig = struct pisp_be_resample_config;
 using BeGlobalConfig = struct pisp_be_global_config;
 using BeCropConfig = struct pisp_be_crop_config;
-using BeCacExtra = struct pisp_be_cac_extra;
 using BeResampleExtra = struct pisp_be_resample_extra;
 using BeDownscaleExtra = struct pisp_be_downscale_extra;
 using BeTilesConfig = struct pisp_be_tiles_config;
 
-class BackEnd;
-struct BackEnd::BeConfigExtra;
+struct BeConfigExtra
+{
+	// Non-register fields:
+	BeLscConfig lsc {};
+	BeCacConfig cac {};
+	BeDownscaleExtra downscale[PISP_BACK_END_NUM_OUTPUTS] {};
+	BeResampleExtra resample[PISP_BACK_END_NUM_OUTPUTS] {};
+	BeCropConfig crop[PISP_BACK_END_NUM_OUTPUTS] {};
+};
 
 class BackendConfigAdapter
 {
@@ -154,7 +167,7 @@ public:
 
 	using HwConfigVariant = std::variant<pisp_be_config*,  pisp_be_config2*>;
 
-	BackendConfigAdapter(HwConfigVariant config, BackEnd::BeConfigExtra *extras)
+	BackendConfigAdapter(HwConfigVariant config, BeConfigExtra *extras)
 		: config_(config), extras_(extras)
 	{
 	}
