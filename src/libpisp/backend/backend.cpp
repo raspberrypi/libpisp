@@ -55,9 +55,9 @@ void BackEnd::setGlobal(BeGlobal const &global)
 	config_->setGlobal(global);
 }
 
-void BackEnd::getGlobal(BeGlobal &global) const
+BeGlobal BackEnd::getGlobal() const
 {
-	global = config_->getGlobal();
+	return config_->getGlobal();
 }
 
 void BackEnd::setInputFormat(ImageFormatConfig const &inputFormat)
@@ -70,9 +70,9 @@ void BackEnd::setInputFormat(ImageFormatConfig const &inputFormat)
 	pipe_->retile = true;
 }
 
-void BackEnd::getInputFormat(ImageFormatConfig &inputFormat) const
+ImageFormatConfig BackEnd::getInputFormat() const
 {
-	inputFormat = config_->getInputFormat();
+	return config_->getInputFormat();
 }
 
 void BackEnd::setDecompress(DecompressConfig const &decompress)
@@ -81,10 +81,20 @@ void BackEnd::setDecompress(DecompressConfig const &decompress)
 	pipe_->dirtyFlagsBayer |= BayerEnable::Decompress;
 }
 
+DecompressConfig BackEnd::getDecompress() const
+{
+	return config_->getDecompress();
+}
+
 void BackEnd::setDpc(BeDpcConfig const &dpc)
 {
 	config_->setDpc(dpc);
 	pipe_->dirtyFlagsBayer |= BayerEnable::Dpc;
+}
+
+BeDpcConfig BackEnd::getDpc() const
+{
+	return config_->getDpc();
 }
 
 void BackEnd::setGeq(BeGeqConfig const &geq)
@@ -95,6 +105,11 @@ void BackEnd::setGeq(BeGeqConfig const &geq)
 	pipe_->dirtyFlagsBayer |= BayerEnable::Geq;
 }
 
+BeGeqConfig BackEnd::getGeq() const
+{
+	return config_->getGeq();
+}
+
 void BackEnd::setTdnInputFormat(ImageFormatConfig const &tdnInputFormat)
 {
 	config_->setTdnInputFormat(tdnInputFormat);
@@ -102,9 +117,9 @@ void BackEnd::setTdnInputFormat(ImageFormatConfig const &tdnInputFormat)
 	pipe_->finaliseTiling = true;
 }
 
-void BackEnd::getTdnInputFormat(ImageFormatConfig &tdnInputFormat) const
+ImageFormatConfig BackEnd::getTdnInputFormat() const
 {
-	tdnInputFormat = config_->getTdnInputFormat();
+	return config_->getTdnInputFormat();
 }
 
 void BackEnd::setTdnDecompress(DecompressConfig const &tdn_decompress)
@@ -113,21 +128,31 @@ void BackEnd::setTdnDecompress(DecompressConfig const &tdn_decompress)
 	pipe_->dirtyFlagsBayer |= BayerEnable::TdnDecompress;
 }
 
+DecompressConfig BackEnd::getTdnDecompress() const
+{
+	return config_->getTdnDecompress();
+}
+
 void BackEnd::setTdn(BeTdnConfig const &tdn)
 {
 	config_->setTdn(tdn);
 	pipe_->dirtyFlagsBayer |= BayerEnable::Tdn;
 }
 
-void BackEnd::getTdn(BeTdnConfig &tdn) const
+BeTdnConfig BackEnd::getTdn() const
 {
-	tdn = config_->getTdn();
+	return config_->getTdn();
 }
 
 void BackEnd::setTdnCompress(CompressConfig const &tdn_compress)
 {
 	config_->setTdnCompress(tdn_compress);
 	pipe_->dirtyFlagsBayer |= BayerEnable::TdnCompress;
+}
+
+CompressConfig BackEnd::getTdnCompress() const
+{
+	return config_->getTdnCompress();
 }
 
 void BackEnd::setTdnOutputFormat(ImageFormatConfig const &tdn_output_format)
@@ -137,9 +162,9 @@ void BackEnd::setTdnOutputFormat(ImageFormatConfig const &tdn_output_format)
 	pipe_->finaliseTiling = true;
 }
 
-void BackEnd::getTdnOutputFormat(ImageFormatConfig &tdn_output_format) const
+ImageFormatConfig BackEnd::getTdnOutputFormat() const
 {
-	tdn_output_format = config_->getTdnOutputFormat();
+	return config_->getTdnOutputFormat();
 }
 
 void BackEnd::setSdn(BeSdnConfig const &sdn)
@@ -148,15 +173,20 @@ void BackEnd::setSdn(BeSdnConfig const &sdn)
 	pipe_->dirtyFlagsBayer |= BayerEnable::Sdn;
 }
 
+BeSdnConfig BackEnd::getSdn() const
+{
+	return config_->getSdn();
+}
+
 void BackEnd::setBlc(BlaConfig const &blc)
 {
 	config_->setBlc(blc);
 	pipe_->dirtyFlagsBayer |= BayerEnable::Blc;
 }
 
-void BackEnd::getBlc(BlaConfig &blc) const
+BlaConfig BackEnd::getBlc() const
 {
-	blc = config_->getBlc();
+	return config_->getBlc();
 }
 
 void BackEnd::setStitchInputFormat(ImageFormatConfig const &stitch_input_format)
@@ -167,9 +197,9 @@ void BackEnd::setStitchInputFormat(ImageFormatConfig const &stitch_input_format)
 	pipe_->finaliseTiling = true;
 }
 
-void BackEnd::getStitchInputFormat(ImageFormatConfig &stitch_input_format) const
+ImageFormatConfig BackEnd::getStitchInputFormat() const
 {
-	stitch_input_format = config_->getStitchInputFormat();
+	return config_->getStitchInputFormat();
 }
 
 void BackEnd::setStitchDecompress(DecompressConfig const &stitch_decompress)
@@ -178,16 +208,31 @@ void BackEnd::setStitchDecompress(DecompressConfig const &stitch_decompress)
 	pipe_->dirtyFlagsBayer |= BayerEnable::StitchDecompress;
 }
 
+DecompressConfig BackEnd::getStitchDecompress() const
+{
+	return config_->getStitchDecompress();
+}
+
 void BackEnd::setStitch(BeStitchConfig const &stitch)
 {
 	config_->setStitch(stitch);
 	pipe_->dirtyFlagsBayer |= BayerEnable::Stitch;
 }
 
+BeStitchConfig BackEnd::getStitch() const
+{
+	return config_->getStitch();
+}
+
 void BackEnd::setStitchCompress(CompressConfig const &stitch_compress)
 {
 	config_->setStitchCompress(stitch_compress);
 	pipe_->dirtyFlagsBayer |= BayerEnable::StitchCompress;
+}
+
+CompressConfig BackEnd::getStitchCompress() const
+{
+	return config_->getStitchCompress();
 }
 
 void BackEnd::setStitchOutputFormat(ImageFormatConfig const &stitch_output_format)
@@ -197,9 +242,9 @@ void BackEnd::setStitchOutputFormat(ImageFormatConfig const &stitch_output_forma
 	pipe_->finaliseTiling = true;
 }
 
-void BackEnd::getStitchOutputFormat(ImageFormatConfig &stitch_output_format) const
+ImageFormatConfig BackEnd::getStitchOutputFormat() const
 {
-	stitch_output_format = config_->getStitchOutputFormat();
+	return config_->getStitchOutputFormat();
 }
 
 void BackEnd::setCdn(BeCdnConfig const &cdn)
@@ -208,15 +253,20 @@ void BackEnd::setCdn(BeCdnConfig const &cdn)
 	pipe_->dirtyFlagsBayer |= BayerEnable::Cdn;
 }
 
+BeCdnConfig BackEnd::getCdn() const
+{
+	return config_->getCdn();
+}
+
 void BackEnd::setWbg(WbgConfig const &wbg)
 {
 	config_->setWbg(wbg);
 	pipe_->dirtyFlagsBayer |= BayerEnable::Wbg;
 }
 
-void BackEnd::getWbg(WbgConfig &wbg) const
+WbgConfig BackEnd::getWbg() const
 {
-	wbg = config_->getWbg();
+	return config_->getWbg();
 }
 
 void BackEnd::setLsc(BeLscConfig const &lsc)
@@ -228,6 +278,11 @@ void BackEnd::setLsc(BeLscConfig const &lsc)
 	pipe_->dirtyFlagsBayer |= BayerEnable::Lsc;
 }
 
+BeLscConfig BackEnd::getLsc() const
+{
+	return config_->getLsc();
+}
+
 void BackEnd::setCac(BeCacConfig const &cac)
 {
 	pipe_->finaliseTiling |= config_->getCac().grid_step_x != cac.grid_step_x ||
@@ -236,15 +291,20 @@ void BackEnd::setCac(BeCacConfig const &cac)
 	pipe_->dirtyFlagsBayer |= BayerEnable::Cac;
 }
 
+BeCacConfig BackEnd::getCac() const
+{
+	return config_->getCac();
+}
+
 void BackEnd::setDebin(BeDebinConfig const &debin)
 {
 	config_->setDebin(debin);
 	pipe_->dirtyFlagsBayer |= BayerEnable::Debin;
 }
 
-void BackEnd::getDebin(BeDebinConfig &debin) const
+BeDebinConfig BackEnd::getDebin() const
 {
-	debin = config_->getDebin();
+	return config_->getDebin();
 }
 
 void BackEnd::setTonemap(BeTonemapConfig const &tonemap)
@@ -253,15 +313,20 @@ void BackEnd::setTonemap(BeTonemapConfig const &tonemap)
 	pipe_->dirtyFlagsBayer |= BayerEnable::Tonemap;
 }
 
+BeTonemapConfig BackEnd::getTonemap() const
+{
+	return config_->getTonemap();
+}
+
 void BackEnd::setDemosaic(BeDemosaicConfig const &demosaic)
 {
 	config_->setDemosaic(demosaic);
 	pipe_->dirtyFlagsBayer |= BayerEnable::Demosaic;
 }
 
-void BackEnd::getDemosaic(BeDemosaicConfig &demosaic) const
+BeDemosaicConfig BackEnd::getDemosaic() const
 {
-	demosaic = config_->getDemosaic();
+	return config_->getDemosaic();
 }
 
 void BackEnd::setCcm(BeCcmConfig const &ccm)
@@ -270,10 +335,20 @@ void BackEnd::setCcm(BeCcmConfig const &ccm)
 	pipe_->dirtyFlagsRgb |= RgbEnable::Ccm;
 }
 
+BeCcmConfig BackEnd::getCcm() const
+{
+	return config_->getCcm();
+}
+
 void BackEnd::setSatControl(BeSatControlConfig const &sat_control)
 {
 	config_->setSatControl(sat_control);
 	pipe_->dirtyFlagsRgb |= RgbEnable::SatControl;
+}
+
+BeSatControlConfig BackEnd::getSatControl() const
+{
+	return config_->getSatControl();
 }
 
 void BackEnd::setYcbcr(BeCcmConfig const &ycbcr)
@@ -282,9 +357,9 @@ void BackEnd::setYcbcr(BeCcmConfig const &ycbcr)
 	pipe_->dirtyFlagsRgb |= RgbEnable::Ycbcr;
 }
 
-void BackEnd::getYcbcr(BeCcmConfig &ycbcr) const
+BeCcmConfig BackEnd::getYcbcr() const
 {
-	ycbcr = config_->getYcbcr();
+	return config_->getYcbcr();
 }
 
 void BackEnd::setFalseColour(BeFalseColourConfig const &false_colour)
@@ -293,15 +368,20 @@ void BackEnd::setFalseColour(BeFalseColourConfig const &false_colour)
 	pipe_->dirtyFlagsRgb |= RgbEnable::FalseColour;
 }
 
+BeFalseColourConfig BackEnd::getFalseColour() const
+{
+	return config_->getFalseColour();
+}
+
 void BackEnd::setSharpen(BeSharpenConfig const &sharpen)
 {
 	config_->setSharpen(sharpen);
 	pipe_->dirtyFlagsRgb |= RgbEnable::Sharpen;
 }
 
-void BackEnd::getSharpen(BeSharpenConfig &sharpen) const
+BeSharpenConfig BackEnd::getSharpen() const
 {
-	sharpen = config_->getSharpen();
+	return config_->getSharpen();
 }
 
 void BackEnd::setShFcCombine(BeShFcCombineConfig const &sh_fc_combine)
@@ -310,10 +390,20 @@ void BackEnd::setShFcCombine(BeShFcCombineConfig const &sh_fc_combine)
 	pipe_->dirtyFlagsExtra |= DirtyFlag::ShFcCombine;
 }
 
+BeShFcCombineConfig BackEnd::getShFcCombine() const
+{
+	return config_->getShFcCombine();
+}
+
 void BackEnd::setYcbcrInverse(BeCcmConfig const &ycbcr_inverse)
 {
 	config_->setYcbcrInverse(ycbcr_inverse);
 	pipe_->dirtyFlagsRgb |= RgbEnable::YcbcrInverse;
+}
+
+BeCcmConfig BackEnd::getYcbcrInverse() const
+{
+	return config_->getYcbcrInverse();
 }
 
 void BackEnd::setGamma(BeGammaConfig const &gamma)
@@ -322,9 +412,9 @@ void BackEnd::setGamma(BeGammaConfig const &gamma)
 	pipe_->dirtyFlagsRgb |= RgbEnable::Gamma0;
 }
 
-void BackEnd::getGamma(BeGammaConfig &gamma) const
+BeGammaConfig BackEnd::getGamma() const
 {
-	gamma = config_->getGamma();
+	return config_->getGamma();
 }
 
 void BackEnd::setCrop(BeCropConfig const &crop)
@@ -335,6 +425,11 @@ void BackEnd::setCrop(BeCropConfig const &crop)
 	pipe_->retile = true;
 }
 
+BeCropConfig BackEnd::getCrop() const
+{
+	return pipe_->configExtra.crop[0];
+}
+
 void BackEnd::setCrop(unsigned int i, BeCropConfig const &crop)
 {
 	PISP_ASSERT(i < variant_.backEndNumBranches(0));
@@ -343,15 +438,21 @@ void BackEnd::setCrop(unsigned int i, BeCropConfig const &crop)
 	pipe_->retile = true;
 }
 
+BeCropConfig BackEnd::getCrop(unsigned int i) const
+{
+	PISP_ASSERT(i < variant_.backEndNumBranches(0));
+	return pipe_->configExtra.crop[i];
+}
+
 void BackEnd::setCsc(unsigned int i, BeCcmConfig const &csc)
 {
 	config_->setCsc(i, csc);
 	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::PostCsc0, i);
 }
 
-void BackEnd::getCsc(unsigned int i, BeCcmConfig &csc) const
+BeCcmConfig BackEnd::getCsc(unsigned int i) const
 {
-	csc = config_->getCsc(i);
+	return config_->getCsc(i);
 }
 
 void BackEnd::setDownscale(unsigned int i, BeDownscaleConfig const &downscale)
@@ -362,9 +463,9 @@ void BackEnd::setDownscale(unsigned int i, BeDownscaleConfig const &downscale)
 	pipe_->retile = true;
 }
 
-void BackEnd::getDownscale(unsigned int i, BeDownscaleConfig &downscale) const
+BeDownscaleConfig BackEnd::getDownscale(unsigned int i) const
 {
-	downscale = config_->getDownscale(i);
+	return config_->getDownscale(i);
 }
 
 void BackEnd::setResample(unsigned int i, BeResampleConfig const &resample)
@@ -375,9 +476,9 @@ void BackEnd::setResample(unsigned int i, BeResampleConfig const &resample)
 	pipe_->retile = true;
 }
 
-void BackEnd::getResample(unsigned int i, BeResampleConfig &resample) const
+BeResampleConfig BackEnd::getResample(unsigned int i) const
 {
-	resample = config_->getResample(i);
+	return config_->getResample(i);
 }
 
 void BackEnd::setOutputFormat(unsigned int i, BeOutputFormatConfig const &output_format)
@@ -389,10 +490,10 @@ void BackEnd::setOutputFormat(unsigned int i, BeOutputFormatConfig const &output
 	pipe_->retile = true;
 }
 
-void BackEnd::getOutputFormat(unsigned int i, BeOutputFormatConfig &output_format) const
+BeOutputFormatConfig BackEnd::getOutputFormat(unsigned int i) const
 {
 	PISP_ASSERT(i < variant_.backEndNumBranches(0));
-	output_format = config_->getOutputFormat(i);
+	return config_->getOutputFormat(i);
 }
 
 void BackEnd::setSmartResize(unsigned int i, BackEnd::SmartResize const &smart_resize)

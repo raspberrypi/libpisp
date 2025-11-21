@@ -271,8 +271,7 @@ int main(int argc, char *argv[])
 	libpisp::BackEnd *be = backendDevice.get();
 	libpisp::PiSPVariant variant = be->getVariant();
 
-	libpisp::BeGlobal global;
-	be->getGlobal(global);
+	libpisp::BeGlobal global = be->getGlobal();
 	global.bayerEnables = libpisp::BayerEnable::None;
 	global.rgbEnables = libpisp::RgbEnable::Input | libpisp::RgbEnable::Output0;
 

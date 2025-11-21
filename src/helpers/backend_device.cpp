@@ -47,8 +47,7 @@ BackendDevice::~BackendDevice()
 
 void BackendDevice::setup(unsigned int bufferCount, bool useOpaqueFormat)
 {
-	BeGlobal global;
-	be_->getGlobal(global);
+	BeGlobal global = be_->getGlobal();
 
 	pisp_be_tiles_config config = {};
 	be_->prepare(&config);
