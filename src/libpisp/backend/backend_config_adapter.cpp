@@ -359,7 +359,7 @@ void BackendConfigAdapter::setLsc(const BeLscConfig &lsc)
 	visit([&lsc](auto *cfg) { 
 		cfg->lsc.grid_step_x = lsc.grid_step_x;
 		cfg->lsc.grid_step_y = lsc.grid_step_y;
-		std::memcpy(cfg->lsc.lut_packed, lsc.lut_packed, sizeof(cfg->lsc.lut_packed));
+		std::memcpy(cfg->lsc.lut_packed, lsc.lut_packed.data(), sizeof(cfg->lsc.lut_packed));
 	});
 
 	// Store the extras as well!
@@ -399,7 +399,7 @@ void BackendConfigAdapter::setCac(const BeCacConfig &cac)
 	visit([&cac](auto *cfg) { 
 		cfg->cac.grid_step_x = cac.grid_step_x;
 		cfg->cac.grid_step_y = cac.grid_step_y;
-		std::memcpy(cfg->cac.lut, cac.lut, sizeof(cfg->cac.lut));
+		std::memcpy(cfg->cac.lut, cac.lut.data(), sizeof(cfg->cac.lut));
 	});
 
 	// Store the extras as well!
@@ -742,7 +742,7 @@ void BackendConfigAdapter::setResample(unsigned int i, const BeResampleConfig &r
 		[&resample, i](pisp_be_config *cfg) {
 			cfg->resample[i].scale_factor_h = resample.scale_factor_h;
 			cfg->resample[i].scale_factor_v = resample.scale_factor_v;
-			std::memcpy(cfg->resample[i].coef, resample.coef, sizeof(cfg->resample[i].coef));
+			std::memcpy(cfg->resample[i].coef, resample.coef.data(), sizeof(cfg->resample[i].coef));
 		},
 		[&resample, i](pisp_be_config2 *cfg) {
 			// v2 uses pisp_be_resample2_config

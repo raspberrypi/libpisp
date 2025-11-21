@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <type_traits>
 #include <variant>
@@ -107,7 +108,7 @@ struct BeLscConfig
 {
 	uint16_t grid_step_x = 0;
 	uint16_t grid_step_y = 0;
-	uint32_t lut_packed[PISP_BE_LSC_LUT_SIZE][PISP_BE_LSC_LUT_SIZE] {};
+	std::array<uint32_t, PISP_BE_LSC_LUT_SIZE * PISP_BE_LSC_LUT_SIZE> lut_packed {};
 	uint16_t offset_x = 0; // Non-register field
 	uint16_t offset_y = 0; // Non-register field
 };
@@ -116,7 +117,7 @@ struct BeCacConfig
 {
 	uint16_t grid_step_x = 0;
 	uint16_t grid_step_y = 0;
-	int8_t lut[PISP_BE_CAC_LUT_SIZE][PISP_BE_CAC_LUT_SIZE][2][2] {};
+	std::array<int8_t, PISP_BE_CAC_LUT_SIZE * PISP_BE_CAC_LUT_SIZE * 2 * 2> lut {};
 	uint16_t offset_x = 0;
 	uint16_t offset_y = 0;
 };
@@ -135,11 +136,11 @@ struct BeResampleConfig
 {
 	uint16_t scale_factor_h = 0;
 	uint16_t scale_factor_v = 0;
-	int16_t coef[PISP_BE_RESAMPLE_FILTER_SIZE] {};
+	std::array<int16_t, PISP_BE_RESAMPLE_FILTER_SIZE> coef {};
 	uint16_t scaled_width = 0; // Non-register field
 	uint16_t scaled_height = 0; // Non-register field
-	int16_t initial_phase_h[3] {}; // Non-register field
-	int16_t initial_phase_v[3] {}; // Non-register field
+	std::array<int16_t, 3> initial_phase_h {}; // Non-register field
+	std::array<int16_t, 3> initial_phase_v {}; // Non-register field
 };
 
 // No hardware registers for crop directly.
@@ -181,9 +182,9 @@ struct BeConfigExtra
 	// Non-register fields:
 	BeLscConfig lsc {};
 	BeCacConfig cac {};
-	BeDownscaleConfig downscale[PISP_BACK_END_NUM_OUTPUTS] {};
-	BeResampleConfig resample[PISP_BACK_END_NUM_OUTPUTS] {};
-	BeCropConfig crop[PISP_BACK_END_NUM_OUTPUTS] {};
+	std::array<BeDownscaleConfig, PISP_BACK_END_NUM_OUTPUTS> downscale {};
+	std::array<BeResampleConfig, PISP_BACK_END_NUM_OUTPUTS> resample {};
+	std::array<BeCropConfig, PISP_BACK_END_NUM_OUTPUTS> crop {};
 };
 
 class BackendConfigAdapter

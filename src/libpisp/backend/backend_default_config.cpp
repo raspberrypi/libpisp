@@ -139,13 +139,13 @@ void readResample(std::map<std::string, libpisp::BeResampleConfig> &resampleFilt
 	for (auto const &[name, filter] : filters.items())
 	{
 		libpisp::BeResampleConfig r;
-		constexpr unsigned int num_coefs = sizeof(r.coef) / sizeof(r.coef[0]);
+		constexpr unsigned int num_coefs = r.coef.size();
 		auto coefs = filter.get<std::vector<int16_t>>();
 
 		if (coefs.size() != num_coefs)
 			throw std::runtime_error("readResample: Incorrect number of filter coefficients");
 
-		memcpy(r.coef, coefs.data(), sizeof(r.coef));
+		memcpy(r.coef.data(), coefs.data(), sizeof(r.coef));
 		resampleFilterMap.emplace(name, r);
 	}
 
@@ -283,11 +283,11 @@ void BackEnd::initialiseYcbcrInverse(libpisp::BeCcmConfig &ycbcr_inverse, const 
 
 void BackEnd::initialiseResample(BeResampleConfig &resample, const std::string &filter)
 {
-	memset(resample.coef, 0, sizeof(resample.coef));
+	memset(resample.coef.data(), 0, sizeof(resample.coef));
 
 	auto it = resampleFilterMap_.find(filter);
 	if (it != resampleFilterMap_.end())
-		memcpy(resample.coef, it->second.coef, sizeof(resample.coef));
+		memcpy(resample.coef.data(), it->second.coef.data(), sizeof(resample.coef));
 }
 
 void BackEnd::initialiseResample(BeResampleConfig &resample, double downscale)
