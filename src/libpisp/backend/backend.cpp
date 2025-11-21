@@ -391,9 +391,7 @@ void BackEnd::setResample(unsigned int i, BeResampleExtra const &resample_extra)
 void BackEnd::setOutputFormat(unsigned int i, BeOutputFormatConfig const &output_format)
 {
 	PISP_ASSERT(i < variant_.backEndNumBranches(0));
-	BeOutputFormatConfig output_format_copy = output_format;
-	output_format_copy.rebayer = output_format_copy.bayer_order = output_format_copy.chroma_pos = 0;
-	config_->setOutputFormat(i, output_format_copy);
+	config_->setOutputFormat(i, output_format);
 	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::Output0, i);
 	// Should only need a retile if the transform has changed, othwise a finalise_tile will do.
 	pipe_->retile = true;

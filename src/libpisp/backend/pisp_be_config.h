@@ -690,9 +690,7 @@ enum pisp_be_transform {
 struct pisp_be_output_format_config {
 	struct pisp_image_format_config image;
 	__u8 transform;
-	__u8 rebayer;
-	__u8 bayer_order;
-	__u8 chroma_pos;
+	__u8 pad[3];
 	__u16 lo;
 	__u16 hi;
 	__u16 lo2;
@@ -1035,6 +1033,18 @@ struct pisp_be_gamma2_config {
 	__u16 pad;
 };
 
+struct pisp_be_output_format_config2 {
+	struct pisp_image_format_config image;
+	__u8 transform;
+	__u8 rebayer;
+	__u8 bayer_order;
+	__u8 chroma_pos;
+	__u16 lo;
+	__u16 hi;
+	__u16 lo2;
+	__u16 hi2;
+} __attribute__((packed));
+
 enum pisp_be_rgb_enable2 {
 	PISP_BE_RGB_ENABLE2_INPUT = 0x0000001,
 	PISP_BE_RGB_ENABLE2_DEDISTORT = 0x0000002,
@@ -1106,7 +1116,7 @@ struct pisp_be_config2 {
 	pisp_be_ccm_config post_csc[PISP_BACK_END_NUM_OUTPUTS];
 	pisp_be_downscale_config downscale[PISP_BACK_END_NUM_OUTPUTS];
 	pisp_be_resample2_config resample[PISP_BACK_END_NUM_OUTPUTS];
-	pisp_be_output_format_config
+	pisp_be_output_format_config2
 				output_format[PISP_BACK_END_NUM_OUTPUTS];
 	pisp_compress_config compress[PISP_BACK_END_NUM_OUTPUTS];
 	// Add padding here if necessary to make a multiple of 32 bytes.
