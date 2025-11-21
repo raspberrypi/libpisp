@@ -100,8 +100,8 @@ public:
 	void getWbg(WbgConfig &wbg) const;
 	void setCdn(BeCdnConfig const &cdn);
 	void getCdn(BeCdnConfig &cdn) const;
-	void setLsc(BeLscConfig const &lsc, BeLscExtra lscExtra = { 0, 0 });
-	void getLsc(BeLscConfig &lsc, BeLscExtra &lscExtra) const;
+	void setLsc(BeLscConfig const &lsc);
+	void getLsc(BeLscConfig &lsc) const;
 	void setCac(BeCacConfig const &cac, BeCacExtra cacExtra = { 0, 0 });
 	void getCac(BeCacConfig &cac, BeCacExtra &cacExtra) const;
 	void setDebin(BeDebinConfig const &debin);
@@ -185,11 +185,13 @@ public:
 		return sizeof(PipelineConfig);
 	}
 
+	friend class BackendConfigAdapter;
+
 private:
 	struct BeConfigExtra
 	{
 		// Non-register fields:
-		BeLscExtra lsc {};
+		BeLscConfig lsc {};
 		BeCacExtra cac {};
 		BeDownscaleExtra downscale[PISP_BACK_END_NUM_OUTPUTS] {};
 		BeResampleExtra resample[PISP_BACK_END_NUM_OUTPUTS] {};

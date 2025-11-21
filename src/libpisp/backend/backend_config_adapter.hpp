@@ -96,14 +96,21 @@ T getFlagForBranch(const T field, unsigned int branch)
 	return static_cast<T>(static_cast<std::underlying_type_t<T>>(field) << branch);
 }
 
-class BackEnd;
-
 // Global config is special case between variants!
 struct BeGlobal
 {
 	BayerEnables bayerEnables;
 	RgbEnables rgbEnables;
 	uint8_t bayerOrder;
+};
+
+// LSC has extra non-register fields
+struct BeLscConfig {
+	uint16_t grid_step_x;
+	uint16_t grid_step_y;
+	uint32_t lut_packed[PISP_BE_LSC_LUT_SIZE][PISP_BE_LSC_LUT_SIZE];
+	uint16_t offset_x; 	// Non-register field
+	uint16_t offset_y; 	// Non-register field
 };
 
 // Identical to the current HW structures
@@ -114,7 +121,6 @@ using BeDpcConfig = struct pisp_be_dpc_config;
 using BeGeqConfig = struct pisp_be_geq_config;
 using BeSdnConfig = struct pisp_be_sdn_config;
 using BlaConfig = struct pisp_bla_config;
-using BeLscConfig = struct pisp_be_lsc_config;
 using WbgConfig = struct pisp_wbg_config;
 using BeCdnConfig = struct pisp_be_cdn_config;
 using BeCacConfig = struct pisp_be_cac_config;
@@ -134,11 +140,13 @@ using BeGammaConfig = struct pisp_be_gamma_config;
 using BeResampleConfig = struct pisp_be_resample_config;
 using BeGlobalConfig = struct pisp_be_global_config;
 using BeCropConfig = struct pisp_be_crop_config;
-using BeLscExtra = struct pisp_be_lsc_extra;
 using BeCacExtra = struct pisp_be_cac_extra;
 using BeResampleExtra = struct pisp_be_resample_extra;
 using BeDownscaleExtra = struct pisp_be_downscale_extra;
 using BeTilesConfig = struct pisp_be_tiles_config;
+
+class BackEnd;
+struct BackEnd::BeConfigExtra;
 
 class BackendConfigAdapter
 {
@@ -146,8 +154,8 @@ public:
 
 	using HwConfigVariant = std::variant<pisp_be_config*,  pisp_be_config2*>;
 
-	BackendConfigAdapter(HwConfigVariant config)
-		: config_(config)
+	BackendConfigAdapter(HwConfigVariant config, BackEnd::BeConfigExtra *extras)
+		: config_(config), extras_(extras)
 	{
 	}
 	
@@ -282,6 +290,7 @@ public:
 
 private:
 	HwConfigVariant config_;
+	BeConfigExtra *extras_;
 };
 
 } // namespace libpisp

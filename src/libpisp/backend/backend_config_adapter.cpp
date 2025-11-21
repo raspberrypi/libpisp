@@ -3,9 +3,10 @@
  * Copyright (C) 2025, Raspberry Pi Ltd
  */
 
-#include "backend_config_adapter.hpp"
 #include "backend.hpp"
+#include "backend_config_adapter.hpp"
 
+#include <cstring>
 #include <map>
 #include <stdexcept>
 
@@ -372,12 +373,19 @@ ImageFormatConfig BackendConfigAdapter::getStitchOutputFormat() const
 
 void BackendConfigAdapter::setLsc(const BeLscConfig &lsc)
 {
-	visit([&lsc](auto *cfg) { cfg->lsc = lsc; });
+	visit([&lsc](auto *cfg) { 
+		cfg->lsc.grid_step_x = lsc.grid_step_x;
+		cfg->lsc.grid_step_y = lsc.grid_step_y;
+		std::memcpy(cfg->lsc.lut_packed, lsc.lut_packed, sizeof(cfg->lsc.lut_packed));
+	});
+
+	// Store the extras as well!
+	extras_->lsc = lsc;
 }
 
 BeLscConfig BackendConfigAdapter::getLsc() const
 {
-	return visit([](auto *cfg) -> BeLscConfig { return cfg->lsc; });
+	return extras_->lsc;
 }
 
 void BackendConfigAdapter::setWbg(const WbgConfig &wbg)

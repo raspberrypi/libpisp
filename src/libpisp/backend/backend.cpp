@@ -28,7 +28,7 @@ BackEnd::BackEnd(SoftwareConfig const &swConfig, PiSPVariant const &variant, std
 	else
 		pipe_ = &internalPipelineConfig_;
 	
-	config_ = std::make_unique<BackendConfigAdapter>(&pipe_->hwConfig);
+	config_ = std::make_unique<BackendConfigAdapter>(&pipe_->hwConfig, &pipe_->configExtra);
 
 	const char *env = std::getenv("LIBPISP_BE_CONFIG_FILE");
 	initialiseDefaultConfig(env ? std::string(env) : swConfig.defaultsFile);
@@ -219,14 +219,13 @@ void BackEnd::getWbg(WbgConfig &wbg) const
 	wbg = config_->getWbg();
 }
 
-void BackEnd::setLsc(BeLscConfig const &lsc, BeLscExtra lsc_extra)
+void BackEnd::setLsc(BeLscConfig const &lsc)
 {
 	// Should not need a finalise_tile if only the cell coefficients have changed.
 	pipe_->finaliseTiling |= config_->getLsc().grid_step_x != lsc.grid_step_x ||
 							config_->getLsc().grid_step_y != lsc.grid_step_y;
 	config_->setLsc(lsc);
 	pipe_->dirtyFlagsBayer |= BayerEnable::Lsc;
-	pipe_->configExtra.lsc = lsc_extra;
 }
 
 void BackEnd::setCac(BeCacConfig const &cac, BeCacExtra cac_extra)
