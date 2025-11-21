@@ -561,12 +561,20 @@ BeCcmConfig BackendConfigAdapter::getCsc(unsigned int i) const
 
 void BackendConfigAdapter::setDownscale(unsigned int i, const BeDownscaleConfig &downscale)
 {
-	visit([&downscale, i](auto *cfg) { cfg->downscale[i] = downscale; });
+	visit([&downscale, i](auto *cfg) {
+		cfg->downscale[i].scale_factor_h = downscale.scale_factor_h;
+		cfg->downscale[i].scale_factor_v = downscale.scale_factor_v;
+		cfg->downscale[i].scale_recip_h = downscale.scale_recip_h;
+		cfg->downscale[i].scale_recip_v = downscale.scale_recip_v;
+	});
+
+	// Store the extras as well!
+	extras_->downscale[i] = downscale;
 }
 
 BeDownscaleConfig BackendConfigAdapter::getDownscale(unsigned int i) const
 {
-	return visit([i](auto *cfg) -> BeDownscaleConfig { return cfg->downscale[i]; });
+	return extras_->downscale[i];
 }
 
 void BackendConfigAdapter::setOutputFormat(unsigned int i, const BeOutputFormatConfig &outputFormat)
@@ -735,7 +743,9 @@ void BackendConfigAdapter::setResample(unsigned int i, const BeResampleConfig &r
 {
 	visit(overloaded {
 		[&resample, i](pisp_be_config *cfg) {
-			cfg->resample[i] = resample;
+			cfg->resample[i].scale_factor_h = resample.scale_factor_h;
+			cfg->resample[i].scale_factor_v = resample.scale_factor_v;
+			std::memcpy(cfg->resample[i].coef, resample.coef, sizeof(cfg->resample[i].coef));
 		},
 		[&resample, i](pisp_be_config2 *cfg) {
 			// v2 uses pisp_be_resample2_config
@@ -748,24 +758,12 @@ void BackendConfigAdapter::setResample(unsigned int i, const BeResampleConfig &r
 			}
 		}
 	});
+
+	// Store the extras as well!
+	extras_->resample[i] = resample;
 }
 
 BeResampleConfig BackendConfigAdapter::getResample(unsigned int i) const
 {
-	return visit(overloaded {
-		[i](pisp_be_config *cfg) -> BeResampleConfig {
-			return cfg->resample[i];
-		},
-		[i](pisp_be_config2 *cfg) -> BeResampleConfig {
-			// Convert from v2 to v1
-			BeResampleConfig result{};
-			result.scale_factor_h = cfg->resample[i].scale_factor_h;
-			result.scale_factor_v = cfg->resample[i].scale_factor_v;
-			// v1 has single coef array, v2 has separate coef_h and coef_v - use coef_h
-			for (unsigned int j = 0; j < PISP_BE_RESAMPLE_FILTER_SIZE; j++) {
-				result.coef[j] = cfg->resample[i].coef_h[j];
-			}
-			return result;
-		}
-	});
+	return extras_->resample[i];
 }

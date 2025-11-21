@@ -134,18 +134,10 @@ public:
 	void getCsc(unsigned int i, BeCcmConfig &csc) const;
 	void setOutputFormat(unsigned int i, BeOutputFormatConfig const &outputFormat);
 	void getOutputFormat(unsigned int i, BeOutputFormatConfig &outputFormat) const;
-	void setResample(unsigned int i, BeResampleConfig const &resample,
-					 BeResampleExtra const &resampleExtra);
-	void getResample(unsigned int i, BeResampleConfig &resample,
-					 BeResampleExtra &resampleExtra) const;
-	void setResample(unsigned int i, BeResampleExtra const &resampleExtra);
-	void getResample(unsigned int i, BeResampleExtra &resampleExtra) const;
-	void setDownscale(unsigned int i, BeDownscaleConfig const &downscale,
-					  BeDownscaleExtra const &downscaleExtra);
-	void getDownscale(unsigned int i, BeDownscaleConfig &downscale,
-					  BeDownscaleExtra &downscaleExtra) const;
-	void setDownscale(unsigned int i, BeDownscaleExtra const &downscaleExtra);
-	void getDownscale(unsigned int i, BeDownscaleExtra &downscaleExtra) const;
+	void setResample(unsigned int i, BeResampleConfig const &resample);
+	void getResample(unsigned int i, BeResampleConfig &resample) const;
+	void setDownscale(unsigned int i, BeDownscaleConfig const &downscale);
+	void getDownscale(unsigned int i, BeDownscaleConfig &downscale) const;
 
 	void initialiseYcbcr(BeCcmConfig &ycbcr, const std::string &colourSpace);
 	void initialiseYcbcrInverse(BeCcmConfig &ycbcrInverse, const std::string &colourSpace);

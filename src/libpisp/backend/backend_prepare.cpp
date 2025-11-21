@@ -191,10 +191,9 @@ void BackEnd::finaliseCac()
 void BackEnd::finaliseResample(unsigned int index, uint16_t width, uint16_t height)
 {
 	BeResampleConfig resample = config_->getResample(index);
-	const BeResampleExtra &resampleExtra = pipe_->configExtra.resample[index];
 
-	uint32_t scaleFactorH = ((width - 1) << ScalePrecision) / (resampleExtra.scaled_width - 1);
-	uint32_t scaleFactorV = ((height - 1) << ScalePrecision) / (resampleExtra.scaled_height - 1);
+	uint32_t scaleFactorH = ((width - 1) << ScalePrecision) / (resample.scaled_width - 1);
+	uint32_t scaleFactorV = ((height - 1) << ScalePrecision) / (resample.scaled_height - 1);
 
 	if ((scaleFactorH < UnityScale / 16 || scaleFactorH >= 16 * UnityScale) ||
 		(scaleFactorV < UnityScale / 16 || scaleFactorV >= 16 * UnityScale))
@@ -210,13 +209,12 @@ void BackEnd::finaliseResample(unsigned int index, uint16_t width, uint16_t heig
 void BackEnd::finaliseDownscale(unsigned int index, uint16_t width, uint16_t height)
 {
 	BeDownscaleConfig downscale = config_->getDownscale(index);
-	const BeDownscaleExtra &downscaleExtra = pipe_->configExtra.downscale[index];
 
-	PISP_LOG(debug, "width " << width << " scaled_width " << downscaleExtra.scaled_width);
-	PISP_LOG(debug, "height " << height << " scaled_height " << downscaleExtra.scaled_height);
+	PISP_LOG(debug, "width " << width << " scaled_width " << downscale.scaled_width);
+	PISP_LOG(debug, "height " << height << " scaled_height " << downscale.scaled_height);
 
-	uint32_t scaleFactorH = (width << ScalePrecision) / (downscaleExtra.scaled_width);
-	uint32_t scaleFactorV = (height << ScalePrecision) / (downscaleExtra.scaled_height);
+	uint32_t scaleFactorH = (width << ScalePrecision) / (downscale.scaled_width);
+	uint32_t scaleFactorV = (height << ScalePrecision) / (downscale.scaled_height);
 
 	if ((scaleFactorH != UnityScale && (scaleFactorH < 2 * UnityScale || scaleFactorH > 8 * UnityScale)) ||
 		(scaleFactorV != UnityScale && (scaleFactorV < 2 * UnityScale || scaleFactorV > 8 * UnityScale)))
@@ -224,8 +222,8 @@ void BackEnd::finaliseDownscale(unsigned int index, uint16_t width, uint16_t hei
 
 	downscale.scale_factor_h = scaleFactorH;
 	downscale.scale_factor_v = scaleFactorV;
-	downscale.scale_recip_h = (downscaleExtra.scaled_width << ScalePrecision) / (width);
-	downscale.scale_recip_v = (downscaleExtra.scaled_height << ScalePrecision) / (height);
+	downscale.scale_recip_h = (downscale.scaled_width << ScalePrecision) / (width);
+	downscale.scale_recip_v = (downscale.scaled_height << ScalePrecision) / (height);
 	
 	config_->setDownscale(index, downscale);
 
@@ -650,10 +648,10 @@ void BackEnd::updateSmartResize()
 							 << downscalerOutputWidth << " x " <<  downscalerOutputHeight);
 
 					// Now program up the downscaler.
-					pisp_be_downscale_extra downscale = {};
+					BeDownscaleConfig downscale = config_->getDownscale(i);
 					downscale.scaled_width = downscalerOutputWidth;
 					downscale.scaled_height = downscalerOutputHeight;
-					setDownscale(i, downscale);
+					config_->setDownscale(i, downscale);
 					global.rgbEnables |= getFlagForBranch(RgbEnable::Downscale0, i);
 
 					// Now adjust the input dimensions that the code below (which
@@ -687,8 +685,7 @@ void BackEnd::updateSmartResize()
 				// on image quality for larger downscale factors.
 				double scaleFactorX = (double)(resamplerInputWidth - 1) / (resamplerOutputWidth - 1);
 				double scaleFactorY = (double)(resamplerInputHeight - 1) / (resamplerOutputHeight - 1);
-				pisp_be_resample_config resample = {};
-				pisp_be_resample_extra resample_extra = {};
+				BeResampleConfig resample = config_->getResample(i);
 
 				if (scaleFactorX > 2.1 &&
 					scaleFactorX < scaleFactorY * 1.1 && scaleFactorY < scaleFactorX * 1.1)
@@ -714,9 +711,6 @@ void BackEnd::updateSmartResize()
 							scale -= s;
 						}
 					}
-
-					// resample_extra will be filled in below.
-					setResample(i, resample, resample_extra);
 				}
 				else
 				{
@@ -726,9 +720,9 @@ void BackEnd::updateSmartResize()
 				}
 
 				// Last thing is to set the output dimensions.
-				resample_extra.scaled_width = resamplerOutputWidth;
-				resample_extra.scaled_height = resamplerOutputHeight;
-				setResample(i, resample_extra);
+				resample.scaled_width = resamplerOutputWidth;
+				resample.scaled_height = resamplerOutputHeight;
+				setResample(i, resample);
 				global.rgbEnables |= getFlagForBranch(RgbEnable::Resample0, i);
 			}
 		}

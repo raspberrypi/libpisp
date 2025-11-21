@@ -121,6 +121,25 @@ struct BeCacConfig {
 	uint16_t offset_y = 0;
 };
 
+struct BeDownscaleConfig {
+	uint16_t scale_factor_h = 0;
+	uint16_t scale_factor_v = 0;
+	uint16_t scale_recip_h = 0;
+	uint16_t scale_recip_v = 0;
+	uint16_t scaled_width = 0;  // Non-register field
+	uint16_t scaled_height = 0;  // Non-register field
+};
+
+struct BeResampleConfig {
+	uint16_t scale_factor_h = 0;
+	uint16_t scale_factor_v = 0;
+	int16_t coef[PISP_BE_RESAMPLE_FILTER_SIZE] {};
+	uint16_t scaled_width = 0;  // Non-register field
+	uint16_t scaled_height = 0;  // Non-register field
+	int16_t initial_phase_h[3] {};  // Non-register field
+	int16_t initial_phase_v[3] {};  // Non-register field
+};
+
 // Identical to the current HW structures
 using ImageFormatConfig = struct pisp_image_format_config;
 using DecompressConfig = struct pisp_decompress_config;
@@ -137,18 +156,14 @@ using BeSatControlConfig = struct pisp_be_sat_control_config;
 using BeFalseColourConfig = struct pisp_be_false_colour_config;
 using BeSharpenConfig = struct pisp_be_sharpen_config;
 using BeShFcCombineConfig = struct pisp_be_sh_fc_combine_config;
-using BeDownscaleConfig = struct pisp_be_downscale_config;
 using BeOutputFormatConfig = struct pisp_be_output_format_config;
 using BeTdnConfig = struct pisp_be_tdn_config;
 using BeStitchConfig = struct pisp_be_stitch_config;
 using BeTonemapConfig = struct pisp_be_tonemap_config;
 using BeDemosaicConfig = struct pisp_be_demosaic_config;
 using BeGammaConfig = struct pisp_be_gamma_config;
-using BeResampleConfig = struct pisp_be_resample_config;
 using BeGlobalConfig = struct pisp_be_global_config;
 using BeCropConfig = struct pisp_be_crop_config;
-using BeResampleExtra = struct pisp_be_resample_extra;
-using BeDownscaleExtra = struct pisp_be_downscale_extra;
 using BeTilesConfig = struct pisp_be_tiles_config;
 
 struct BeConfigExtra
@@ -156,8 +171,8 @@ struct BeConfigExtra
 	// Non-register fields:
 	BeLscConfig lsc {};
 	BeCacConfig cac {};
-	BeDownscaleExtra downscale[PISP_BACK_END_NUM_OUTPUTS] {};
-	BeResampleExtra resample[PISP_BACK_END_NUM_OUTPUTS] {};
+	BeDownscaleConfig downscale[PISP_BACK_END_NUM_OUTPUTS] {};
+	BeResampleConfig resample[PISP_BACK_END_NUM_OUTPUTS] {};
 	BeCropConfig crop[PISP_BACK_END_NUM_OUTPUTS] {};
 };
 

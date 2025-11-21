@@ -354,36 +354,30 @@ void BackEnd::getCsc(unsigned int i, BeCcmConfig &csc) const
 	csc = config_->getCsc(i);
 }
 
-void BackEnd::setDownscale(unsigned int i, BeDownscaleConfig const &downscale,
-						   BeDownscaleExtra const &downscale_extra)
+void BackEnd::setDownscale(unsigned int i, BeDownscaleConfig const &downscale)
 {
-	config_->setDownscale(i, downscale);
-	pipe_->configExtra.downscale[i] = downscale_extra;
+	BeDownscaleConfig config = downscale;
+	config_->setDownscale(i, config);
 	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::Downscale0, i);
 	pipe_->retile = true;
 }
 
-void BackEnd::setDownscale(unsigned int i, BeDownscaleExtra const &downscale_extra)
+void BackEnd::getDownscale(unsigned int i, BeDownscaleConfig &downscale) const
 {
-	pipe_->configExtra.downscale[i] = downscale_extra;
-	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::Downscale0, i);
-	pipe_->retile = true;
+	downscale = config_->getDownscale(i);
 }
 
-void BackEnd::setResample(unsigned int i, BeResampleConfig const &resample,
-						  BeResampleExtra const &resample_extra)
+void BackEnd::setResample(unsigned int i, BeResampleConfig const &resample)
 {
-	config_->setResample(i, resample);
-	pipe_->configExtra.resample[i] = resample_extra;
+	BeResampleConfig config = resample;
+	config_->setResample(i, config);
 	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::Resample0, i);
 	pipe_->retile = true;
 }
 
-void BackEnd::setResample(unsigned int i, BeResampleExtra const &resample_extra)
+void BackEnd::getResample(unsigned int i, BeResampleConfig &resample) const
 {
-	pipe_->configExtra.resample[i] = resample_extra;
-	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::Resample0, i);
-	pipe_->retile = true;
+	resample = config_->getResample(i);
 }
 
 void BackEnd::setOutputFormat(unsigned int i, BeOutputFormatConfig const &output_format)
