@@ -86,9 +86,7 @@ enum class DirtyFlag : uint32_t
 CREATE_BITFIELD(DirtyFlags, DirtyFlag);
 
 template <typename T>
-concept EnumType = requires {
-	requires std::is_enum_v<T>;
-};
+concept EnumType = std::is_enum_v<T>;
 
 template <EnumType T>
 T getFlagForBranch(const T field, unsigned int branch)
@@ -104,16 +102,18 @@ struct BeGlobal
 	uint8_t bayerOrder;
 };
 
-// LSC and CAC have extra non-register fields
-struct BeLscConfig {
+// LSC/CAC/Downscale/Resample have extra non-register fields:
+struct BeLscConfig
+{
 	uint16_t grid_step_x = 0;
 	uint16_t grid_step_y = 0;
 	uint32_t lut_packed[PISP_BE_LSC_LUT_SIZE][PISP_BE_LSC_LUT_SIZE] {};
-	uint16_t offset_x = 0; 	// Non-register field
-	uint16_t offset_y = 0; 	// Non-register field
+	uint16_t offset_x = 0; // Non-register field
+	uint16_t offset_y = 0; // Non-register field
 };
 
-struct BeCacConfig {
+struct BeCacConfig
+{
 	uint16_t grid_step_x = 0;
 	uint16_t grid_step_y = 0;
 	int8_t lut[PISP_BE_CAC_LUT_SIZE][PISP_BE_CAC_LUT_SIZE][2][2] {};
@@ -121,24 +121,38 @@ struct BeCacConfig {
 	uint16_t offset_y = 0;
 };
 
-struct BeDownscaleConfig {
+struct BeDownscaleConfig
+{
 	uint16_t scale_factor_h = 0;
 	uint16_t scale_factor_v = 0;
 	uint16_t scale_recip_h = 0;
 	uint16_t scale_recip_v = 0;
-	uint16_t scaled_width = 0;  // Non-register field
-	uint16_t scaled_height = 0;  // Non-register field
+	uint16_t scaled_width = 0; // Non-register field
+	uint16_t scaled_height = 0; // Non-register field
 };
 
-struct BeResampleConfig {
+struct BeResampleConfig
+{
 	uint16_t scale_factor_h = 0;
 	uint16_t scale_factor_v = 0;
 	int16_t coef[PISP_BE_RESAMPLE_FILTER_SIZE] {};
-	uint16_t scaled_width = 0;  // Non-register field
-	uint16_t scaled_height = 0;  // Non-register field
-	int16_t initial_phase_h[3] {};  // Non-register field
-	int16_t initial_phase_v[3] {};  // Non-register field
+	uint16_t scaled_width = 0; // Non-register field
+	uint16_t scaled_height = 0; // Non-register field
+	int16_t initial_phase_h[3] {}; // Non-register field
+	int16_t initial_phase_v[3] {}; // Non-register field
 };
+
+// No hardware registers for crop directly.
+struct BeCropConfig
+{
+	uint16_t offsetX = 0;
+	uint16_t offsetY = 0;
+	uint16_t width = 0;
+	uint16_t height = 0;
+};
+
+// pisp_be_output_format_config2 is a superset of pisp_be_output_format_config
+using BeOutputFormatConfig = struct pisp_be_output_format_config2;
 
 // Identical to the current HW structures
 using ImageFormatConfig = struct pisp_image_format_config;
@@ -156,15 +170,11 @@ using BeSatControlConfig = struct pisp_be_sat_control_config;
 using BeFalseColourConfig = struct pisp_be_false_colour_config;
 using BeSharpenConfig = struct pisp_be_sharpen_config;
 using BeShFcCombineConfig = struct pisp_be_sh_fc_combine_config;
-using BeOutputFormatConfig = struct pisp_be_output_format_config;
 using BeTdnConfig = struct pisp_be_tdn_config;
 using BeStitchConfig = struct pisp_be_stitch_config;
 using BeTonemapConfig = struct pisp_be_tonemap_config;
 using BeDemosaicConfig = struct pisp_be_demosaic_config;
 using BeGammaConfig = struct pisp_be_gamma_config;
-using BeGlobalConfig = struct pisp_be_global_config;
-using BeCropConfig = struct pisp_be_crop_config;
-using BeTilesConfig = struct pisp_be_tiles_config;
 
 struct BeConfigExtra
 {
@@ -179,7 +189,6 @@ struct BeConfigExtra
 class BackendConfigAdapter
 {
 public:
-
 	using HwConfigVariant = std::variant<pisp_be_config*,  pisp_be_config2*>;
 
 	BackendConfigAdapter(HwConfigVariant config, BeConfigExtra *extras)
@@ -309,14 +318,12 @@ public:
 	void setResample(unsigned int i, const BeResampleConfig &resample);
 	BeResampleConfig getResample(unsigned int i) const;
 
+private:
 	uint32_t rgbEnablesToHw(RgbEnables rgbEnables) const;
 	RgbEnables hwToRgbEnables(uint32_t hwEnables) const;
 	uint32_t bayerEnablesToHw(BayerEnables bayerEnables) const;
 	BayerEnables hwToBayerEnables(uint32_t hwEnables) const;
-	BeGlobal hwToGlobal(const BeGlobalConfig &hwGlobal) const;
-	BeGlobalConfig globalToHw(const BeGlobal &global) const;
 
-private:
 	HwConfigVariant config_;
 	BeConfigExtra *extras_;
 };

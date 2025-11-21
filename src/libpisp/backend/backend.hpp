@@ -145,7 +145,7 @@ public:
 	void initialiseResample(BeResampleConfig &resample, double downscale);
 	void initialiseSharpen(BeSharpenConfig &sharpen, BeShFcCombineConfig &shfc);
 
-	void prepare(BeTilesConfig *config);
+	void prepare(pisp_be_tiles_config *config);
 
 	bool computeOutputImageFormat(unsigned int i, ImageFormatConfig &outputFormat,
 								  ImageFormatConfig const &inputFormat) const;
@@ -154,7 +154,7 @@ public:
 
 	unsigned int getMaxDownscale() const;
 
-	std::string getJsonConfig(BeTilesConfig *config);
+	std::string getJsonConfig(pisp_be_tiles_config *config);
 	void setJsonConfig(const std::string &jsonConfig);
 
 	void setMaxTileWidth(unsigned int width)

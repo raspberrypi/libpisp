@@ -181,43 +181,27 @@ BayerEnables BackendConfigAdapter::hwToBayerEnables(uint32_t hwEnables) const
 	return enables;
 }
 
-BeGlobal BackendConfigAdapter::hwToGlobal(const BeGlobalConfig &hwGlobal) const
-{
-	BeGlobal global;
-
-	global.bayerOrder = hwGlobal.bayer_order;
-	global.bayerEnables = hwToBayerEnables(hwGlobal.bayer_enables);
-	global.rgbEnables = hwToRgbEnables(hwGlobal.rgb_enables);
-
-	return global;
-}
-
-BeGlobalConfig BackendConfigAdapter::globalToHw(const BeGlobal &global) const
-{
-	BeGlobalConfig config{};
-
-	config.bayer_order = global.bayerOrder;
-	config.bayer_enables = bayerEnablesToHw(global.bayerEnables);
-	config.rgb_enables = rgbEnablesToHw(global.rgbEnables);
-
-	return config;
-}
-
 void BackendConfigAdapter::setGlobal(const BeGlobal &global)
 {
-	BeGlobalConfig hwGlobal = globalToHw(global);
-	hwGlobal.pad[0] = hwGlobal.pad[1] = hwGlobal.pad[2] = 0;
-	visit([&hwGlobal](auto *cfg) {
-		cfg->global = hwGlobal;
+	visit([&global, this](auto *cfg) {
+		cfg->global.bayer_enables = bayerEnablesToHw(global.bayerEnables);
+		cfg->global.rgb_enables = rgbEnablesToHw(global.rgbEnables);
+		cfg->global.bayer_order = global.bayerOrder;
+		cfg->global.pad[0] = cfg->global.pad[1] = cfg->global.pad[2] = 0;
 	});
 }
 
 BeGlobal BackendConfigAdapter::getGlobal() const
 {
-	BeGlobalConfig hwGlobal = visit([](auto *cfg) -> BeGlobalConfig {
-		return cfg->global;
+	BeGlobal global;
+
+	visit([&global, this](auto *cfg) {
+		global.bayerEnables = hwToBayerEnables(cfg->global.bayer_enables);
+		global.rgbEnables = hwToRgbEnables(cfg->global.rgb_enables);
+		global.bayerOrder = cfg->global.bayer_order;
 	});
-	return hwToGlobal(hwGlobal);
+
+	return global;
 }
 
 // Common field implementations (same type in both variants)
@@ -501,8 +485,7 @@ void BackendConfigAdapter::setSharpen(const BeSharpenConfig &sharpen)
 		cfg->sharpen.pad2[0] = cfg->sharpen.pad2[1] = cfg->sharpen.pad2[2] = 0;
 		cfg->sharpen.pad3[0] = cfg->sharpen.pad3[1] = cfg->sharpen.pad3[2] = 0;
 		cfg->sharpen.pad4[0] = cfg->sharpen.pad4[1] = cfg->sharpen.pad4[2] = 0;
-		cfg->sharpen.pad5 = cfg->sharpen.pad6 = cfg->sharpen.pad7 = cfg->sharpen.pad8 =
-			cfg->sharpen.pad9 = 0;
+		cfg->sharpen.pad5 = cfg->sharpen.pad6 = cfg->sharpen.pad7 = cfg->sharpen.pad8 = cfg->sharpen.pad9 = 0;
 	});
 }
 
@@ -581,11 +564,16 @@ void BackendConfigAdapter::setOutputFormat(unsigned int i, const BeOutputFormatC
 {
 	visit(overloaded {
 		[&outputFormat, i](pisp_be_config *cfg) {
-			cfg->output_format[i] = outputFormat;
+			cfg->output_format[i].image = outputFormat.image;
+			cfg->output_format[i].transform = outputFormat.transform;
+			cfg->output_format[i].lo = outputFormat.lo;
+			cfg->output_format[i].lo2 = outputFormat.lo2;
+			cfg->output_format[i].hi = outputFormat.hi;
+			cfg->output_format[i].hi2 = outputFormat.hi2;
+			cfg->output_format[i].pad[0] = cfg->output_format[i].pad[1] = cfg->output_format[i].pad[2] = 0;
 		},
 		[&outputFormat, i](pisp_be_config2 *cfg) {
-			//TODO
-			(void) cfg;
+			cfg->output_format[i] = outputFormat;
 		}
 	});
 }
@@ -593,8 +581,17 @@ void BackendConfigAdapter::setOutputFormat(unsigned int i, const BeOutputFormatC
 BeOutputFormatConfig BackendConfigAdapter::getOutputFormat(unsigned int i) const
 {
 	return visit(overloaded {
-		[i](pisp_be_config *cfg) -> BeOutputFormatConfig { return cfg->output_format[i]; },
-		[i](pisp_be_config2 *cfg) -> BeOutputFormatConfig { (void) cfg; return {}; }
+		[i](pisp_be_config *cfg) -> BeOutputFormatConfig {
+			BeOutputFormatConfig outputFormat {};
+			outputFormat.image = cfg->output_format[i].image;
+			outputFormat.transform = cfg->output_format[i].transform;
+			outputFormat.lo = cfg->output_format[i].lo;
+			outputFormat.lo2 = cfg->output_format[i].lo2;
+			outputFormat.hi = cfg->output_format[i].hi;
+			outputFormat.hi2 = cfg->output_format[i].hi2;
+			return outputFormat;
+		},
+		[i](pisp_be_config2 *cfg) -> BeOutputFormatConfig { return cfg->output_format[i]; }
 	});
 }
 

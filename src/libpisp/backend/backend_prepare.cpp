@@ -754,8 +754,8 @@ void BackEnd::updateTiles()
 			const BeDownscaleConfig &downscale = config_->getDownscale(i);
 			const BeResampleConfig &resample = config_->getResample(i);
 
-			tilingConfig.crop[i] = tiling::Interval2(tiling::Interval(ce.crop[i].offset_x, ce.crop[i].width),
-													  tiling::Interval(ce.crop[i].offset_y, ce.crop[i].height));
+			tilingConfig.crop[i] = tiling::Interval2(tiling::Interval(ce.crop[i].offsetX, ce.crop[i].width),
+													  tiling::Interval(ce.crop[i].offsetY, ce.crop[i].height));
 
 			if (tilingConfig.crop[i].x.length == 0 || tilingConfig.crop[i].y.length == 0)
 				tilingConfig.crop[i] = tiling::Interval2(tiling::Interval(0, inputFormat.width),
