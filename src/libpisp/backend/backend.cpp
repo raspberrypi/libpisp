@@ -504,6 +504,13 @@ void BackEnd::setSmartResize(unsigned int i, BackEnd::SmartResize const &smartRe
 	pipe_->smartResizeDirty |= (1 << i);
 }
 
+void BackEnd::setDedistort(const BeDedistortionConfig &dedistort)
+{
+	config_->setDedistort(dedistort);
+	pipe_->dirtyFlagsRgb |= RgbEnable::Dedistort;
+	pipe_->retile = true;
+}
+
 unsigned int BackEnd::getMaxDownscale() const
 {
 	// Return an estimate of the largest horizontal downscale we can do.

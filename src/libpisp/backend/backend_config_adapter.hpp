@@ -158,7 +158,16 @@ using BeOutputFormatConfig = struct pisp_be_output_format_config2;
 
 struct BeGammaConfig
 {
-	std::array<uint32_t, std::max<size_t>(PISP_BE_GAMMA2_LUT_SIZE, PISP_BE_GAMMA_LUT_SIZE)> lut;
+	std::array<uint32_t, std::max<size_t>(PISP_BE_GAMMA2_LUT_SIZE, PISP_BE_GAMMA_LUT_SIZE)> lut {};
+};
+
+struct BeDedistortionConfig
+{
+	uint16_t grid_step_x = 0;
+	uint16_t grid_step_y = 0;
+	std::array<int16_t, (PISP_BE_DDX_GRID_SIZE + 1) * (PISP_BE_DDX_GRID_SIZE + 1)> lut {};
+    uint16_t offset_x = 0; // Non-register field
+    uint16_t offset_y = 0; // Non-register field
 };
 
 // Identical to the current HW structures
@@ -181,13 +190,12 @@ using BeTdnConfig = struct pisp_be_tdn_config;
 using BeStitchConfig = struct pisp_be_stitch_config;
 using BeTonemapConfig = struct pisp_be_tonemap_config;
 using BeDemosaicConfig = struct pisp_be_demosaic_config;
-using BeDedistortionConfig = struct pisp_be_dedistort_config;
 
 struct BeConfigExtra
 {
-	// Non-register fields:
 	BeLscConfig lsc {};
 	BeCacConfig cac {};
+	BeDedistortionConfig dedistort {};
 	std::array<BeDownscaleConfig, PISP_BACK_END_NUM_OUTPUTS> downscale {};
 	std::array<BeResampleConfig, PISP_BACK_END_NUM_OUTPUTS> resample {};
 	std::array<BeCropConfig, PISP_BACK_END_NUM_OUTPUTS> crop {};
@@ -324,6 +332,9 @@ public:
 
 	void setResample(unsigned int i, const BeResampleConfig &resample);
 	BeResampleConfig getResample(unsigned int i) const;
+
+	void setDedistort(const BeDedistortionConfig &dedistort);
+	BeDedistortionConfig getDedistort() const;
 
 	BeConfigExtra *getExtras()
 	{

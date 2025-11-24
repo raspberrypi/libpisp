@@ -138,6 +138,8 @@ public:
 	BeResampleConfig getResample(unsigned int i) const;
 	void setDownscale(unsigned int i, BeDownscaleConfig const &downscale);
 	BeDownscaleConfig getDownscale(unsigned int i) const;
+	void setDedistort(const BeDedistortionConfig &dedistort);
+	BeDedistortionConfig getDedistort() const;
 
 	void initialiseYcbcr(BeCcmConfig &ycbcr, const std::string &colourSpace);
 	void initialiseYcbcrInverse(BeCcmConfig &ycbcrInverse, const std::string &colourSpace);

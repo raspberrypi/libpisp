@@ -761,3 +761,24 @@ BeResampleConfig BackendConfigAdapter::getResample(unsigned int i) const
 {
 	return extras_->resample[i];
 }
+
+void BackendConfigAdapter::setDedistort(const BeDedistortionConfig &dedistort)
+{
+	visit(overloaded {
+		[&dedistort]([[maybe_unused]]pisp_be_config *cfg) {
+			// Throw exception?
+		},
+
+		[&dedistort](pisp_be_config2 *cfg) {
+			cfg->dedistort.grid_step_x = dedistort.grid_step_x;
+			cfg->dedistort.grid_step_y = dedistort.grid_step_y;
+			cfg->dedistort.pad = 0;
+			std::memcpy(cfg->dedistort.lut, dedistort.lut.data(), dedistort.lut.size());
+		}
+	});
+}
+
+BeDedistortionConfig BackendConfigAdapter::getDedistort() const
+{
+	return extras_->dedistort;
+}
