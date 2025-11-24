@@ -155,9 +155,9 @@ CompressConfig BackEnd::getTdnCompress() const
 	return config_->getTdnCompress();
 }
 
-void BackEnd::setTdnOutputFormat(ImageFormatConfig const &tdn_output_format)
+void BackEnd::setTdnOutputFormat(ImageFormatConfig const &tdn_outputFormat)
 {
-	config_->setTdnOutputFormat(tdn_output_format);
+	config_->setTdnOutputFormat(tdn_outputFormat);
 	pipe_->dirtyFlagsBayer |= BayerEnable::TdnOutput; // TDN output address will always be written
 	pipe_->finaliseTiling = true;
 }
@@ -235,9 +235,9 @@ CompressConfig BackEnd::getStitchCompress() const
 	return config_->getStitchCompress();
 }
 
-void BackEnd::setStitchOutputFormat(ImageFormatConfig const &stitch_output_format)
+void BackEnd::setStitchOutputFormat(ImageFormatConfig const &stitch_outputFormat)
 {
-	config_->setStitchOutputFormat(stitch_output_format);
+	config_->setStitchOutputFormat(stitch_outputFormat);
 	pipe_->dirtyFlagsBayer |= BayerEnable::StitchOutput;
 	pipe_->finaliseTiling = true;
 }
@@ -481,10 +481,10 @@ BeResampleConfig BackEnd::getResample(unsigned int i) const
 	return config_->getResample(i);
 }
 
-void BackEnd::setOutputFormat(unsigned int i, BeOutputFormatConfig const &output_format)
+void BackEnd::setOutputFormat(unsigned int i, BeOutputFormatConfig const &outputFormat)
 {
 	PISP_ASSERT(i < variant_.backEndNumBranches(0));
-	config_->setOutputFormat(i, output_format);
+	config_->setOutputFormat(i, outputFormat);
 	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::Output0, i);
 	// Should only need a retile if the transform has changed, othwise a finalise_tile will do.
 	pipe_->retile = true;
@@ -496,24 +496,24 @@ BeOutputFormatConfig BackEnd::getOutputFormat(unsigned int i) const
 	return config_->getOutputFormat(i);
 }
 
-void BackEnd::setSmartResize(unsigned int i, BackEnd::SmartResize const &smart_resize)
+void BackEnd::setSmartResize(unsigned int i, BackEnd::SmartResize const &smartResize)
 {
 	PISP_ASSERT(i < variant_.backEndNumBranches(0));
 	// Non-zero width and height will be interpreted as "enabled".
-	pipe_->smartResize[i] = smart_resize;
+	pipe_->smartResize[i] = smartResize;
 	pipe_->smartResizeDirty |= (1 << i);
 }
 
 unsigned int BackEnd::getMaxDownscale() const
 {
 	// Return an estimate of the largest horizontal downscale we can do.
-	unsigned int max_tile_width = sw_.maxTileWidth;
-	if (!max_tile_width)
-		max_tile_width = variant_.backEndMaxTileWidth(0);
+	unsigned int maxTileWidth = sw_.maxTileWidth;
+	if (!maxTileWidth)
+		maxTileWidth = variant_.backEndMaxTileWidth(0);
 
 	// We reckon a 640 tile-width implementation can do 24x safely with formats that
 	// want 1 byte per pixel. This should approximately scale with the max tile width.
 	unsigned int downscale = 24;
-	const unsigned int ref_tile_width = 640;
-	return downscale * max_tile_width / ref_tile_width;
+	const unsigned int refTileWidth = 640;
+	return downscale * maxTileWidth / refTileWidth;
 }

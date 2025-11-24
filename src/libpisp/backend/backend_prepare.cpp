@@ -573,12 +573,12 @@ void BackEnd::finaliseConfig()
 	if (!(bayerEnables & BayerEnable::Input) && !(rgbEnables & RgbEnable::Input))
 		throw std::runtime_error("BackEnd::finalise: exactly one of Bayer and RGB inputs should be enabled");
 
-	BayerEnables bayer_output_enables = bayerEnables & (BayerEnable::TdnOutput | BayerEnable::StitchOutput);
-	RgbEnables rgb_output_enables = RgbEnable::None;
+	BayerEnables bayerOutputsEnabled = bayerEnables & (BayerEnable::TdnOutput | BayerEnable::StitchOutput);
+	RgbEnables rgbOutputsEnabled = RgbEnable::None;
 	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
-		rgb_output_enables |= rgbEnables & getFlagForBranch(RgbEnable::Output0, i);
+		rgbOutputsEnabled |= rgbEnables & getFlagForBranch(RgbEnable::Output0, i);
 
-	if (rgb_output_enables == RgbEnable::None && bayer_output_enables == BayerEnable::None)
+	if (rgbOutputsEnabled == RgbEnable::None && bayerOutputsEnabled == BayerEnable::None)
 		throw std::runtime_error("BackEnd::finalise: PiSP not configured to do anything");
 }
 
