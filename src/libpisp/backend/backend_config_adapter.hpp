@@ -319,6 +319,11 @@ public:
 	void setResample(unsigned int i, const BeResampleConfig &resample);
 	BeResampleConfig getResample(unsigned int i) const;
 
+	BeConfigExtra *getExtras()
+	{
+		return extras_;
+	}
+
 private:
 	uint32_t rgbEnablesToHw(RgbEnables rgbEnables) const;
 	RgbEnables hwToRgbEnables(uint32_t hwEnables) const;
