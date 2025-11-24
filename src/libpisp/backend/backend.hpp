@@ -218,6 +218,8 @@ private:
 	void retilePipeline(TilingConfig const &tilingConfig);
 	void finaliseTiling();
 	void getOutputSize(int outputNum, uint16_t *width, uint16_t *height, ImageFormatConfig const &ifmt) const;
+	uint16_t postTransposeWidth();
+	uint16_t postTransposeHeight();
 
 	void initialiseDefaultConfig(const std::string &filename);
 

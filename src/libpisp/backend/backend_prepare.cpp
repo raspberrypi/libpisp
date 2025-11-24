@@ -51,7 +51,7 @@ void checkStride(ImageFormatConfig const &config)
 }
 
 // TDN and Stitch I/O dimensions must match the input, though the format may differ.
-static void checkRawioFormat(ImageFormatConfig &fmt, uint16_t w, uint16_t h)
+static void checkRawIoFormat(ImageFormatConfig &fmt, uint16_t w, uint16_t h)
 {
 	if (fmt.width == 0 || fmt.height == 0)
 	{
@@ -123,30 +123,30 @@ void BackEnd::finaliseBayerRgbInputs() const
 
 void BackEnd::finaliseInputs() const
 {
-	const ImageFormatConfig &input_format = config_->getInputFormat();
+	const ImageFormatConfig &inputFormat = config_->getInputFormat();
 
 	// Not so much finalising, just checking that input dimensions and strides are OK.
 	if (config_->getGlobal().bayerEnables & BayerEnable::Input)
 	{
-		if ((input_format.width & 1) || (input_format.height & 1))
+		if ((inputFormat.width & 1) || (inputFormat.height & 1))
 			throw std::runtime_error("finaliseInputs: Bayer pipe image dimensions must be even");
-		if (input_format.stride & 15)
+		if (inputFormat.stride & 15)
 			throw std::runtime_error("finaliseInputs: input stride should be at least 16-byte aligned");
 	}
 	else if (config_->getGlobal().rgbEnables & RgbEnable::Input)
 	{
-		if (PISP_IMAGE_FORMAT_SAMPLING_420(input_format.format) && (input_format.width & 1))
+		if (PISP_IMAGE_FORMAT_SAMPLING_420(inputFormat.format) && (inputFormat.height & 1))
 			throw std::runtime_error("finaliseInputs: 420 input height must be even");
-		else if ((PISP_IMAGE_FORMAT_SAMPLING_420(input_format.format) ||
-				  PISP_IMAGE_FORMAT_SAMPLING_422(input_format.format)) &&
-				 (input_format.width & 1))
+		else if ((PISP_IMAGE_FORMAT_SAMPLING_420(inputFormat.format) ||
+				  PISP_IMAGE_FORMAT_SAMPLING_422(inputFormat.format)) &&
+				 (inputFormat.width & 1))
 			throw std::runtime_error("finaliseInputs: 420/422 input width must be even");
-		if (PISP_IMAGE_FORMAT_WALLPAPER(input_format.format))
+		if (PISP_IMAGE_FORMAT_WALLPAPER(inputFormat.format))
 		{
-			if ((input_format.stride & 127) || (input_format.stride2 & 127))
+			if ((inputFormat.stride & 127) || (inputFormat.stride2 & 127))
 				throw std::runtime_error("finaliseInputs: wallpaper format strides must be at least 128-byte aligned");
 		}
-		else if ((input_format.stride & 15) || (input_format.stride2 & 15))
+		else if ((inputFormat.stride & 15) || (inputFormat.stride2 & 15))
 			throw std::runtime_error("finaliseInputs: input strides must be at least 16-byte aligned");
 	}
 }
@@ -154,7 +154,7 @@ void BackEnd::finaliseInputs() const
 void BackEnd::finaliseLsc()
 {
 	BeLscConfig lsc = config_->getLsc();
-	uint16_t width = config_->getInputFormat().width, height = config_->getInputFormat().height;
+	uint16_t width = postTransposeWidth(), height = postTransposeHeight();
 
 	// Just a warning that ACLS algorithms might want the grid calculations here to match the AWB/ACLS stats.
 	static const int P = PISP_BE_LSC_STEP_PRECISION;
@@ -173,7 +173,7 @@ void BackEnd::finaliseLsc()
 void BackEnd::finaliseCac()
 {
 	BeCacConfig cac = config_->getCac();
-	uint16_t width = config_->getInputFormat().width, height = config_->getInputFormat().height;
+	uint16_t width = postTransposeWidth(), height = postTransposeHeight();
 
 	static const int P = PISP_BE_CAC_STEP_PRECISION;
 
@@ -248,7 +248,6 @@ void BackEnd::finaliseDecompression() const
 
 void BackEnd::finaliseTdn()
 {
-	const ImageFormatConfig &inputFormat = config_->getInputFormat();
 	const BeTdnConfig &tdn = config_->getTdn();
 	ImageFormatConfig tdnInputFormat = config_->getTdnInputFormat();
 	ImageFormatConfig tdnOutputFormat = config_->getTdnOutputFormat();
@@ -274,10 +273,10 @@ void BackEnd::finaliseTdn()
 		throw std::runtime_error("finaliseTdn: TDN output does not match compression mode");
 
 	if (tdnOutputEnabled)
-          checkRawioFormat(tdnOutputFormat, inputFormat.width, inputFormat.height);
+        checkRawIoFormat(tdnOutputFormat, postTransposeWidth(), postTransposeHeight());
 
 	if (tdnInputEnabled)
-		checkRawioFormat(tdnOutputFormat, inputFormat.width, inputFormat.height);
+		checkRawIoFormat(tdnOutputFormat, postTransposeWidth(), postTransposeHeight());
 
 	if (!tdnEnabled)
 	{
@@ -311,7 +310,6 @@ void BackEnd::finaliseTdn()
 
 void BackEnd::finaliseStitch()
 {
-	const ImageFormatConfig &inputFormat = config_->getInputFormat();
 	BeStitchConfig stitch = config_->getStitch();
 	ImageFormatConfig stitchInputFormat = config_->getStitchInputFormat();
 	ImageFormatConfig stitchOutputFormat = config_->getStitchOutputFormat();
@@ -341,10 +339,10 @@ void BackEnd::finaliseStitch()
 		throw std::runtime_error("BackEnd::finalise: stitch output does not match compression mode");
 
 	if (stitchOutputEnabled)
-		checkRawioFormat(stitchOutputFormat, inputFormat.width, inputFormat.height);
+		checkRawIoFormat(stitchOutputFormat, postTransposeWidth(), postTransposeHeight());
 
 	if (stitchInputEnabled)
-		checkRawioFormat(stitchInputFormat, inputFormat.width, inputFormat.height);
+		checkRawIoFormat(stitchInputFormat, postTransposeWidth(), postTransposeHeight());
 
 	// Compute the motion_threshold reciprocal if it hasn't been done.
 	if (stitch.motion_threshold_recip == 0)
@@ -532,8 +530,6 @@ void BackEnd::finaliseConfig()
 	if (dirty_flags_bayer & BayerEnable::Cac)
 		finaliseCac();
 
-	const ImageFormatConfig &inputFormat = config_->getInputFormat();
-
 	for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++)
 	{
 		bool enabled = rgbEnables & getFlagForBranch(RgbEnable::Output0, j);
@@ -541,8 +537,8 @@ void BackEnd::finaliseConfig()
 		if (enabled)
 		{
 			// crop is enabled when it contains non-zero width/height
-			uint16_t w = pipe_->configExtra.crop[j].width ? pipe_->configExtra.crop[j].width : inputFormat.width;
-			uint16_t h = pipe_->configExtra.crop[j].width ? pipe_->configExtra.crop[j].height : inputFormat.height;
+			uint16_t w = pipe_->configExtra.crop[j].width ? pipe_->configExtra.crop[j].width : postTransposeWidth();
+			uint16_t h = pipe_->configExtra.crop[j].width ? pipe_->configExtra.crop[j].height : postTransposeHeight();
 
 			if (dirty_flags_rgb & getFlagForBranch(RgbEnable::Downscale0, j))
 			{
@@ -591,15 +587,13 @@ void BackEnd::updateSmartResize()
 	// has been requested.
 	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 	{
-		const ImageFormatConfig &inputFormat = config_->getInputFormat();
-
 		// First get the size of the input to the rescalers. The crops are zero when not in use.
 		uint16_t InputWidth = pipe_->configExtra.crop[i].width;
 		if (!InputWidth)
-			InputWidth = inputFormat.width;
+			InputWidth = postTransposeWidth();
 		uint16_t inputHeight = pipe_->configExtra.crop[i].height;
 		if (!inputHeight)
-			inputHeight = inputFormat.height;
+			inputHeight = postTransposeHeight();
 
 		if ((pipe_->smartResizeDirty & (1 << i)) || (pipe_->dirtyFlagsExtra & PISP_BE_DIRTY_CROP))
 		{
@@ -738,7 +732,6 @@ void BackEnd::updateTiles()
 	{
 		TilingConfig tilingConfig;
 		const BeConfigExtra &ce = pipe_->configExtra;
-		const ImageFormatConfig &inputFormat = config_->getInputFormat();
 		RgbEnables rgbEnables = config_->getGlobal().rgbEnables;
 
 		pipe_->retile = false;
@@ -746,7 +739,7 @@ void BackEnd::updateTiles()
 
 		PISP_LOG(debug, "Input alignments are " << tilingConfig.inputAlignment << " pixels");
 
-		tilingConfig.inputImageSize = tiling::Length2(inputFormat.width, inputFormat.height);
+		tilingConfig.inputImageSize = tiling::Length2(postTransposeWidth(), postTransposeHeight());
 
 		for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 		{
@@ -758,8 +751,8 @@ void BackEnd::updateTiles()
 													  tiling::Interval(ce.crop[i].offsetY, ce.crop[i].height));
 
 			if (tilingConfig.crop[i].x.length == 0 || tilingConfig.crop[i].y.length == 0)
-				tilingConfig.crop[i] = tiling::Interval2(tiling::Interval(0, inputFormat.width),
-														  tiling::Interval(0, inputFormat.height));
+				tilingConfig.crop[i] = tiling::Interval2(tiling::Interval(0, postTransposeWidth()),
+														  tiling::Interval(0, postTransposeHeight()));
 
 			tilingConfig.outputHMirror[i] = outputFormat.transform & PISP_BE_TRANSFORM_HFLIP;
 			tilingConfig.downscaleFactor[i] =
@@ -1034,6 +1027,18 @@ void BackEnd::getOutputSize(int i, uint16_t *width, uint16_t *height, ImageForma
 		*width = ifmt.width, *height = ifmt.height;
 }
 
+uint16_t BackEnd::postTransposeWidth()
+{
+	return (config_->getGlobal().bayerEnables & BayerEnable::Transpose) ? config_->getInputFormat().height
+																		: config_->getInputFormat().width;
+}
+
+uint16_t BackEnd::postTransposeHeight()
+{
+	return (config_->getGlobal().bayerEnables & BayerEnable::Transpose) ? config_->getInputFormat().width
+																		: config_->getInputFormat().height;
+}
+
 bool BackEnd::computeOutputImageFormat(unsigned int i, ImageFormatConfig &fmt,
 									   ImageFormatConfig const &ifmt) const
 {
@@ -1075,6 +1080,8 @@ void BackEnd::prepare(pisp_be_tiles_config *config)
 		throw std::runtime_error("BackEnd::preFrameUpdate: neither Bayer nor RGB inputs are enabled");
 	else if ((bayerEnables & BayerEnable::Input) && (rgbEnables & RgbEnable::Input))
 		throw std::runtime_error("BackEnd::preFrameUpdate: both Bayer and RGB inputs are enabled");
+	else if (bayerEnables && (rgbEnables & RgbEnable::Input))
+		throw std::runtime_error("BackEnd::preFrameUpdate: Bayer processing not possible with RGB input");
 
 	// 2. Also check the output configuration is all filled in and looks sensible. Again, addresses must be
 	// left to the HAL.
