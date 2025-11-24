@@ -1000,14 +1000,14 @@ void BackEnd::finaliseTiling()
 		for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++)
 		{
 			const BeOutputFormatConfig &outputFormat = config_->getOutputFormat(j);
-			int output_offset_x_unflipped = t.output_offset_x[j], output_offset_y_unflipped = t.output_offset_y[j];
+			int outputOffsetXUnflipped = t.output_offset_x[j], outputOffsetYUnflipped = t.output_offset_y[j];
 
 			if (outputFormat.transform & PISP_BE_TRANSFORM_HFLIP)
 				t.output_offset_x[j] =
-					outputFormat.image.width - output_offset_x_unflipped - t.output_width[j];
+					outputFormat.image.width - outputOffsetXUnflipped - t.output_width[j];
 
 			if (outputFormat.transform & PISP_BE_TRANSFORM_VFLIP)
-				t.output_offset_y[j] = outputFormat.image.height - output_offset_y_unflipped - 1;
+				t.output_offset_y[j] = outputFormat.image.height - outputOffsetYUnflipped - 1;
 
 			computeAddrOffset(outputFormat.image, t.output_offset_x[j], t.output_offset_y[j], &t.output_addr_offset[j],
 							  &t.output_addr_offset2[j]);
