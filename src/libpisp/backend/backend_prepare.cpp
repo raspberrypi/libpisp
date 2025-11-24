@@ -474,12 +474,10 @@ tiling::Length2 BackEnd::calculateInputAlignment() const
 	// For starters, we need 4 *byte* alignment (this automatically cover 2 *pixel* alignment for all the raw formats).
 	int pixelAlignment = getPixelAlignment(inputFormat.format, PISP_BACK_END_INPUT_ALIGN);
 
-	// If any input is compressed, we need 8 *pixel* alignment.
-	if (PISP_IMAGE_FORMAT_COMPRESSED(inputFormat.format) ||
-		((bayerEnables & BayerEnable::TdnInput) &&
-		 PISP_IMAGE_FORMAT_COMPRESSED(tdnInputFormat.format)) ||
-		((bayerEnables & BayerEnable::StitchInput) &&
-		 PISP_IMAGE_FORMAT_COMPRESSED(stitchInputFormat.format)))
+	// If any input is compressed, we need 8 *pixel* alignment. (Ignore input when transposing, we deal with that later.)
+	if ((PISP_IMAGE_FORMAT_COMPRESSED(inputFormat.format) && !(bayerEnables & BayerEnable::Transpose)) ||
+		((bayerEnables & BayerEnable::TdnInput) && PISP_IMAGE_FORMAT_COMPRESSED(tdnInputFormat.format)) ||
+		((bayerEnables & BayerEnable::StitchInput) && PISP_IMAGE_FORMAT_COMPRESSED(stitchInputFormat.format)))
 		pixelAlignment = lcm(pixelAlignment, PISP_BACK_END_COMPRESSED_ALIGN);
 
 	// If any of the Bayer outputs are enabled, those need 16 *byte* alignment. (This already covers the outputs being compressed.)
@@ -487,10 +485,11 @@ tiling::Length2 BackEnd::calculateInputAlignment() const
 		pixelAlignment =
 			lcm(pixelAlignment, getPixelAlignment(tdnOutputFormat.format, PISP_BACK_END_OUTPUT_MIN_ALIGN));
 	if (bayerEnables & BayerEnable::StitchOutput)
-		pixelAlignment = lcm(pixelAlignment,
-							 getPixelAlignment(stitchOutputFormat.format, PISP_BACK_END_OUTPUT_MIN_ALIGN));
+		pixelAlignment =
+			lcm(pixelAlignment, getPixelAlignment(stitchOutputFormat.format, PISP_BACK_END_OUTPUT_MIN_ALIGN));
 
-	return tiling::Length2(pixelAlignment, 2); // Bayer input rows always in pairs
+	// Bayer input rows always in pairs; but when transposing, the input-in-memory should be highly aligned
+	return tiling::Length2(pixelAlignment, (bayerEnables & BayerEnable::Transpose) ? 64 : 2);
 }
 
 void BackEnd::finaliseConfig()
@@ -962,11 +961,13 @@ void BackEnd::finaliseTiling()
 	{
 		const BeLscConfig &lsc = config_->getLsc();
 		const BeCacConfig &cac = config_->getCac();
+		const BayerEnables bayerEnables = config_->getGlobal().bayerEnables;
 
 		pisp_tile &t = pipe_->tiles[tileNum];
 
-		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, config_->getInputFormat(),
-									&t.input_addr_offset, &t.input_addr_offset2);
+		calculateInputAddrOffset((bayerEnables & BayerEnable::Transpose) ? t.input_offset_y : t.input_offset_x,
+								 (bayerEnables & BayerEnable::Transpose) ? t.input_offset_x : t.input_offset_y,
+								 config_->getInputFormat(), &t.input_addr_offset, &t.input_addr_offset2);
 		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, config_->getTdnInputFormat(),
 									&t.tdn_input_addr_offset);
 		calculateInputAddrOffset(t.input_offset_x, t.input_offset_y, config_->getTdnOutputFormat(),
@@ -1023,6 +1024,8 @@ void BackEnd::getOutputSize(int i, uint16_t *width, uint16_t *height, ImageForma
 		*width = config_->getExtras()->downscale[i].scaled_width, *height = config_->getExtras()->downscale[i].scaled_height;
 	else if (config_->getExtras()->crop[i].width) // crop width and height will be zero when crop disabled
 		*width = config_->getExtras()->crop[i].width, *height = config_->getExtras()->crop[i].height;
+	else if (config_->getGlobal().bayerEnables & BayerEnable::Transpose)
+		*width = ifmt.height, *height = ifmt.width;
 	else
 		*width = ifmt.width, *height = ifmt.height;
 }
