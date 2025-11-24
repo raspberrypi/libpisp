@@ -707,31 +707,28 @@ void BackendConfigAdapter::setGamma(const BeGammaConfig &gamma)
 {
 	visit(overloaded {
 		[&gamma](pisp_be_config *cfg) {
-			cfg->gamma = gamma;
+			std::memcpy(cfg->gamma.lut, gamma.lut.data(), sizeof(cfg->gamma.lut));
 		},
 		[&gamma](pisp_be_config2 *cfg) {
-			// v2 uses array of pisp_be_gamma2_config
-			// Copy to first element
-			for (unsigned int i = 0; i < PISP_BE_GAMMA2_LUT_SIZE && i < PISP_BE_GAMMA_LUT_SIZE; i++) {
-				cfg->gamma[0].lut[i] = gamma.lut[i];
-			}
+			std::memcpy(cfg->gamma[0].lut, gamma.lut.data(), sizeof(cfg->gamma[0].lut));
+			std::memcpy(cfg->gamma[1].lut, gamma.lut.data(), sizeof(cfg->gamma[1].lut));
+			cfg->gamma[0].pad = cfg->gamma[1].pad = 0;
 		}
 	});
 }
 
 BeGammaConfig BackendConfigAdapter::getGamma() const
 {
+	BeGammaConfig gamma;
+
 	return visit(overloaded {
-		[](pisp_be_config *cfg) -> BeGammaConfig {
-			return cfg->gamma;
+		[&gamma](pisp_be_config *cfg) -> BeGammaConfig {
+			std::memcpy(gamma.lut.data(), cfg->gamma.lut, sizeof(cfg->gamma.lut));
+			return gamma;
 		},
-		[](pisp_be_config2 *cfg) -> BeGammaConfig {
-			// Convert from v2 array to v1 single
-			BeGammaConfig result{};
-			for (unsigned int i = 0; i < PISP_BE_GAMMA_LUT_SIZE && i < PISP_BE_GAMMA2_LUT_SIZE; i++) {
-				result.lut[i] = cfg->gamma[0].lut[i];
-			}
-			return result;
+		[&gamma](pisp_be_config2 *cfg) -> BeGammaConfig {
+			std::memcpy(gamma.lut.data(), cfg->gamma[0].lut, sizeof(cfg->gamma[0].lut));
+			return gamma;
 		}
 	});
 }

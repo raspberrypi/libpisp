@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <type_traits>
@@ -155,6 +156,11 @@ struct BeCropConfig
 // pisp_be_output_format_config2 is a superset of pisp_be_output_format_config
 using BeOutputFormatConfig = struct pisp_be_output_format_config2;
 
+struct BeGammaConfig
+{
+	std::array<uint32_t, std::max<size_t>(PISP_BE_GAMMA2_LUT_SIZE, PISP_BE_GAMMA_LUT_SIZE)> lut;
+};
+
 // Identical to the current HW structures
 using ImageFormatConfig = struct pisp_image_format_config;
 using DecompressConfig = struct pisp_decompress_config;
@@ -175,7 +181,7 @@ using BeTdnConfig = struct pisp_be_tdn_config;
 using BeStitchConfig = struct pisp_be_stitch_config;
 using BeTonemapConfig = struct pisp_be_tonemap_config;
 using BeDemosaicConfig = struct pisp_be_demosaic_config;
-using BeGammaConfig = struct pisp_be_gamma_config;
+using BeDedistortionConfig = struct pisp_be_dedistort_config;
 
 struct BeConfigExtra
 {
