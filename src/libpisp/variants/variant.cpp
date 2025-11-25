@@ -12,8 +12,11 @@
 namespace libpisp
 {
 
+// Must make sure the .id fields are incremented correctly below!
+
 const PiSPVariant BCM2712_C0 {
 	.name = "BCM2712_C0",
+	.id = 0x0001,
 	.feVersion = 0x00114666,
 	.beVersion = 0x02252700,
 	.numFe = 2,
@@ -31,6 +34,7 @@ const PiSPVariant BCM2712_C0 {
 
 const PiSPVariant BCM2712_D0 {
 	.name = "BCM2712_D0",
+	.id = 0x0002,	
 	.feVersion = 0x00114666,
 	.beVersion = 0x02252701,
 	.numFe = 2,

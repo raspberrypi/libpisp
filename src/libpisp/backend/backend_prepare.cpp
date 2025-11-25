@@ -406,8 +406,7 @@ void BackEnd::finaliseStitch()
 		checkRawIoFormat(stitchInputFormat, postTransposeWidth(), postTransposeHeight());
 
 	// Compute the motion_threshold reciprocal if it hasn't been done.
-	// TODO ADD VARIANT CHECK
-	if (stitch.motion_threshold_recip == 0)
+	if (variant_ <= BCM2712_D0 && stitch.motion_threshold_recip == 0)
 	{
 		if (stitch.motion_threshold_256 == 0)
 			stitch.motion_threshold_recip = 255;

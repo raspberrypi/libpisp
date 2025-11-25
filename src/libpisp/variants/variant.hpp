@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <compare>
 #include <optional>
 #include <string>
 #include <vector>
@@ -27,6 +28,7 @@ public:
 	static constexpr unsigned int MaxBackEndBranches = 4;
 
 	std::string name;
+	unsigned int id;
 	unsigned int feVersion;
 	unsigned int beVersion;
 	unsigned int numFe;
@@ -112,7 +114,14 @@ public:
 	{
 		return id < numBe ? beRgb32Support : false;
 	}
+
+	auto operator<=>(const PiSPVariant &other) const
+	{
+		return id <=> other.id;
+	}
 };
+
+extern const PiSPVariant BCM2712_C0, BCM2712_D0;
 
 const std::vector<PiSPVariant> &getVariants();
 std::optional<PiSPVariant> getVariant(unsigned int feVersion, unsigned int beVersion);
