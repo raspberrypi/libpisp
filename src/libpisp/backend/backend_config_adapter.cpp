@@ -256,8 +256,11 @@ void BackendConfigAdapter::setTile(unsigned int i, const BeTile &tile)
 			tiles[i].tonemap_lores_offset_y = tile.tonemap_lores_offset_y;
 			tiles[i].dedistort_grid_offset_x = tile.dedistort_grid_offset_x;
 			tiles[i].dedistort_grid_offset_y = tile.dedistort_grid_offset_y;
+			std::memcpy(tiles[i].resample_start_context_x, tile.resample_start_context_x.data(), sizeof(tile.resample_start_context_x));
+			std::memcpy(tiles[i].resample_start_context_y, tile.resample_start_context_y.data(), sizeof(tile.resample_start_context_y));			
 
 			// v2 has per-output downscale/resample phases, v1/BeTile has per-component
+			// TODO Remove the loop?
 			for (unsigned int j = 0; j < PISP_BACK_END_NUM_OUTPUTS; j++)
 			{
 				tiles[i].downscale_phase_x[j] = tile.downscale_phase_x[j];
@@ -347,8 +350,13 @@ BeTile BackendConfigAdapter::getTile(unsigned int i) const
 			tile.tonemap_lores_offset_y = tiles[i].tonemap_lores_offset_y;
 			tile.dedistort_grid_offset_x = tiles[i].dedistort_grid_offset_x;
 			tile.dedistort_grid_offset_y = tiles[i].dedistort_grid_offset_y;
+
+			std::memcpy(tile.resample_start_context_x.data(), tiles[i].resample_start_context_x, sizeof(tile.resample_start_context_x));
+			std::memcpy(tile.resample_start_context_y.data(), tiles[i].resample_start_context_y, sizeof(tile.resample_start_context_y));			
+
 			// v2 has per-output downscale/resample phases, v1/BeTile has per-component
 			for (unsigned int j = 0; j < PISP_BACK_END_NUM_OUTPUTS; j++) {
+				// TODO Remove the loop?
 				tile.downscale_phase_x[j] = tiles[i].downscale_phase_x[j];
 				tile.downscale_phase_y[j] = tiles[i].downscale_phase_y[j];
 				tile.resample_phase_x[j] = tiles[i].resample_phase_x[j];

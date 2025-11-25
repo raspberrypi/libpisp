@@ -29,6 +29,7 @@ constexpr unsigned int PhasePrecision = 12;
 constexpr unsigned int UnityScale = 1 << ScalePrecision;
 constexpr unsigned int UnityPhase = 1 << PhasePrecision;
 // PPF properties
+constexpr unsigned int ScaleStartContext = 2;
 constexpr unsigned int ResamplePrecision = 10;
 constexpr unsigned int NumPhases = 16;
 constexpr unsigned int NumTaps = 6;
@@ -795,6 +796,7 @@ void BackEnd::updateSmartResize()
 				{
 					// Let's choose a resampling filter based on the scaling factor.
 					// The selection mapping is defined in the config json file.
+					// TODO is this variant check needed?
 					if (variant_ <= BCM2712_D0)
 					{
 						initialiseResample(resample, scaleFactorX);
@@ -929,18 +931,23 @@ void BackEnd::retilePipeline(TilingConfig const &tilingConfig)
 	for (unsigned int i = 0; i < pipe_->numTilesX * pipe_->numTilesY; i++)
 	{
 		RgbEnables rgbEnables = config_->getGlobal().rgbEnables;
+		bool top_edge = i < pipe_->numTilesX;
+		bool left_edge = i % pipe_->numTilesX == 0;
 
 		BeTile t = config_->getTile(i);
 
-		t.edge = 0;
-		if (i < pipe_->numTilesX)
-			t.edge |= PISP_TOP_EDGE;
-		if (i >= pipe_->numTilesX * (pipe_->numTilesY - 1))
-			t.edge |= PISP_BOTTOM_EDGE;
-		if (i % pipe_->numTilesX == 0)
-			t.edge |= PISP_LEFT_EDGE;
-		if ((i + 1) % pipe_->numTilesX == 0)
-			t.edge |= PISP_RIGHT_EDGE;
+		if (variant_ <= BCM2712_D0)
+		{
+			t.edge = 0;
+			if (top_edge)
+				t.edge |= PISP_TOP_EDGE;
+			if (i >= pipe_->numTilesX * (pipe_->numTilesY - 1))
+				t.edge |= PISP_BOTTOM_EDGE;
+			if (left_edge)
+				t.edge |= PISP_LEFT_EDGE;
+			if ((i + 1) % pipe_->numTilesX == 0)
+				t.edge |= PISP_RIGHT_EDGE;
+		}
 
 		t.input_offset_x = tiles[i].input.input.x.offset;
 		t.input_offset_y = tiles[i].input.input.y.offset;
@@ -1002,6 +1009,12 @@ void BackEnd::retilePipeline(TilingConfig const &tilingConfig)
 			t.output_offset_y[j] = tiles[i].output[j].output.y.offset;
 			t.output_width[j] = tiles[i].output[j].output.x.length;
 			t.output_height[j] = tiles[i].output[j].output.y.length;
+
+			if (variant_ > BCM2712_D0)
+			{
+				t.resample_start_context_x[j] = !left_edge;
+                t.resample_start_context_y[j] = !top_edge;
+			}
 
 			for (int p = 0; p < 3; p++)
 			{

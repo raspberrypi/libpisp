@@ -280,6 +280,8 @@ struct BeTile
 	uint32_t tonemap_lores_offset_y = 0;
 	uint32_t dedistort_grid_offset_x = 0;
 	uint32_t dedistort_grid_offset_y = 0;
+	std::array<uint8_t, PISP_BACK_END_NUM_OUTPUTS> resample_start_context_x {};
+	std::array<uint8_t, PISP_BACK_END_NUM_OUTPUTS> resample_start_context_y {};
 };
 
 class BackendConfigAdapter
