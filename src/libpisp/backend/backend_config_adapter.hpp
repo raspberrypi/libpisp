@@ -158,6 +158,9 @@ struct BeCropConfig
 // pisp_be_output_format_config2 is a superset of pisp_be_output_format_config
 using BeOutputFormatConfig = struct pisp_be_output_format_config2;
 
+// pisp_be_demosaic2_config is a superset of pisp_be_demosaic_config
+using BeDemosaicConfig = struct pisp_be_demosaic2_config;
+
 struct BeGammaConfig
 {
 	std::array<uint32_t, std::max<size_t>(PISP_BE_GAMMA2_LUT_SIZE, PISP_BE_GAMMA_LUT_SIZE)> lut {};
@@ -191,7 +194,6 @@ using BeShFcCombineConfig = struct pisp_be_sh_fc_combine_config;
 using BeTdnConfig = struct pisp_be_tdn_config;
 using BeStitchConfig = struct pisp_be_stitch_config;
 using BeTonemapConfig = struct pisp_be_tonemap_config;
-using BeDemosaicConfig = struct pisp_be_demosaic_config;
 using BeCompressConfig = struct pisp_compress_config;
 using BeTonemap2Config = struct pisp_be_tonemap2_config;
 

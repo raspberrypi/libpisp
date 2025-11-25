@@ -909,13 +909,13 @@ void BackendConfigAdapter::setDemosaic(const BeDemosaicConfig &demosaic)
 {
 	visit(overloaded {
 		[&demosaic](pisp_be_config *cfg) {
-			cfg->demosaic = demosaic;
+			cfg->demosaic.sharper = demosaic.sharper;
+			cfg->demosaic.fc_mode = demosaic.fc_mode;
 			cfg->demosaic.pad[0] = cfg->demosaic.pad[1] = 0;
 		},
 		[&demosaic](pisp_be_config2 *cfg) {
-			// v2 uses pisp_be_demosaic2_config - copy compatible fields
-			cfg->demosaic.sharper = demosaic.sharper;
-			cfg->demosaic.fc_mode = demosaic.fc_mode;
+			cfg->demosaic = demosaic;
+			cfg->demosaic.pad[0] = cfg->demosaic.pad[1] = cfg->demosaic.pad[2] = 0;
 		}
 	});
 }
@@ -924,14 +924,13 @@ BeDemosaicConfig BackendConfigAdapter::getDemosaic() const
 {
 	return visit(overloaded {
 		[](pisp_be_config *cfg) -> BeDemosaicConfig {
-			return cfg->demosaic;
+			BeDemosaicConfig demosaic {};
+			demosaic.sharper = cfg->demosaic.sharper;
+			demosaic.fc_mode = cfg->demosaic.fc_mode;
+			return demosaic;
 		},
 		[](pisp_be_config2 *cfg) -> BeDemosaicConfig {
-			// Convert from v2 to v1
-			BeDemosaicConfig result{};
-			result.sharper = cfg->demosaic.sharper;
-			result.fc_mode = cfg->demosaic.fc_mode;
-			return result;
+			return cfg->demosaic;
 		}
 	});
 }
