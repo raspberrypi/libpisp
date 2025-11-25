@@ -782,7 +782,7 @@ void BackendConfigAdapter::setTdn(const BeTdnConfig &tdn)
 			cfg->tdn.black_level = tdn.black_level;
 			cfg->tdn.ratio = tdn.ratio;
 			cfg->tdn.noise_constant = tdn.noise_constant;
-			cfg->tdn.noise_slope = tdn.threshold;
+			cfg->tdn.noise_slope = tdn.noise_slope;
 			cfg->tdn.reset = tdn.reset;
 			cfg->tdn.threshold = tdn.threshold;
 			cfg->tdn.pad = 0;
@@ -801,7 +801,7 @@ BeTdnConfig BackendConfigAdapter::getTdn() const
 			tdn.black_level = cfg->tdn.black_level;
 			tdn.ratio = cfg->tdn.ratio;
 			tdn.noise_constant = cfg->tdn.noise_constant;
-			tdn.threshold = cfg->tdn.noise_slope;
+			tdn.noise_slope = cfg->tdn.noise_slope;
 			tdn.reset = cfg->tdn.reset;
 			tdn.threshold = cfg->tdn.threshold;
 			return tdn;
