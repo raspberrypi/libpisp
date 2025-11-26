@@ -99,9 +99,7 @@ BeDpcConfig BackEnd::get_dpc() const
 
 void BackEnd::set_geq(BeGeqConfig const &geq)
 {
-	BeGeqConfig geq_copy = geq;
-	geq_copy.slope_sharper &= (PISP_BE_GEQ_SLOPE | PISP_BE_GEQ_SHARPER);
-	config_->set_geq(geq_copy);
+	config_->set_geq(geq);
 	pipe_->dirty_flags_bayer |= BayerEnable::Geq;
 }
 

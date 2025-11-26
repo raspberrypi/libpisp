@@ -427,7 +427,11 @@ BeDpcConfig BackendConfigAdapter::get_dpc() const
 
 void BackendConfigAdapter::set_geq(const BeGeqConfig &geq)
 {
-	visit([&geq](auto *cfg) { cfg->geq = geq; });
+	visit([&geq](auto *cfg)
+		  {
+			cfg->geq = geq;
+			cfg->geq.slope_sharper &= (PISP_BE_GEQ_SLOPE | PISP_BE_GEQ_SHARPER);
+		  });
 }
 
 BeGeqConfig BackendConfigAdapter::get_geq() const
