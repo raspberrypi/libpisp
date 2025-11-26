@@ -1019,6 +1019,11 @@ void BackEnd::retilePipeline(TilingConfig const &tilingConfig)
 			for (int p = 0; p < 3; p++)
 			{
 				// Calculate x/y initial downsampler/resampler phases per-plane.
+
+				// Variant Beryl onwards use the same phase for all planes.
+				if (p > 0 && variant_ >= BERYL)
+					continue;
+
 				if (rgbEnables & getFlagForBranch(RgbEnable::Downscale0, j))
 				{
 					const BeDownscaleConfig &downscale = config_->getDownscale(j);
