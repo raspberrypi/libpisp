@@ -121,7 +121,7 @@ public:
 	}
 };
 
-extern const PiSPVariant BCM2712_C0, BCM2712_D0;
+extern const PiSPVariant BCM2712_C0, BCM2712_D0, BERYL;
 
 const std::vector<PiSPVariant> &getVariants();
 std::optional<PiSPVariant> getVariant(unsigned int feVersion, unsigned int beVersion);

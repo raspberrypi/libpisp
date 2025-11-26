@@ -50,11 +50,30 @@ const PiSPVariant BCM2712_D0 {
 	.beRgb32Support = true,
 };
 
+const PiSPVariant BERYL {
+	.name = "BERYL",
+	.id = 0x0003,
+	.feVersion = 0x00114666,
+	.beVersion = 0x00352701,
+	.numFe = 2,
+	.numBe = 1,
+	.numFeBranches = { 2, 2 },
+	.feStatsMaxWidth = { 6144, 6144 },
+	.feDownscaler = { { { true, true }, { true, true } } },
+	.feDownscalerMaxWidth = { { { 6144, 4096 }, { 6144, 4096 } } },
+	.beMaxTileWidth = 640,
+	.numBeBranches = { 2 },
+	.beIntegralImages = { { { false, false } } },
+	.beDownscaler = { { { true, true } } },
+	.beRgb32Support = true,
+};
+
 const std::vector<PiSPVariant> &getVariants()
 {
 	static const std::vector<PiSPVariant> variants {
 		BCM2712_C0,
-		BCM2712_D0
+		BCM2712_D0,
+		BERYL,
 	};
 
 	return variants;
