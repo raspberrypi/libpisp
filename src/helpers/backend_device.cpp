@@ -36,7 +36,6 @@ BackendDevice::BackendDevice(const std::string &device)
 								[&info](const auto &v) { return v.back_end_version() == info.hw_revision; });
 	if (variant == variants.end())
 		throw std::runtime_error("Backend hardware cound not be identified: " + std::to_string(info.hw_revision));
-
 	be_ = std::make_unique<libpisp::BackEnd>(libpisp::BackEnd::SoftwareConfig({}), *variant);
 }
 

@@ -7,7 +7,6 @@
 #pragma once
 
 #include <memory>
-#include <optional>
 #include <string>
 #include <unordered_set>
 
@@ -64,7 +63,6 @@ private:
 	V4l2Device::Buffer config_buffer_;
 	std::string media_dev_;
 	std::unique_ptr<libpisp::BackEnd> be_;
-	libpisp::PiSPVariant variant_;
 };
 
 } // namespace libpisp

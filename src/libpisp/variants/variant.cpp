@@ -14,59 +14,59 @@ namespace libpisp
 
 // Must make sure the .id fields are incremented correctly below!
 
-const PiSPVariant BCM2712_C0 {
-	.name = "BCM2712_C0",
-	.id = 0x0001,
-	.fe_version = 0x00114666,
-	.be_version = 0x02252700,
-	.num_fe = 2,
-	.num_be = 1,
-	.num_fe_branches = { 2, 2 },
-	.fe_stats_max_width = { 6144, 6144 },
-	.fe_downscaler = { { { true, true }, { true, true } } },
-	.fe_downscaler_max_width = { { { 6144, 4096 }, { 6144, 4096 } } },
-	.be_max_tile_width = 640,
-	.num_be_branches = { 2 },
-	.be_integral_images = { { { false, false } } },
-	.be_downscaler = { { { false, true } } },
-	.be_rgb32_support = false,
-};
+const PiSPVariant BCM2712_C0(
+	"BCM2712_C0",						// name
+	0x0001,								// id
+	0x00114666,							// fe_version (front-end version)
+	0x02252700,							// be_version (back-end version)
+	2,									// num_fe (number of front-ends)
+	1,									// num_be (number of back-ends)
+	{ 2, 2 },							// num_fe_branches (branches per front-end)
+	{ 6144, 6144 },						// fe_stats_max_width (max stats width per front-end)
+	{ { { true, true }, { true, true } } },	// fe_downscaler (downscaler available per FE/branch)
+	{ { { 6144, 4096 }, { 6144, 4096 } } },	// fe_downscaler_max_width (max width per FE/branch)
+	640,								// be_max_tile_width (max tile width for back-end)
+	{ 2 },								// num_be_branches (branches per back-end)
+	{ { { false, false } } },			// be_integral_images (integral images available per BE/branch)
+	{ { { false, true } } },			// be_downscaler (downscaler available per BE/branch)
+	false								// be_rgb32_support (RGB32 format support)
+);
 
-const PiSPVariant BCM2712_D0 {
-	.name = "BCM2712_D0",
-	.id = 0x0002,	
-	.fe_version = 0x00114666,
-	.be_version = 0x02252701,
-	.num_fe = 2,
-	.num_be = 1,
-	.num_fe_branches = { 2, 2 },
-	.fe_stats_max_width = { 6144, 6144 },
-	.fe_downscaler = { { { true, true }, { true, true } } },
-	.fe_downscaler_max_width = { { { 6144, 4096 }, { 6144, 4096 } } },
-	.be_max_tile_width = 640,
-	.num_be_branches = { 2 },
-	.be_integral_images = { { { false, false } } },
-	.be_downscaler = { { { false, true } } },
-	.be_rgb32_support = true,
-};
+const PiSPVariant BCM2712_D0(
+	"BCM2712_D0",						// name
+	0x0002,								// id
+	0x00114666,							// fe_version (front-end version)
+	0x02252701,							// be_version (back-end version)
+	2,									// num_fe (number of front-ends)
+	1,									// num_be (number of back-ends)
+	{ 2, 2 },							// num_fe_branches (branches per front-end)
+	{ 6144, 6144 },						// fe_stats_max_width (max stats width per front-end)
+	{ { { true, true }, { true, true } } },	// fe_downscaler (downscaler available per FE/branch)
+	{ { { 6144, 4096 }, { 6144, 4096 } } },	// fe_downscaler_max_width (max width per FE/branch)
+	640,								// be_max_tile_width (max tile width for back-end)
+	{ 2 },								// num_be_branches (branches per back-end)
+	{ { { false, false } } },			// be_integral_images (integral images available per BE/branch)
+	{ { { false, true } } },			// be_downscaler (downscaler available per BE/branch)
+	true								// be_rgb32_support (RGB32 format support)
+);
 
-const PiSPVariant BERYL {
-	.name = "BERYL",
-	.id = 0x0003,
-	.fe_version = 0x00114666,
-	.be_version = 0x00352320,
-	.num_fe = 2,
-	.num_be = 1,
-	.num_fe_branches = { 2, 2 },
-	.fe_stats_max_width = { 6144, 6144 },
-	.fe_downscaler = { { { true, true }, { true, true } } },
-	.fe_downscaler_max_width = { { { 6144, 4096 }, { 6144, 4096 } } },
-	.be_max_tile_width = 9126,
-	.num_be_branches = { 2 },
-	.be_integral_images = { { { false, false } } },
-	.be_downscaler = { { { true, true } } },
-	.be_rgb32_support = true,
-};
+const PiSPVariant BERYL(
+	"BERYL",							// name
+	0x0003,								// id
+	0x00114666,							// fe_version (front-end version)
+	0x00352320,							// be_version (back-end version)
+	2,									// num_fe (number of front-ends)
+	1,									// num_be (number of back-ends)
+	{ 2, 2 },							// num_fe_branches (branches per front-end)
+	{ 6144, 6144 },						// fe_stats_max_width (max stats width per front-end)
+	{ { { true, true }, { true, true } } },  // fe_downscaler (downscaler available per FE/branch)
+	{ { { 6144, 4096 }, { 6144, 4096 } } }, // fe_downscaler_max_width (max width per FE/branch)
+	9126,								// be_max_tile_width (max tile width for back-end)
+	{ 2 },								// num_be_branches (branches per back-end)
+	{ { { false, false } } },			// be_integral_images (integral images available per BE/branch)
+	{ { { true, true } } },				// be_downscaler (downscaler available per BE/branch)
+	true								// be_rgb32_support (RGB32 format support)
+);
 
 const std::vector<PiSPVariant> &get_variants()
 {
@@ -84,8 +84,10 @@ std::optional<PiSPVariant> get_variant(unsigned int fe_version, unsigned int be_
 	const std::vector<PiSPVariant> &variants = get_variants();
 
 	auto it = std::find_if(variants.begin(), variants.end(),
-				   [fe_version, be_version](const auto &hw) { return hw.front_end_version() == fe_version &&
-																	 hw.back_end_version() == be_version; });
+						   [fe_version, be_version](const auto &hw)
+						   {
+								return hw.front_end_version() == fe_version && hw.back_end_version() == be_version;
+						   });
 
 	if (it == variants.end())
 		return {};

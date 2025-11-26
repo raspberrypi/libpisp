@@ -21,103 +21,143 @@ namespace libpisp
 
 class PiSPVariant
 {
-public:
+private:
 	static constexpr unsigned int MaxFrontEnds = 4;
 	static constexpr unsigned int MaxBackEnds = 4;
 	static constexpr unsigned int MaxFrontEndBranches = 4;
 	static constexpr unsigned int MaxBackEndBranches = 4;
 
-	std::string name;
-	unsigned int id;
-	unsigned int fe_version;
-	unsigned int be_version;
-	unsigned int num_fe;
-	unsigned int num_be;
+	std::string name_;
+	unsigned int id_;
+	unsigned int fe_version_;
+	unsigned int be_version_;
+	unsigned int num_fe_;
+	unsigned int num_be_;
 
-	std::array<unsigned int, MaxFrontEnds> num_fe_branches;
-	std::array<unsigned int, MaxFrontEnds> fe_stats_max_width;
-	std::array<std::array<bool, MaxFrontEndBranches>, MaxFrontEnds> fe_downscaler;
-	std::array<std::array<unsigned int, MaxFrontEndBranches>, MaxFrontEnds> fe_downscaler_max_width;
+	std::array<unsigned int, MaxFrontEnds> num_fe_branches_;
+	std::array<unsigned int, MaxFrontEnds> fe_stats_max_width_;
+	std::array<std::array<bool, MaxFrontEndBranches>, MaxFrontEnds> fe_downscaler_;
+	std::array<std::array<unsigned int, MaxFrontEndBranches>, MaxFrontEnds> fe_downscaler_max_width_;
 
-	unsigned int be_max_tile_width;
-	std::array<unsigned int, MaxBackEnds> num_be_branches;
-	std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> be_integral_images;
-	std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> be_downscaler;
-	bool be_rgb32_support;
+	unsigned int be_max_tile_width_;
+	std::array<unsigned int, MaxBackEnds> num_be_branches_;
+	std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> be_integral_images_;
+	std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> be_downscaler_;
+	bool be_rgb32_support_;
 
-	const std::string &get_name() const
+public:
+	PiSPVariant(
+		const std::string &name,
+		unsigned int id,
+		unsigned int fe_version,
+		unsigned int be_version,
+		unsigned int num_fe,
+		unsigned int num_be,
+		const std::array<unsigned int, MaxFrontEnds> &num_fe_branches,
+		const std::array<unsigned int, MaxFrontEnds> &fe_stats_max_width,
+		const std::array<std::array<bool, MaxFrontEndBranches>, MaxFrontEnds> &fe_downscaler,
+		const std::array<std::array<unsigned int, MaxFrontEndBranches>, MaxFrontEnds> &fe_downscaler_max_width,
+		unsigned int be_max_tile_width,
+		const std::array<unsigned int, MaxBackEnds> &num_be_branches,
+		const std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> &be_integral_images,
+		const std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> &be_downscaler,
+		bool be_rgb32_support)
+		: name_(name)
+		, id_(id)
+		, fe_version_(fe_version)
+		, be_version_(be_version)
+		, num_fe_(num_fe)
+		, num_be_(num_be)
+		, num_fe_branches_(num_fe_branches)
+		, fe_stats_max_width_(fe_stats_max_width)
+		, fe_downscaler_(fe_downscaler)
+		, fe_downscaler_max_width_(fe_downscaler_max_width)
+		, be_max_tile_width_(be_max_tile_width)
+		, num_be_branches_(num_be_branches)
+		, be_integral_images_(be_integral_images)
+		, be_downscaler_(be_downscaler)
+		, be_rgb32_support_(be_rgb32_support)
 	{
-		return name;
+	}
+
+	const std::string &name() const
+	{
+		return name_;
+	}
+
+	unsigned int id() const
+	{
+		return id_;
 	}
 
 	unsigned int back_end_version() const
 	{
-		return be_version;
+		return be_version_;
 	}
 
 	unsigned int front_end_version() const
 	{
-		return fe_version;
+		return fe_version_;
 	}
 
 	unsigned int num_front_ends() const
 	{
-		return num_fe;
+		return num_fe_;
 	}
 
 	unsigned int num_back_ends() const
 	{
-		return num_be;
+		return num_be_;
 	}
 
 	unsigned int front_end_num_branches(unsigned int id) const
 	{
-		return id < num_fe ? num_fe_branches[id] : 0;
+		return id < num_fe_ ? num_fe_branches_[id] : 0;
 	}
 
 	unsigned int front_end_stats_max_width(unsigned int id) const
 	{
-		return (id < num_fe) ? fe_stats_max_width[id] : 0;
+		return (id < num_fe_) ? fe_stats_max_width_[id] : 0;
 	}
 
 	unsigned int front_end_downscaler_max_width(unsigned int id, unsigned int branch) const
 	{
-		return (id < num_fe && branch < num_fe_branches[id]) ? fe_downscaler_max_width[id][branch] : 0;
+		return (id < num_fe_ && branch < num_fe_branches_[id]) ? fe_downscaler_max_width_[id][branch] : 0;
 	}
 
 	bool front_end_downscaler_available(unsigned int id, unsigned int branch) const
 	{
-		return (id < num_fe && branch < num_fe_branches[id]) ? fe_downscaler[id][branch] : 0;
+		return (id < num_fe_ && branch < num_fe_branches_[id]) ? fe_downscaler_[id][branch] : 0;
 	}
 
 	unsigned int back_end_num_branches(unsigned int id) const
 	{
-		return id < num_be ? num_be_branches[id] : 0;
+		return id < num_be_ ? num_be_branches_[id] : 0;
 	}
 
 	unsigned int back_end_max_tile_width(unsigned int id) const
 	{
-		return (id < num_be) ? be_max_tile_width : 0;
+		return (id < num_be_) ? be_max_tile_width_ : 0;
 	}
 
 	bool back_end_integral_images_available(unsigned int id, unsigned int branch) const
 	{
-		return (id < num_be && branch < num_be_branches[id]) ? be_integral_images[id][branch] : 0;
+		return (id < num_be_ && branch < num_be_branches_[id]) ? be_integral_images_[id][branch] : 0;
 	}
 
 	bool back_end_downscaler_available(unsigned int id, unsigned int branch) const
 	{
-		return (id < num_be && branch < num_be_branches[id]) ? be_downscaler[id][branch] : 0;
+		return (id < num_be_ && branch < num_be_branches_[id]) ? be_downscaler_[id][branch] : 0;
 	}
 
 	bool backend_rgb32_supported(unsigned int id) const
 	{
-		return id < num_be ? be_rgb32_support : false;
+		return id < num_be_ ? be_rgb32_support_ : false;
 	}
 
 	auto operator<=>(const PiSPVariant &other) const
 	{
-		return id <=> other.id;
+		return id_ <=> other.id_;
 	}
 };
 
