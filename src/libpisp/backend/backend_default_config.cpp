@@ -90,7 +90,7 @@ void initialiseFalseColour(pisp_be_false_colour_config &fc, const json &root)
 	fc.distance = params["distance"].get<uint8_t>();
 }
 
-void initialiseGamma(libpisp::BeGammaConfig &gamma, const json &root)
+void initialiseGamma(libpisp::BeGammaConfig &gamma, const json &root, bool applySlope)
 {
 	constexpr unsigned int num_points = sizeof(gamma.lut) / sizeof(gamma.lut[0]);
 
@@ -127,7 +127,7 @@ void initialiseGamma(libpisp::BeGammaConfig &gamma, const json &root)
 		if (y < 0 || (i && y < lastY))
 			throw std::runtime_error("initialiseGamma: Malformed LUT");
 
-		if (i)
+		if (applySlope && i)
 		{
 			unsigned int slope = y - lastY;
 			if (slope >= (1u << SlopeBits))
@@ -393,7 +393,7 @@ void BackEnd::initialiseDefaultConfig(const std::string &filename)
 	setFalseColour(fc);
 
 	libpisp::BeGammaConfig gamma;
-	initialiseGamma(gamma, root);
+	initialiseGamma(gamma, root, variant_ <= BCM2712_D0 ? true : false);
 	setGamma(0, gamma);
 	setGamma(1, gamma);
 
