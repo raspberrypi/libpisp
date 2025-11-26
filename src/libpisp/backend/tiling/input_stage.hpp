@@ -16,21 +16,21 @@ class InputStage : public BasicStage
 public:
 	struct Config
 	{
-		Config(Length2 const &inputImageSize, Length2 const &alignment, int compressionAlignment = 0)
-			: inputImageSize(inputImageSize), alignment(alignment), compressionAlignment(compressionAlignment)
+		Config(Length2 const &input_image_size, Length2 const &alignment, int compression_alignment = 0)
+			: input_image_size(input_image_size), alignment(alignment), compression_alignment(compression_alignment)
 		{
 		}
-		Length2 inputImageSize;
+		Length2 input_image_size;
 		Length2 alignment;
-		int compressionAlignment;
+		int compression_alignment;
 	};
-	InputStage(char const *name, Pipeline *pipeline, Config const &config, int structOffset);
-	virtual Length2 getInputImageSize() const;
-	virtual Interval getInputInterval() const;
-	virtual void pushStartUp(int outputStart, Dir dir);
-	virtual int pushEndDown(int inputEnd, Dir dir);
-	virtual void pushEndUp(int outputEnd, Dir dir);
-	virtual void pushCropDown(Interval interval, Dir dir);
+	InputStage(char const *name, Pipeline *pipeline, Config const &config, int struct_offset);
+	virtual Length2 get_input_image_size() const;
+	virtual Interval get_input_interval() const;
+	virtual void push_start_up(int output_start, Dir dir);
+	virtual int push_end_down(int input_end, Dir dir);
+	virtual void push_end_up(int output_end, Dir dir);
+	virtual void push_crop_down(Interval interval, Dir dir);
 
 private:
 	Config config_;

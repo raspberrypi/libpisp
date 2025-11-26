@@ -18,12 +18,12 @@
 namespace libpisp
 {
 
-uint32_t computeXOffset(uint32_t /* pisp_image_format */ format, int x)
+uint32_t compute_x_offset(uint32_t /* pisp_image_format */ format, int x)
 {
 	PISP_ASSERT(x >= 0 && x < 65536);
 	PISP_ASSERT(!PISP_IMAGE_FORMAT_HOG(format)); // HOG is deprecated everywhere
 
-	uint32_t xOffset = 0;
+	uint32_t x_offset = 0;
 
 	// HoG features are slightly different from the rest.
 	if (PISP_IMAGE_FORMAT_HOG(format))
@@ -32,12 +32,12 @@ uint32_t computeXOffset(uint32_t /* pisp_image_format */ format, int x)
 		 // Output 16-bit word samples per bin. This is then packed to:
 		 // 32-bytes for an unsigned histogram cell.
 		 // 48-bytes for a signed histogram cell.
-		xOffset = x * ((format & PISP_IMAGE_FORMAT_HOG_UNSIGNED) ? 32 : 48);
+		x_offset = x * ((format & PISP_IMAGE_FORMAT_HOG_UNSIGNED) ? 32 : 48);
 	}
 	else if (format & (PISP_IMAGE_FORMAT_INTEGRAL_IMAGE | PISP_IMAGE_FORMAT_BPP_32))
 	{
 		// 32-bit words per sample.
-		xOffset = x * 4;
+		x_offset = x * 4;
 	}
 	else
 	{
@@ -49,7 +49,7 @@ uint32_t computeXOffset(uint32_t /* pisp_image_format */ format, int x)
 		switch (format & PISP_IMAGE_FORMAT_BPS_MASK)
 		{
 		case PISP_IMAGE_FORMAT_BPS_8:
-			xOffset = x;
+			x_offset = x;
 			break;
 		case PISP_IMAGE_FORMAT_BPS_10:
 			// NOTE: We don't currently define any 10bps multi-channel format that are NOT wallpaper,
@@ -58,23 +58,23 @@ uint32_t computeXOffset(uint32_t /* pisp_image_format */ format, int x)
 			// which are tightly-packed (MIPI-style) and which are loosely-packed (wallpaper-style).
 			// Let's not pre-empt those decisions now. 10-bit raw Bayer is always tightly-packed.
 			PISP_ASSERT(PISP_IMAGE_FORMAT_SINGLE_CHANNEL(format));
-			xOffset = ((x + 3) >> 2) * 5;
+			x_offset = ((x + 3) >> 2) * 5;
 			break;
 		case PISP_IMAGE_FORMAT_BPS_12:
-			xOffset = ((x + 1) >> 1) * 3;
+			x_offset = ((x + 1) >> 1) * 3;
 			break;
 		case PISP_IMAGE_FORMAT_BPS_14:
-			xOffset = ((x + 3) >> 2) * 7;
+			x_offset = ((x + 3) >> 2) * 7;
 			break;
 		default:
-			xOffset = 2 * x;
+			x_offset = 2 * x;
 		}
 	}
 
-	return xOffset;
+	return x_offset;
 }
 
-void computeStrideAlign(pisp_image_format_config &config, int align, bool preserveSubsampleRatio)
+void compute_stride_align(pisp_image_format_config &config, int align, bool preserve_subsample_ratio)
 {
 	if (PISP_IMAGE_FORMAT_WALLPAPER(config.format))
 	{
@@ -88,9 +88,9 @@ void computeStrideAlign(pisp_image_format_config &config, int align, bool preser
 	if (PISP_IMAGE_FORMAT_COMPRESSED(config.format))
 		width = (width + 7) & ~7; // compression uses blocks of 8 samples
 
-	int32_t computedStride = computeXOffset(config.format, width);
-	if (!config.stride || config.stride < computedStride)
-		config.stride = computedStride;
+	int32_t computed_stride = compute_x_offset(config.format, width);
+	if (!config.stride || config.stride < computed_stride)
+		config.stride = computed_stride;
 	config.stride2 = 0;
 
 	switch (config.format & PISP_IMAGE_FORMAT_PLANARITY_MASK)
@@ -112,7 +112,7 @@ void computeStrideAlign(pisp_image_format_config &config, int align, bool preser
 	config.stride2 = (config.stride2 + align - 1) & ~(align - 1);
 
 	// For YUV420/422 formats, ensure the stride ratio matches the subample ratio for the planes.
-	if (preserveSubsampleRatio && PISP_IMAGE_FORMAT_PLANAR(config.format) &&
+	if (preserve_subsample_ratio && PISP_IMAGE_FORMAT_PLANAR(config.format) &&
 		(PISP_IMAGE_FORMAT_SAMPLING_422(config.format) || PISP_IMAGE_FORMAT_SAMPLING_420(config.format)))
 		config.stride = config.stride2 << 1;
 
@@ -121,71 +121,71 @@ void computeStrideAlign(pisp_image_format_config &config, int align, bool preser
 	config.stride2 = (config.stride2 + align - 1) & ~(align - 1);
 }
 
-void computeStride(pisp_image_format_config &config, bool preserveSubsampleRatio)
+void compute_stride(pisp_image_format_config &config, bool preserve_subsample_ratio)
 {
 	// Our preferred alignment is really 64 bytes, though 16 should work too. Use 16 for now, as it gives better test coverage.
-	computeStrideAlign(config, PISP_BACK_END_OUTPUT_MIN_ALIGN, preserveSubsampleRatio);
+	compute_stride_align(config, PISP_BACK_END_OUTPUT_MIN_ALIGN, preserve_subsample_ratio);
 }
 
-void computeOptimalStride(pisp_image_format_config &config, bool preserveSubsampleRatio)
+void compute_optimal_stride(pisp_image_format_config &config, bool preserve_subsample_ratio)
 {
 	// Use our preferred alignment of 64 bytes.
-	computeStrideAlign(config, PISP_BACK_END_OUTPUT_MAX_ALIGN, preserveSubsampleRatio);
+	compute_stride_align(config, PISP_BACK_END_OUTPUT_MAX_ALIGN, preserve_subsample_ratio);
 }
 
-void computeOptimalStride(pisp_image_format_config &config)
+void compute_optimal_stride(pisp_image_format_config &config)
 {
-	computeOptimalStride(config, false);
+	compute_optimal_stride(config, false);
 }
 
-void computeAddrOffset(const pisp_image_format_config &config, int x, int y, uint32_t *addrOffset,
-						 uint32_t *addrOffset2)
+void compute_addr_offset(const pisp_image_format_config &config, int x, int y, uint32_t *addr_offset,
+						 uint32_t *addr_offset2)
 {
 	if (PISP_IMAGE_FORMAT_WALLPAPER(config.format))
 	{
-		int pixelsInRoll =
+		int pixels_in_roll =
 			PISP_IMAGE_FORMAT_BPS_8(config.format)
 				? PISP_WALLPAPER_WIDTH
 				: (PISP_IMAGE_FORMAT_BPS_16(config.format) ? PISP_WALLPAPER_WIDTH / 2 : PISP_WALLPAPER_WIDTH / 4 * 3);
-		int pixelOffsetInRoll = x % pixelsInRoll;
-		int pixelOffsetInBytes;
+		int pixel_offset_in_roll = x % pixels_in_roll;
+		int pixel_offset_in_bytes;
 
 		if (PISP_IMAGE_FORMAT_BPS_8(config.format))
-			pixelOffsetInBytes = pixelOffsetInRoll;
+			pixel_offset_in_bytes = pixel_offset_in_roll;
 		else if (PISP_IMAGE_FORMAT_BPS_16(config.format))
-			pixelOffsetInBytes = pixelOffsetInRoll * 2;
+			pixel_offset_in_bytes = pixel_offset_in_roll * 2;
 		else
 		{
 			// 10-bit format. Whinge if not a multiple of 3 into the roll.
-			PISP_ASSERT(pixelOffsetInRoll % 3 == 0);
-			pixelOffsetInBytes = pixelOffsetInRoll / 3 * 4;
+			PISP_ASSERT(pixel_offset_in_roll % 3 == 0);
+			pixel_offset_in_bytes = pixel_offset_in_roll / 3 * 4;
 		}
 
-		int numRolls = x / pixelsInRoll;
-		*addrOffset = numRolls * config.stride + y * PISP_WALLPAPER_WIDTH + pixelOffsetInBytes;
+		int num_rolls = x / pixels_in_roll;
+		*addr_offset = num_rolls * config.stride + y * PISP_WALLPAPER_WIDTH + pixel_offset_in_bytes;
 		if (PISP_IMAGE_FORMAT_SAMPLING_420(config.format))
-			*addrOffset2 = numRolls * config.stride2 + y / 2 * PISP_WALLPAPER_WIDTH + pixelOffsetInBytes;
+			*addr_offset2 = num_rolls * config.stride2 + y / 2 * PISP_WALLPAPER_WIDTH + pixel_offset_in_bytes;
 		else
-			*addrOffset2 = *addrOffset;
+			*addr_offset2 = *addr_offset;
 
 		return;
 	}
 
-	uint32_t xByteOffset = computeXOffset(config.format, x);
-	*addrOffset = y * config.stride + xByteOffset;
-	if (addrOffset2 && !PISP_IMAGE_FORMAT_INTERLEAVED(config.format))
+	uint32_t x_byte_offset = compute_x_offset(config.format, x);
+	*addr_offset = y * config.stride + x_byte_offset;
+	if (addr_offset2 && !PISP_IMAGE_FORMAT_INTERLEAVED(config.format))
 	{
 		if (PISP_IMAGE_FORMAT_SAMPLING_420(config.format))
 			y /= 2;
 
 		if (PISP_IMAGE_FORMAT_PLANAR(config.format) && !PISP_IMAGE_FORMAT_SAMPLING_444(config.format))
-			xByteOffset /= 2;
+			x_byte_offset /= 2;
 
-		*addrOffset2 = y * config.stride2 + xByteOffset;
+		*addr_offset2 = y * config.stride2 + x_byte_offset;
 	}
 }
 
-int numPlanes(pisp_image_format format)
+int num_planes(pisp_image_format format)
 {
 	int planes = 1;
 
@@ -208,31 +208,31 @@ int numPlanes(pisp_image_format format)
 	return planes;
 }
 
-std::size_t getPlaneSize(const pisp_image_format_config &config, int plane)
+std::size_t get_plane_size(const pisp_image_format_config &config, int plane)
 {
 	uint64_t stride = std::abs(plane ? config.stride2 : config.stride); // in case vflipped?
-	uint64_t planeSize = 0;
+	uint64_t plane_size = 0;
 
 	if (PISP_IMAGE_FORMAT_WALLPAPER(config.format))
 	{
-		int pixelsInRoll =
+		int pixels_in_roll =
 			PISP_IMAGE_FORMAT_BPS_8(config.format)
 				? PISP_WALLPAPER_WIDTH
 				: (PISP_IMAGE_FORMAT_BPS_16(config.format) ? PISP_WALLPAPER_WIDTH / 2 : PISP_WALLPAPER_WIDTH / 4 * 3);
-		std::size_t numRolls = (config.width + pixelsInRoll - 1) / pixelsInRoll;
-		planeSize = numRolls * stride;
+		std::size_t num_rolls = (config.width + pixels_in_roll - 1) / pixels_in_roll;
+		plane_size = num_rolls * stride;
 	}
 	else
 	{
 		std::size_t height = plane && PISP_IMAGE_FORMAT_SAMPLING_420(config.format) ? config.height >> 1
 																					: config.height;
-		planeSize = height * stride;
+		plane_size = height * stride;
 	}
 
-	return planeSize >= (1ULL << 32) ? 0 : planeSize;
+	return plane_size >= (1ULL << 32) ? 0 : plane_size;
 }
 
-static const std::map<std::string, uint32_t> &formatsTable()
+static const std::map<std::string, uint32_t> &formats_table()
 {
 	// Note that alternate names and plane orderings are not defined to keep a 1:1 mapping.
 	static const std::map<std::string, uint32_t> formats = {
@@ -265,21 +265,21 @@ static const std::map<std::string, uint32_t> &formatsTable()
 	return formats;
 }
 
-unsigned int getPispImageFormat(const std::string &format)
+unsigned int get_pisp_image_format(const std::string &format)
 {
-	auto it = formatsTable().find(format);
-	if (it == formatsTable().end())
+	auto it = formats_table().find(format);
+	if (it == formats_table().end())
 		return 0;
 
 	return it->second;
 }
 
-std::string getPispImageFormat(uint32_t format)
+std::string get_pisp_image_format(uint32_t format)
 {
 	// Remove shift from the format assignment, its value does not change format.
 	format = format & ~PISP_IMAGE_FORMAT_SHIFT_MASK;
 
-	const auto &fmts = formatsTable();
+	const auto &fmts = formats_table();
 	auto it = std::find_if(fmts.begin(), fmts.end(), [format](const auto &f) { return f.second == format; });
 	if (it == fmts.end())
 		return {};

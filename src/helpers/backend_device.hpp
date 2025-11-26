@@ -26,7 +26,7 @@ public:
 	BackendDevice(const std::string &device = "");
 	~BackendDevice();
 
-	void setup(unsigned int bufferCount = 1, bool useOpaqueFormat = false);
+	void setup(unsigned int buffer_count = 1, bool use_opaque_format = false);
 	int run(const std::map<std::string, V4l2Device::Buffer> &buffers);
 
 	bool valid() const
@@ -39,9 +39,9 @@ public:
 		return nodes_.at(node);
 	}
 
-	std::string mediaDev() const
+	std::string media_dev() const
 	{
-		return mediaDev_;
+		return media_dev_;
 	}
 
 	libpisp::BackEnd *get()
@@ -49,20 +49,20 @@ public:
 		return be_.get();
 	}
 
-	std::map<std::string, V4l2Device::Buffer> acquireBuffers();
-	void releaseBuffer(const std::map<std::string, V4l2Device::Buffer> &buffers);
-	V4l2Device::Buffer &configBuffer()
+	std::map<std::string, V4l2Device::Buffer> acquire_buffers();
+	void release_buffer(const std::map<std::string, V4l2Device::Buffer> &buffers);
+	V4l2Device::Buffer &config_buffer()
 	{
-		return configBuffer_;
+		return config_buffer_;
 	}
 
 private:
 	bool valid_;
 	V4l2DevMap nodes_;
 	MediaDevice devices_;
-	std::unordered_set<std::string> nodesEnabled_;
-	V4l2Device::Buffer configBuffer_;
-	std::string mediaDev_;
+	std::unordered_set<std::string> nodes_enabled_;
+	V4l2Device::Buffer config_buffer_;
+	std::string media_dev_;
 	std::unique_ptr<libpisp::BackEnd> be_;
 	libpisp::PiSPVariant variant_;
 };

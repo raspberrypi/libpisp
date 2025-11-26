@@ -17,23 +17,23 @@ using namespace libpisp::helpers;
 BackendDevice::BackendDevice(const std::string &device)
 	: valid_(true)
 {
-	mediaDev_ = MediaDevice().acquire(device);
-	if (mediaDev_.empty())
+	media_dev_ = MediaDevice().acquire(device);
+	if (media_dev_.empty())
 		throw std::runtime_error("Unable to acquire any pisp_be device!");
 
-	nodes_ = MediaDevice().openV4l2Nodes(mediaDev_);
+	nodes_ = MediaDevice().open_v4l2_nodes(media_dev_);
 	if (nodes_.empty())
 		valid_ = false;
 
 	// Allocate a config buffer to persist.
-	nodes_.at("pispbe-config").requestBuffers(1);
-	nodes_.at("pispbe-config").streamOn();
-	configBuffer_ = nodes_.at("pispbe-config").acquireBuffer().value();
+	nodes_.at("pispbe-config").request_buffers(1);
+	nodes_.at("pispbe-config").stream_on();
+	config_buffer_ = nodes_.at("pispbe-config").acquire_buffer().value();
 
-		const std::vector<libpisp::PiSPVariant> &variants = libpisp::getVariants();
-	const media_device_info info = MediaDevice().deviceInfo(mediaDev_);
+		const std::vector<libpisp::PiSPVariant> &variants = libpisp::get_variants();
+	const media_device_info info = MediaDevice().device_info(media_dev_);
 	auto variant = std::find_if(variants.begin(), variants.end(),
-								[&info](const auto &v) { return v.backEndVersion() == info.hw_revision; });
+								[&info](const auto &v) { return v.back_end_version() == info.hw_revision; });
 	if (variant == variants.end())
 		throw std::runtime_error("Backend hardware cound not be identified: " + std::to_string(info.hw_revision));
 
@@ -42,127 +42,127 @@ BackendDevice::BackendDevice(const std::string &device)
 
 BackendDevice::~BackendDevice()
 {
-	nodes_.at("pispbe-config").streamOff();
+	nodes_.at("pispbe-config").stream_off();
 }
 
-void BackendDevice::setup(unsigned int bufferCount, bool useOpaqueFormat)
+void BackendDevice::setup(unsigned int buffer_count, bool use_opaque_format)
 {
-	BeGlobal global = be_->getGlobal();
+	BeGlobal global = be_->get_global();
 
 	pisp_be_tiles_config config = {};
 	be_->prepare(&config);
 
-	nodesEnabled_.clear();
+	nodes_enabled_.clear();
 
-	if ((global.rgbEnables & RgbEnable::Input) || (global.bayerEnables & BayerEnable::Input))
+	if ((global.rgb_enables & RgbEnable::Input) || (global.bayer_enables & BayerEnable::Input))
 	{
-		nodes_.at("pispbe-input").setFormat(config.config.input_format, useOpaqueFormat);
+		nodes_.at("pispbe-input").set_format(config.config.input_format, use_opaque_format);
 		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-input").returnBuffers();
-		nodes_.at("pispbe-input").requestBuffers(bufferCount);
-		nodesEnabled_.emplace("pispbe-input");
+		nodes_.at("pispbe-input").return_buffers();
+		nodes_.at("pispbe-input").request_buffers(buffer_count);
+		nodes_enabled_.emplace("pispbe-input");
 	}
 
-	if (global.rgbEnables & RgbEnable::Output0)
+	if (global.rgb_enables & RgbEnable::Output0)
 	{
-		nodes_.at("pispbe-output0").setFormat(config.config.output_format[0].image, useOpaqueFormat);
+		nodes_.at("pispbe-output0").set_format(config.config.output_format[0].image, use_opaque_format);
 		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-output0").returnBuffers();
-		nodes_.at("pispbe-output0").requestBuffers(bufferCount);
-		nodesEnabled_.emplace("pispbe-output0");
+		nodes_.at("pispbe-output0").return_buffers();
+		nodes_.at("pispbe-output0").request_buffers(buffer_count);
+		nodes_enabled_.emplace("pispbe-output0");
 	}
 
-	if (global.rgbEnables & RgbEnable::Output1)
+	if (global.rgb_enables & RgbEnable::Output1)
 	{
-		nodes_.at("pispbe-output1").setFormat(config.config.output_format[1].image, useOpaqueFormat);
+		nodes_.at("pispbe-output1").set_format(config.config.output_format[1].image, use_opaque_format);
 		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-output1").returnBuffers();
-		nodes_.at("pispbe-output1").requestBuffers(bufferCount);
-		nodesEnabled_.emplace("pispbe-output1");
+		nodes_.at("pispbe-output1").return_buffers();
+		nodes_.at("pispbe-output1").request_buffers(buffer_count);
+		nodes_enabled_.emplace("pispbe-output1");
 	}
 
-	if (global.bayerEnables & BayerEnable::TdnInput)
+	if (global.bayer_enables & BayerEnable::TdnInput)
 	{
-		nodes_.at("pispbe-tdn_input").setFormat(config.config.tdn_input_format, useOpaqueFormat);
+		nodes_.at("pispbe-tdn_input").set_format(config.config.tdn_input_format, use_opaque_format);
 		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-tdn_input").returnBuffers();
-		nodes_.at("pispbe-tdn_input").requestBuffers(bufferCount);
-		nodesEnabled_.emplace("pispbe-tdn_input");
+		nodes_.at("pispbe-tdn_input").return_buffers();
+		nodes_.at("pispbe-tdn_input").request_buffers(buffer_count);
+		nodes_enabled_.emplace("pispbe-tdn_input");
 	}
 
-	if (global.bayerEnables & BayerEnable::TdnOutput)
+	if (global.bayer_enables & BayerEnable::TdnOutput)
 	{
-		nodes_.at("pispbe-tdn_output").setFormat(config.config.tdn_output_format, useOpaqueFormat);
+		nodes_.at("pispbe-tdn_output").set_format(config.config.tdn_output_format, use_opaque_format);
 		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-tdn_output").returnBuffers();
-		nodes_.at("pispbe-tdn_output").requestBuffers(bufferCount);
-		nodesEnabled_.emplace("pispbe-tdn_output");
+		nodes_.at("pispbe-tdn_output").return_buffers();
+		nodes_.at("pispbe-tdn_output").request_buffers(buffer_count);
+		nodes_enabled_.emplace("pispbe-tdn_output");
 	}
 
-	if (global.bayerEnables & BayerEnable::StitchInput)
+	if (global.bayer_enables & BayerEnable::StitchInput)
 	{
-		nodes_.at("pispbe-stitch_input").setFormat(config.config.stitch_input_format, useOpaqueFormat);
+		nodes_.at("pispbe-stitch_input").set_format(config.config.stitch_input_format, use_opaque_format);
 		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-stitch_input").returnBuffers();
-		nodes_.at("pispbe-stitch_input").requestBuffers(bufferCount);
-		nodesEnabled_.emplace("pispbe-stitch_input");
+		nodes_.at("pispbe-stitch_input").return_buffers();
+		nodes_.at("pispbe-stitch_input").request_buffers(buffer_count);
+		nodes_enabled_.emplace("pispbe-stitch_input");
 	}
 
-	if (global.bayerEnables & BayerEnable::StitchOutput)
+	if (global.bayer_enables & BayerEnable::StitchOutput)
 	{
-		nodes_.at("pispbe-stitch_output").setFormat(config.config.stitch_output_format, useOpaqueFormat);
+		nodes_.at("pispbe-stitch_output").set_format(config.config.stitch_output_format, use_opaque_format);
 		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-stitch_output").returnBuffers();
-		nodes_.at("pispbe-stitch_output").requestBuffers(bufferCount);
-		nodesEnabled_.emplace("pispbe-stitch_output");
+		nodes_.at("pispbe-stitch_output").return_buffers();
+		nodes_.at("pispbe-stitch_output").request_buffers(buffer_count);
+		nodes_enabled_.emplace("pispbe-stitch_output");
 	}
 
-	std::memcpy(reinterpret_cast<pisp_be_tiles_config *>(configBuffer_.mem[0]), &config, sizeof(config));
+	std::memcpy(reinterpret_cast<pisp_be_tiles_config *>(config_buffer_.mem[0]), &config, sizeof(config));
 }
 
-std::map<std::string, V4l2Device::Buffer> BackendDevice::acquireBuffers()
+std::map<std::string, V4l2Device::Buffer> BackendDevice::acquire_buffers()
 {
 	std::map<std::string, V4l2Device::Buffer> buffers;
 
-	for (auto const &n : nodesEnabled_)
-		buffers[n] = nodes_.at(n).acquireBuffer().value();
+	for (auto const &n : nodes_enabled_)
+		buffers[n] = nodes_.at(n).acquire_buffer().value();
 
 	return buffers;
 }
 
-void BackendDevice::releaseBuffer(const std::map<std::string, V4l2Device::Buffer> &buffers)
+void BackendDevice::release_buffer(const std::map<std::string, V4l2Device::Buffer> &buffers)
 {
 	for (auto const &[n, b] : buffers)
-		nodes_.at(n).releaseBuffer(b);
+		nodes_.at(n).release_buffer(b);
 }
 
 int BackendDevice::run(const std::map<std::string, V4l2Device::Buffer> &buffers)
 {
 	int ret = 0;
 
-	for (auto const &n : nodesEnabled_)
+	for (auto const &n : nodes_enabled_)
 	{
-		nodes_.at(n).streamOn();
-		if (nodes_.at(n).queueBuffer(buffers.at(n).buffer.index))
+		nodes_.at(n).stream_on();
+		if (nodes_.at(n).queue_buffer(buffers.at(n).buffer.index))
 			ret = -1;
 	}
 
 	// Triggers the HW job.
-	if (nodes_.at("pispbe-config").queueBuffer(configBuffer_.buffer.index))
+	if (nodes_.at("pispbe-config").queue_buffer(config_buffer_.buffer.index))
 		ret = -1;
 
-	for (auto const &n : nodesEnabled_)
+	for (auto const &n : nodes_enabled_)
 	{
-		if (nodes_.at(n).dequeueBuffer(1000) < 0)
+		if (nodes_.at(n).dequeue_buffer(1000) < 0)
 			ret = -1;
 	}
 
 	// Must dequeue the config buffer in case it's used again.
-	if (nodes_.at("pispbe-config").dequeueBuffer(1000) < 0)
+	if (nodes_.at("pispbe-config").dequeue_buffer(1000) < 0)
 		ret = -1;
 
-	for (auto const &n : nodesEnabled_)
-		nodes_.at(n).streamOff();
+	for (auto const &n : nodes_enabled_)
+		nodes_.at(n).stream_off();
 
 	return ret;
 }

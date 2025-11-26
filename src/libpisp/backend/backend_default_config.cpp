@@ -35,7 +35,7 @@ namespace
 // stripped them out when doing the install step.
 //
 // Source: https://stackoverflow.com/questions/2836330/is-there-a-programmatic-way-to-inspect-the-current-rpath-on-linux
-bool isInstalled()
+bool is_installed()
 {
 	const ElfW(Dyn) *dyn = _DYNAMIC;
 	for (; dyn->d_tag != DT_NULL; dyn++)
@@ -46,12 +46,12 @@ bool isInstalled()
 	return true;
 }
 
-std::string sourcePath()
+std::string source_path()
 {
 	Dl_info dl_info;
 	std::string path;
 
-	if (dladdr(reinterpret_cast<void *>(sourcePath), &dl_info))
+	if (dladdr(reinterpret_cast<void *>(source_path), &dl_info))
 		path = dl_info.dli_fname;
 
 	if (path.empty())
@@ -65,32 +65,32 @@ std::string sourcePath()
 	return path;
 }
 
-void initialiseDebin(libpisp::BeDebinConfig &debin, const json &root)
+void initialise_debin(libpisp::BeDebinConfig &debin, const json &root)
 {
-	constexpr unsigned int numCoefs = sizeof(debin.coeffs) / sizeof(debin.coeffs[0]);
+	constexpr unsigned int num_coefs = sizeof(debin.coeffs) / sizeof(debin.coeffs[0]);
 	auto coefs = root["debin"]["coefs"].get<std::vector<int8_t>>();
 
-	if (coefs.size() != numCoefs)
+	if (coefs.size() != num_coefs)
 		throw std::runtime_error("Debin filter size mismatch");
 
 	memcpy(debin.coeffs, coefs.data(), sizeof(debin.coeffs));
 	debin.h_enable = debin.v_enable = 1;
 }
 
-void initialiseDemosaic(libpisp::BeDemosaicConfig &demosaic, const json &root)
+void initialise_demosaic(libpisp::BeDemosaicConfig &demosaic, const json &root)
 {
 	auto &params = root["demosaic"];
 	demosaic.sharper = params["sharper"].get<uint8_t>();
 	demosaic.fc_mode = params["fc_mode"].get<uint8_t>();
 }
 
-void initialiseFalseColour(pisp_be_false_colour_config &fc, const json &root)
+void initialise_false_colour(pisp_be_false_colour_config &fc, const json &root)
 {
 	auto &params = root["false_colour"];
 	fc.distance = params["distance"].get<uint8_t>();
 }
 
-void initialiseGamma(libpisp::BeGammaConfig &gamma, const json &root, bool applySlope)
+void initialise_gamma(libpisp::BeGammaConfig &gamma, const json &root, bool apply_slope)
 {
 	constexpr unsigned int num_points = sizeof(gamma.lut) / sizeof(gamma.lut[0]);
 
@@ -98,21 +98,21 @@ void initialiseGamma(libpisp::BeGammaConfig &gamma, const json &root, bool apply
 
 	// First read the config as a generic PWL
 	json const &params = root["gamma"]["lut"];
-	double lastX = 0.0;
+	double last_x = 0.0;
 	for (auto it = params.begin(); it != params.end(); it++)
 	{
 		double x = it->get<double>();
-		assert(it == params.begin() || x > lastX);
+		assert(it == params.begin() || x > last_x);
 		it++;
 		double y = it->get<double>();
 		pwl.append(x, y);
-		lastX = x;
+		last_x = x;
 	}
 
 	// Now resample the PWL at the hardware's X points
 	static constexpr unsigned int SlopeBits = 14;
 	static constexpr unsigned int PosBits = 16;
-	int lastY = 0;
+	int last_y = 0;
 	for (unsigned int i = 0; i < num_points; i++)
 	{
 		int x, y;
@@ -124,27 +124,27 @@ void initialiseGamma(libpisp::BeGammaConfig &gamma, const json &root, bool apply
 			x = std::min(65535u, (i - 48) * 2048 + 32768);
 
 		y = pwl.eval(x);
-		if (y < 0 || (i && y < lastY))
-			throw std::runtime_error("initialiseGamma: Malformed LUT");
+		if (y < 0 || (i && y < last_y))
+			throw std::runtime_error("initialise_gamma: Malformed LUT");
 
-		if (applySlope && i)
+		if (apply_slope && i)
 		{
-			unsigned int slope = y - lastY;
+			unsigned int slope = y - last_y;
 			if (slope >= (1u << SlopeBits))
 			{
 				slope = (1u << SlopeBits) - 1;
-				y = lastY + slope;
+				y = last_y + slope;
 			}
 			gamma.lut[i - 1] |= slope << PosBits;
 		}
 
 		gamma.lut[i] = y;
-		lastY = y;
+		last_y = y;
 	}
 }
 
-void readResample(std::map<std::string, std::vector<int16_t>> &resampleFilterMap,
-				   std::vector<std::pair<double, std::string>> &resampleSelectList, const json &root)
+void read_resample(std::map<std::string, std::vector<int16_t>> &resample_filter_map,
+				   std::vector<std::pair<double, std::string>> &resample_select_list, const json &root)
 {
 	auto &filters = root["resample"]["filters"];
 
@@ -153,24 +153,24 @@ void readResample(std::map<std::string, std::vector<int16_t>> &resampleFilterMap
 		auto coefs = filter.get<std::vector<int16_t>>();
 
 		if (coefs.size() != PISP_BE_RESAMPLE_FILTER_SIZE)
-			throw std::runtime_error("readResample: Incorrect number of filter coefficients");
+			throw std::runtime_error("read_resample: Incorrect number of filter coefficients");
 
-		resampleFilterMap.emplace(name, coefs);
+		resample_filter_map.emplace(name, coefs);
 	}
 
 	auto &smart = root["resample"]["smart_selection"];
 	for (auto &scale : smart["downscale"])
-		resampleSelectList.emplace_back(scale.get<double>(), std::string {});
+		resample_select_list.emplace_back(scale.get<double>(), std::string {});
 
 	unsigned int i = 0;
 	for (auto &filter : smart["filter"])
 	{
-		resampleSelectList[i].second = filter.get<std::string>();
-		if (++i == resampleSelectList.size())
+		resample_select_list[i].second = filter.get<std::string>();
+		if (++i == resample_select_list.size())
 			break;
 	}
-	if (i != resampleSelectList.size())
-		throw std::runtime_error("readResample: Incorrect number of filters");
+	if (i != resample_select_list.size())
+		throw std::runtime_error("read_resample: Incorrect number of filters");
 }
 
 // Macros for the sharpening filters, to avoid repeating the same code 5 times
@@ -206,7 +206,7 @@ void readResample(std::map<std::string, std::vector<int16_t>> &resampleFilterMap
 		memcpy(&sharpen.i##tive_limit, &limit, sizeof(sharpen.i##tive_limit));                                         \
 	}
 
-void readSharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc, const json &root)
+void read_sharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &shfc, const json &root)
 {
 	auto params = root["sharpen"];
 
@@ -229,7 +229,7 @@ void readSharpen(pisp_be_sharpen_config &sharpen, pisp_be_sh_fc_combine_config &
 	shfc.y_factor = params["shfc_y_factor"].get<double>() * (1 << 8);
 }
 
-void readYCbCr(std::map<std::string, libpisp::BeCcmConfig> &ycbcr_map,
+void read_ycbcr(std::map<std::string, libpisp::BeCcmConfig> &ycbcr_map,
 				std::map<std::string, libpisp::BeCcmConfig> &inverse_ycbcr_map, const json &root)
 {
 	auto encoding = root["colour_encoding"];
@@ -245,12 +245,12 @@ void readYCbCr(std::map<std::string, libpisp::BeCcmConfig> &ycbcr_map,
 
 			auto coeffs = matrix["coeffs"].get<std::vector<int16_t>>();
 			if (coeffs.size() != 9)
-				throw std::runtime_error("readYCbCr: Incorrect number of matrix coefficients");
+				throw std::runtime_error("read_ycbcr: Incorrect number of matrix coefficients");
 			memcpy(ccm.coeffs, coeffs.data(), sizeof(ccm.coeffs));
 
 			auto offsets = matrix["offsets"].get<std::vector<int32_t>>();
 			if (offsets.size() != 3)
-				throw std::runtime_error("readYCbCr: Incorrect number of matrix offsets");
+				throw std::runtime_error("read_ycbcr: Incorrect number of matrix offsets");
 			memcpy(ccm.offsets, offsets.data(), sizeof(ccm.offsets));
 
 			if (key == "ycbcr")
@@ -261,7 +261,7 @@ void readYCbCr(std::map<std::string, libpisp::BeCcmConfig> &ycbcr_map,
 	}
 }
 
-void getMatrix(libpisp::BeCcmConfig &matrix, const std::map<std::string, libpisp::BeCcmConfig> &map,
+void get_matrix(libpisp::BeCcmConfig &matrix, const std::map<std::string, libpisp::BeCcmConfig> &map,
 			   const std::string &cs)
 {
 	memset(matrix.coeffs, 0, sizeof(matrix.coeffs));
@@ -280,51 +280,51 @@ void getMatrix(libpisp::BeCcmConfig &matrix, const std::map<std::string, libpisp
 namespace libpisp
 {
 
-void BackEnd::initialiseYcbcr(libpisp::BeCcmConfig &ycbcr, const std::string &cs)
+void BackEnd::initialise_ycbcr(libpisp::BeCcmConfig &ycbcr, const std::string &cs)
 {
-	getMatrix(ycbcr, ycbcrMap_, cs);
+	get_matrix(ycbcr, ycbcr_map_, cs);
 }
 
-void BackEnd::initialiseYcbcrInverse(libpisp::BeCcmConfig &ycbcr_inverse, const std::string &cs)
+void BackEnd::initialise_ycbcr_inverse(libpisp::BeCcmConfig &ycbcr_inverse, const std::string &cs)
 {
-	getMatrix(ycbcr_inverse, inverseYcbcrMap_, cs);
+	get_matrix(ycbcr_inverse, inverse_ycbcr_map_, cs);
 }
 
-void BackEnd::initialiseResample(BeResampleConfig &resample, const std::string &filter)
+void BackEnd::initialise_resample(BeResampleConfig &resample, const std::string &filter)
 {
 	resample.coef.emplace(); // zero-initialise the optional.
 
-	auto it = resampleFilterMap_.find(filter);
-	if (it != resampleFilterMap_.end())
+	auto it = resample_filter_map_.find(filter);
+	if (it != resample_filter_map_.end())
 		std::copy(it->second.begin(), it->second.end(), resample.coef->begin());
 }
 
-void BackEnd::initialiseResample(BeResampleConfig &resample, double downscale)
+void BackEnd::initialise_resample(BeResampleConfig &resample, double downscale)
 {
-	auto it = std::find_if(resampleSelectList_.begin(), resampleSelectList_.end(),
+	auto it = std::find_if(resample_select_list_.begin(), resample_select_list_.end(),
 						   [downscale](const auto &item) { return item.first >= downscale; });
 
-	if (it != resampleSelectList_.end())
-		initialiseResample(resample, it->second);
+	if (it != resample_select_list_.end())
+		initialise_resample(resample, it->second);
 	else
-		initialiseResample(resample, resampleSelectList_.back().second);
+		initialise_resample(resample, resample_select_list_.back().second);
 }
 
-void BackEnd::initialiseSharpen(libpisp::BeSharpenConfig &sharpen, libpisp::BeShFcCombineConfig &shfc)
+void BackEnd::initialise_sharpen(libpisp::BeSharpenConfig &sharpen, libpisp::BeShFcCombineConfig &shfc)
 {
-	sharpen = defaultSharpen_;
-	shfc = defaultShfc_;
+	sharpen = default_sharpen_;
+	shfc = default_shfc_;
 }
 
-void BackEnd::initialiseDefaultConfig(const std::string &filename)
+void BackEnd::initialise_default_config(const std::string &filename)
 {
 	std::string file(filename);
 
 	if (file.empty())
 	{
-		if (!isInstalled())
+		if (!is_installed())
 		{
-			std::string path = sourcePath();
+			std::string path = source_path();
 			if (path.empty())
 				throw std::runtime_error("BE: Could not determine the local source path");
 
@@ -341,48 +341,48 @@ void BackEnd::initialiseDefaultConfig(const std::string &filename)
 	json root = json::parse(ifs);
 	ifs.close();
 
-	memset(&pipe_->hwConfig, 0, sizeof(pipe_->hwConfig));
+	memset(&pipe_->hw_config, 0, sizeof(pipe_->hw_config));
 
 	libpisp::BeDebinConfig debin;
-	initialiseDebin(debin, root);
-	setDebin(debin);
+	initialise_debin(debin, root);
+	set_debin(debin);
 
 	libpisp::BeDemosaicConfig demosaic;
-	initialiseDemosaic(demosaic, root);
-	setDemosaic(demosaic);
+	initialise_demosaic(demosaic, root);
+	set_demosaic(demosaic);
 
 	BeFalseColourConfig fc;
-	initialiseFalseColour(fc, root);
-	setFalseColour(fc);
+	initialise_false_colour(fc, root);
+	set_false_colour(fc);
 
 	libpisp::BeGammaConfig gamma;
-	initialiseGamma(gamma, root, variant_ <= BCM2712_D0 ? true : false);
-	setGamma(0, gamma);
-	setGamma(1, gamma);
+	initialise_gamma(gamma, root, variant_ <= BCM2712_D0 ? true : false);
+	set_gamma(0, gamma);
+	set_gamma(1, gamma);
 
-	readYCbCr(ycbcrMap_, inverseYcbcrMap_, root);
-	readResample(resampleFilterMap_, resampleSelectList_, root);
-	readSharpen(defaultSharpen_, defaultShfc_, root);
+	read_ycbcr(ycbcr_map_, inverse_ycbcr_map_, root);
+	read_resample(resample_filter_map_, resample_select_list_, root);
+	read_sharpen(default_sharpen_, default_shfc_, root);
 
 	libpisp::BeSharpenConfig sharpen;
 	libpisp::BeShFcCombineConfig shfc;
-	initialiseSharpen(sharpen, shfc);
-	setSharpen(sharpen);
-	setShFcCombine(shfc);
+	initialise_sharpen(sharpen, shfc);
+	set_sharpen(sharpen);
+	set_sh_fc_combine(shfc);
 
 	// Start with a sensible default YCbCr -- must be full-range on 2712C1
-	libpisp::BeCcmConfig ycbcr, ycbcrInverse;
-	initialiseYcbcr(ycbcr, "jpeg");
-	setYcbcr(ycbcr);
+	libpisp::BeCcmConfig ycbcr, ycbcr_inverse;
+	initialise_ycbcr(ycbcr, "jpeg");
+	set_ycbcr(ycbcr);
 
-	initialiseYcbcrInverse(ycbcrInverse, "jpeg");
-	setYcbcrInverse(ycbcrInverse);	
+	initialise_ycbcr_inverse(ycbcr_inverse, "jpeg");
+	set_ycbcr_inverse(ycbcr_inverse);	
 
 	// Start with a sensible default resamplers.
 	libpisp::BeResampleConfig resample;
-	initialiseResample(resample, "lanczos3");
-	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
-		setResample(i, resample);
+	initialise_resample(resample, "lanczos3");
+	for (unsigned int i = 0; i < variant_.back_end_num_branches(0); i++)
+		set_resample(i, resample);
 }
 
 } // namespace libpisp

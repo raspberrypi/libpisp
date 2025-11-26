@@ -59,8 +59,8 @@ struct Interval
 	explicit Interval(int _offset) : offset(_offset), length(0) {}
 	int offset, length;
 	int end() const { return offset + length; }
-	void setStart(int start) { length += (offset - start), offset = start; } // leave end unchanged
-	void setEnd(int end) { length = end - offset; }
+	void set_start(int start) { length += (offset - start), offset = start; } // leave end unchanged
+	void set_end(int end) { length = end - offset; }
 	bool operator==(Interval const &other) const { return offset == other.offset && length == other.length; }
 	Interval operator-(Crop const &crop) const { return Interval(offset - crop.start, length - crop.start - crop.end); }
 	Crop operator-(Interval const &other) { return Crop(other.offset - offset, end() - other.end()); }
@@ -69,9 +69,9 @@ struct Interval
 	Interval &operator|=(int off)
 	{
 		if (off < offset)
-			setStart(off);
+			set_start(off);
 		else if (off > end())
-			setEnd(off);
+			set_end(off);
 		return *this;
 	}
 };

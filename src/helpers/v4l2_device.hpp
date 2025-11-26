@@ -66,47 +66,47 @@ public:
 		std::array<uint8_t *, 3> mem;
 	};
 
-	int requestBuffers(unsigned int count = 1);
-	void returnBuffers();
+	int request_buffers(unsigned int count = 1);
+	void return_buffers();
 
-	std::optional<Buffer> acquireBuffer();
-	void releaseBuffer(const Buffer &buffer);
+	std::optional<Buffer> acquire_buffer();
+	void release_buffer(const Buffer &buffer);
 	const std::vector<Buffer> &buffers() const
 	{
-		return v4l2Buffers_;
+		return v4l2_buffers_;
 	};
 
-	int queueBuffer(unsigned int index);
-	int dequeueBuffer(unsigned int timeoutMs = 500);
+	int queue_buffer(unsigned int index);
+	int dequeue_buffer(unsigned int timeout_ms = 500);
 
-	void setFormat(const pisp_image_format_config &format, bool useOpaqueFormat = false);
+	void set_format(const pisp_image_format_config &format, bool use_opaque_format = false);
 
-	void streamOn();
-	void streamOff();
+	void stream_on();
+	void stream_off();
 
 private:
-	bool isMeta()
+	bool is_meta()
 	{
-		return bufType_ == V4L2_BUF_TYPE_META_OUTPUT;
+		return buf_type_ == V4L2_BUF_TYPE_META_OUTPUT;
 	}
 
-	bool isCapture()
+	bool is_capture()
 	{
-		return bufType_ == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+		return buf_type_ == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 	}
 
-	bool isOutput()
+	bool is_output()
 	{
-		return !isCapture();
+		return !is_capture();
 	}
 
-	std::optional<Buffer> findBuffer(unsigned int index) const;
+	std::optional<Buffer> find_buffer(unsigned int index) const;
 
-	std::queue<unsigned int> availableBuffers_;
-	std::vector<Buffer> v4l2Buffers_;
+	std::queue<unsigned int> available_buffers_;
+	std::vector<Buffer> v4l2_buffers_;
 	DeviceFd fd_;
-	enum v4l2_buf_type bufType_;
-	unsigned int numMemoryPlanes_;
+	enum v4l2_buf_type buf_type_;
+	unsigned int num_memory_planes_;
 };
 
 } // namespace libpisp

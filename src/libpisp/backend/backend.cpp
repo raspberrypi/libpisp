@@ -15,561 +15,561 @@
 
 using namespace libpisp;
 
-BackEnd::BackEnd(SoftwareConfig const &swConfig, PiSPVariant const &variant, std::span<uint8_t> configStorage)
-	: sw_(swConfig), variant_(variant)
+BackEnd::BackEnd(SoftwareConfig const &sw_config, PiSPVariant const &variant, std::span<uint8_t> config_storage)
+	: sw_(sw_config), variant_(variant)
 {
-	unsigned int maxTileWidth = variant_.backEndMaxTileWidth(0);
+	unsigned int max_tile_width = variant_.back_end_max_tile_width(0);
 
-	if (sw_.maxTileWidth > maxTileWidth)
-		PISP_LOG(fatal, "Configured max tile width " << sw_.maxTileWidth << " exceeds " << maxTileWidth);
+	if (sw_.max_tile_width > max_tile_width)
+		PISP_LOG(fatal, "Configured max tile width " << sw_.max_tile_width << " exceeds " << max_tile_width);
 
-	if (configStorage.data() && configStorage.size() >= sizeof(PipelineConfig))
-		pipe_ = reinterpret_cast<PipelineConfig *>(configStorage.data());
+	if (config_storage.data() && config_storage.size() >= sizeof(PipelineConfig))
+		pipe_ = reinterpret_cast<PipelineConfig *>(config_storage.data());
 	else
-		pipe_ = &internalPipelineConfig_;
+		pipe_ = &internal_pipeline_config_;
 	
-	config_ = std::make_unique<BackendConfigAdapter>(&pipe_->hwConfig, pipe_->tiles.data(), &pipe_->configExtra);
+	config_ = std::make_unique<BackendConfigAdapter>(&pipe_->hw_config, pipe_->tiles.data(), &pipe_->config_extra);
 
 	const char *env = std::getenv("LIBPISP_BE_CONFIG_FILE");
-	initialiseDefaultConfig(env ? std::string(env) : swConfig.defaultsFile);
+	initialise_default_config(env ? std::string(env) : sw_config.defaults_file);
 }
 
 BackEnd::~BackEnd()
 {
 }
 
-void BackEnd::setGlobal(BeGlobal const &global)
+void BackEnd::set_global(BeGlobal const &global)
 {
-	RgbEnables currentRgbEnables = config_->getGlobal().rgbEnables;
-	BayerEnables currentBayerEnables = config_->getGlobal().bayerEnables;
+	RgbEnables current_rgb_enables = config_->get_global().rgb_enables;
+	BayerEnables current_bayer_enables = config_->get_global().bayer_enables;
 
-	RgbEnables changedRgbEnables(global.rgbEnables ^ currentRgbEnables);
+	RgbEnables changed_rgb_enables(global.rgb_enables ^ current_rgb_enables);
 
-	if (changedRgbEnables & (RgbEnable::Downscale0 | RgbEnable::Downscale1 |
+	if (changed_rgb_enables & (RgbEnable::Downscale0 | RgbEnable::Downscale1 |
 							 RgbEnable::Resample0 | RgbEnable::Resample1))
 		pipe_->retile = true; // must retile when rescale change
 
-	pipe_->dirtyFlagsBayer |= (global.bayerEnables & ~currentBayerEnables); // label anything newly enabled as dirty
-	pipe_->dirtyFlagsRgb |= (global.rgbEnables & ~currentRgbEnables); // label anything newly enabled as dirty
-	pipe_->dirtyFlagsExtra |= DirtyFlag::Global;
-	config_->setGlobal(global);
+	pipe_->dirty_flags_bayer |= (global.bayer_enables & ~current_bayer_enables); // label anything newly enabled as dirty
+	pipe_->dirty_flags_rgb |= (global.rgb_enables & ~current_rgb_enables); // label anything newly enabled as dirty
+	pipe_->dirty_flags_extra |= DirtyFlag::Global;
+	config_->set_global(global);
 }
 
-BeGlobal BackEnd::getGlobal() const
+BeGlobal BackEnd::get_global() const
 {
-	return config_->getGlobal();
+	return config_->get_global();
 }
 
-void BackEnd::setInputFormat(ImageFormatConfig const &inputFormat)
+void BackEnd::set_input_format(ImageFormatConfig const &input_format)
 {
-	config_->setInputFormat(inputFormat);
-	if (PISP_IMAGE_FORMAT_THREE_CHANNEL(inputFormat.format))
-		pipe_->dirtyFlagsBayer |= BayerEnable::Input;
+	config_->set_input_format(input_format);
+	if (PISP_IMAGE_FORMAT_THREE_CHANNEL(input_format.format))
+		pipe_->dirty_flags_bayer |= BayerEnable::Input;
 	else
-		pipe_->dirtyFlagsRgb |= RgbEnable::Input;
+		pipe_->dirty_flags_rgb |= RgbEnable::Input;
 	pipe_->retile = true;
 }
 
-ImageFormatConfig BackEnd::getInputFormat() const
+ImageFormatConfig BackEnd::get_input_format() const
 {
-	return config_->getInputFormat();
+	return config_->get_input_format();
 }
 
-void BackEnd::setDecompress(DecompressConfig const &decompress)
+void BackEnd::set_decompress(DecompressConfig const &decompress)
 {
-	config_->setDecompress(decompress);
-	pipe_->dirtyFlagsBayer |= BayerEnable::Decompress;
+	config_->set_decompress(decompress);
+	pipe_->dirty_flags_bayer |= BayerEnable::Decompress;
 }
 
-DecompressConfig BackEnd::getDecompress() const
+DecompressConfig BackEnd::get_decompress() const
 {
-	return config_->getDecompress();
+	return config_->get_decompress();
 }
 
-void BackEnd::setDpc(BeDpcConfig const &dpc)
+void BackEnd::set_dpc(BeDpcConfig const &dpc)
 {
-	config_->setDpc(dpc);
-	pipe_->dirtyFlagsBayer |= BayerEnable::Dpc;
+	config_->set_dpc(dpc);
+	pipe_->dirty_flags_bayer |= BayerEnable::Dpc;
 }
 
-BeDpcConfig BackEnd::getDpc() const
+BeDpcConfig BackEnd::get_dpc() const
 {
-	return config_->getDpc();
+	return config_->get_dpc();
 }
 
-void BackEnd::setGeq(BeGeqConfig const &geq)
+void BackEnd::set_geq(BeGeqConfig const &geq)
 {
 	BeGeqConfig geq_copy = geq;
 	geq_copy.slope_sharper &= (PISP_BE_GEQ_SLOPE | PISP_BE_GEQ_SHARPER);
-	config_->setGeq(geq_copy);
-	pipe_->dirtyFlagsBayer |= BayerEnable::Geq;
+	config_->set_geq(geq_copy);
+	pipe_->dirty_flags_bayer |= BayerEnable::Geq;
 }
 
-BeGeqConfig BackEnd::getGeq() const
+BeGeqConfig BackEnd::get_geq() const
 {
-	return config_->getGeq();
+	return config_->get_geq();
 }
 
-void BackEnd::setTdnInputFormat(ImageFormatConfig const &tdnInputFormat)
+void BackEnd::set_tdn_input_format(ImageFormatConfig const &tdn_input_format)
 {
-	config_->setTdnInputFormat(tdnInputFormat);
-	pipe_->dirtyFlagsBayer |= BayerEnable::TdnInput; // TDN input address will always be written
-	pipe_->finaliseTiling = true;
+	config_->set_tdn_input_format(tdn_input_format);
+	pipe_->dirty_flags_bayer |= BayerEnable::TdnInput; // TDN input address will always be written
+	pipe_->finalise_tiling = true;
 }
 
-ImageFormatConfig BackEnd::getTdnInputFormat() const
+ImageFormatConfig BackEnd::get_tdn_input_format() const
 {
-	return config_->getTdnInputFormat();
+	return config_->get_tdn_input_format();
 }
 
-void BackEnd::setTdnDecompress(DecompressConfig const &tdn_decompress)
+void BackEnd::set_tdn_decompress(DecompressConfig const &tdn_decompress)
 {
-	config_->setTdnDecompress(tdn_decompress);
-	pipe_->dirtyFlagsBayer |= BayerEnable::TdnDecompress;
+	config_->set_tdn_decompress(tdn_decompress);
+	pipe_->dirty_flags_bayer |= BayerEnable::TdnDecompress;
 }
 
-DecompressConfig BackEnd::getTdnDecompress() const
+DecompressConfig BackEnd::get_tdn_decompress() const
 {
-	return config_->getTdnDecompress();
+	return config_->get_tdn_decompress();
 }
 
-void BackEnd::setTdn(BeTdnConfig const &tdn)
+void BackEnd::set_tdn(BeTdnConfig const &tdn)
 {
-	config_->setTdn(tdn);
-	pipe_->dirtyFlagsBayer |= BayerEnable::Tdn;
+	config_->set_tdn(tdn);
+	pipe_->dirty_flags_bayer |= BayerEnable::Tdn;
 }
 
-BeTdnConfig BackEnd::getTdn() const
+BeTdnConfig BackEnd::get_tdn() const
 {
-	return config_->getTdn();
+	return config_->get_tdn();
 }
 
-void BackEnd::setTdnCompress(CompressConfig const &tdn_compress)
+void BackEnd::set_tdn_compress(CompressConfig const &tdn_compress)
 {
-	config_->setTdnCompress(tdn_compress);
-	pipe_->dirtyFlagsBayer |= BayerEnable::TdnCompress;
+	config_->set_tdn_compress(tdn_compress);
+	pipe_->dirty_flags_bayer |= BayerEnable::TdnCompress;
 }
 
-CompressConfig BackEnd::getTdnCompress() const
+CompressConfig BackEnd::get_tdn_compress() const
 {
-	return config_->getTdnCompress();
+	return config_->get_tdn_compress();
 }
 
-void BackEnd::setTdnOutputFormat(ImageFormatConfig const &tdn_outputFormat)
+void BackEnd::set_tdn_output_format(ImageFormatConfig const &tdn_outputFormat)
 {
-	config_->setTdnOutputFormat(tdn_outputFormat);
-	pipe_->dirtyFlagsBayer |= BayerEnable::TdnOutput; // TDN output address will always be written
-	pipe_->finaliseTiling = true;
+	config_->set_tdn_output_format(tdn_outputFormat);
+	pipe_->dirty_flags_bayer |= BayerEnable::TdnOutput; // TDN output address will always be written
+	pipe_->finalise_tiling = true;
 }
 
-ImageFormatConfig BackEnd::getTdnOutputFormat() const
+ImageFormatConfig BackEnd::get_tdn_output_format() const
 {
-	return config_->getTdnOutputFormat();
+	return config_->get_tdn_output_format();
 }
 
-void BackEnd::setSdn(BeSdnConfig const &sdn)
+void BackEnd::set_sdn(BeSdnConfig const &sdn)
 {
-	config_->setSdn(sdn);
-	pipe_->dirtyFlagsBayer |= BayerEnable::Sdn;
+	config_->set_sdn(sdn);
+	pipe_->dirty_flags_bayer |= BayerEnable::Sdn;
 }
 
-BeSdnConfig BackEnd::getSdn() const
+BeSdnConfig BackEnd::get_sdn() const
 {
-	return config_->getSdn();
+	return config_->get_sdn();
 }
 
-void BackEnd::setBlc(BlaConfig const &blc)
+void BackEnd::set_blc(BlaConfig const &blc)
 {
-	config_->setBlc(blc);
-	pipe_->dirtyFlagsBayer |= BayerEnable::Blc;
+	config_->set_blc(blc);
+	pipe_->dirty_flags_bayer |= BayerEnable::Blc;
 }
 
-BlaConfig BackEnd::getBlc() const
+BlaConfig BackEnd::get_blc() const
 {
-	return config_->getBlc();
+	return config_->get_blc();
 }
 
-void BackEnd::setStitchInputFormat(ImageFormatConfig const &stitch_input_format)
+void BackEnd::set_stitch_input_format(ImageFormatConfig const &stitch_input_format)
 {
-	config_->setStitchInputFormat(stitch_input_format);
+	config_->set_stitch_input_format(stitch_input_format);
 	// Note: stitch.pad clearing would need variant-specific handling
-	pipe_->dirtyFlagsBayer |= BayerEnable::StitchInput;
-	pipe_->finaliseTiling = true;
+	pipe_->dirty_flags_bayer |= BayerEnable::StitchInput;
+	pipe_->finalise_tiling = true;
 }
 
-ImageFormatConfig BackEnd::getStitchInputFormat() const
+ImageFormatConfig BackEnd::get_stitch_input_format() const
 {
-	return config_->getStitchInputFormat();
+	return config_->get_stitch_input_format();
 }
 
-void BackEnd::setStitchDecompress(DecompressConfig const &stitch_decompress)
+void BackEnd::set_stitch_decompress(DecompressConfig const &stitch_decompress)
 {
-	config_->setStitchDecompress(stitch_decompress);
-	pipe_->dirtyFlagsBayer |= BayerEnable::StitchDecompress;
+	config_->set_stitch_decompress(stitch_decompress);
+	pipe_->dirty_flags_bayer |= BayerEnable::StitchDecompress;
 }
 
-DecompressConfig BackEnd::getStitchDecompress() const
+DecompressConfig BackEnd::get_stitch_decompress() const
 {
-	return config_->getStitchDecompress();
+	return config_->get_stitch_decompress();
 }
 
-void BackEnd::setStitch(BeStitchConfig const &stitch)
+void BackEnd::set_stitch(BeStitchConfig const &stitch)
 {
-	config_->setStitch(stitch);
-	pipe_->dirtyFlagsBayer |= BayerEnable::Stitch;
+	config_->set_stitch(stitch);
+	pipe_->dirty_flags_bayer |= BayerEnable::Stitch;
 }
 
-BeStitchConfig BackEnd::getStitch() const
+BeStitchConfig BackEnd::get_stitch() const
 {
-	return config_->getStitch();
+	return config_->get_stitch();
 }
 
-void BackEnd::setStitchCompress(CompressConfig const &stitch_compress)
+void BackEnd::set_stitch_compress(CompressConfig const &stitch_compress)
 {
-	config_->setStitchCompress(stitch_compress);
-	pipe_->dirtyFlagsBayer |= BayerEnable::StitchCompress;
+	config_->set_stitch_compress(stitch_compress);
+	pipe_->dirty_flags_bayer |= BayerEnable::StitchCompress;
 }
 
-CompressConfig BackEnd::getStitchCompress() const
+CompressConfig BackEnd::get_stitch_compress() const
 {
-	return config_->getStitchCompress();
+	return config_->get_stitch_compress();
 }
 
-void BackEnd::setStitchOutputFormat(ImageFormatConfig const &stitch_outputFormat)
+void BackEnd::set_stitch_output_format(ImageFormatConfig const &stitch_outputFormat)
 {
-	config_->setStitchOutputFormat(stitch_outputFormat);
-	pipe_->dirtyFlagsBayer |= BayerEnable::StitchOutput;
-	pipe_->finaliseTiling = true;
+	config_->set_stitch_output_format(stitch_outputFormat);
+	pipe_->dirty_flags_bayer |= BayerEnable::StitchOutput;
+	pipe_->finalise_tiling = true;
 }
 
-ImageFormatConfig BackEnd::getStitchOutputFormat() const
+ImageFormatConfig BackEnd::get_stitch_output_format() const
 {
-	return config_->getStitchOutputFormat();
+	return config_->get_stitch_output_format();
 }
 
-void BackEnd::setCdn(BeCdnConfig const &cdn)
+void BackEnd::set_cdn(BeCdnConfig const &cdn)
 {
-	config_->setCdn(cdn);
-	pipe_->dirtyFlagsBayer |= BayerEnable::Cdn;
+	config_->set_cdn(cdn);
+	pipe_->dirty_flags_bayer |= BayerEnable::Cdn;
 }
 
-BeCdnConfig BackEnd::getCdn() const
+BeCdnConfig BackEnd::get_cdn() const
 {
-	return config_->getCdn();
+	return config_->get_cdn();
 }
 
-void BackEnd::setWbg(WbgConfig const &wbg)
+void BackEnd::set_wbg(WbgConfig const &wbg)
 {
-	config_->setWbg(wbg);
-	pipe_->dirtyFlagsBayer |= BayerEnable::Wbg;
+	config_->set_wbg(wbg);
+	pipe_->dirty_flags_bayer |= BayerEnable::Wbg;
 }
 
-WbgConfig BackEnd::getWbg() const
+WbgConfig BackEnd::get_wbg() const
 {
-	return config_->getWbg();
+	return config_->get_wbg();
 }
 
-void BackEnd::setLsc(BeLscConfig const &lsc)
+void BackEnd::set_lsc(BeLscConfig const &lsc)
 {
 	// Should not need a finalise_tile if only the cell coefficients have changed.
-	pipe_->finaliseTiling |= config_->getLsc().grid_step_x != lsc.grid_step_x ||
-							config_->getLsc().grid_step_y != lsc.grid_step_y;
-	config_->setLsc(lsc);
-	pipe_->dirtyFlagsBayer |= BayerEnable::Lsc;
+	pipe_->finalise_tiling |= config_->get_lsc().grid_step_x != lsc.grid_step_x ||
+							config_->get_lsc().grid_step_y != lsc.grid_step_y;
+	config_->set_lsc(lsc);
+	pipe_->dirty_flags_bayer |= BayerEnable::Lsc;
 }
 
-BeLscConfig BackEnd::getLsc() const
+BeLscConfig BackEnd::get_lsc() const
 {
-	return config_->getLsc();
+	return config_->get_lsc();
 }
 
-void BackEnd::setCac(BeCacConfig const &cac)
+void BackEnd::set_cac(BeCacConfig const &cac)
 {
-	pipe_->finaliseTiling |= config_->getCac().grid_step_x != cac.grid_step_x ||
-							config_->getCac().grid_step_y != cac.grid_step_y;
-	config_->setCac(cac);
-	pipe_->dirtyFlagsBayer |= BayerEnable::Cac;
+	pipe_->finalise_tiling |= config_->get_cac().grid_step_x != cac.grid_step_x ||
+							config_->get_cac().grid_step_y != cac.grid_step_y;
+	config_->set_cac(cac);
+	pipe_->dirty_flags_bayer |= BayerEnable::Cac;
 }
 
-BeCacConfig BackEnd::getCac() const
+BeCacConfig BackEnd::get_cac() const
 {
-	return config_->getCac();
+	return config_->get_cac();
 }
 
-void BackEnd::setDebin(BeDebinConfig const &debin)
+void BackEnd::set_debin(BeDebinConfig const &debin)
 {
-	config_->setDebin(debin);
-	pipe_->dirtyFlagsBayer |= BayerEnable::Debin;
+	config_->set_debin(debin);
+	pipe_->dirty_flags_bayer |= BayerEnable::Debin;
 }
 
-BeDebinConfig BackEnd::getDebin() const
+BeDebinConfig BackEnd::get_debin() const
 {
-	return config_->getDebin();
+	return config_->get_debin();
 }
 
-void BackEnd::setTonemap(BeTonemapConfig const &tonemap)
+void BackEnd::set_tonemap(BeTonemapConfig const &tonemap)
 {
-	config_->setTonemap(tonemap);
-	pipe_->dirtyFlagsBayer |= BayerEnable::Tonemap;
+	config_->set_tonemap(tonemap);
+	pipe_->dirty_flags_bayer |= BayerEnable::Tonemap;
 }
 
-BeTonemapConfig BackEnd::getTonemap() const
+BeTonemapConfig BackEnd::get_tonemap() const
 {
-	return config_->getTonemap();
+	return config_->get_tonemap();
 }
 
-void BackEnd::setTonemap2(BeTonemap2Config const &tonemap)
+void BackEnd::set_tonemap2(BeTonemap2Config const &tonemap)
 {
-	config_->setTonemap2(tonemap);
-	pipe_->dirtyFlagsBayer |= BayerEnable::Tonemap2;
+	config_->set_tonemap2(tonemap);
+	pipe_->dirty_flags_bayer |= BayerEnable::Tonemap2;
 }
 
-BeTonemap2Config BackEnd::getTonemap2() const
+BeTonemap2Config BackEnd::get_tonemap2() const
 {
-	return config_->getTonemap2();
+	return config_->get_tonemap2();
 }
 
-void BackEnd::setTonemap2Format(ImageFormatConfig const &format)
+void BackEnd::set_tonemap2_format(ImageFormatConfig const &format)
 {
-	config_->setTonemap2Format(format);
-	pipe_->dirtyFlagsBayer |= BayerEnable::Tonemap2Input;
+	config_->set_tonemap2_format(format);
+	pipe_->dirty_flags_bayer |= BayerEnable::Tonemap2Input;
 }
 
-ImageFormatConfig BackEnd::getTonemap2Format() const
+ImageFormatConfig BackEnd::get_tonemap2_format() const
 {
-	return config_->getTonemap2Format();
+	return config_->get_tonemap2_format();
 }
 
-void BackEnd::setDemosaic(BeDemosaicConfig const &demosaic)
+void BackEnd::set_demosaic(BeDemosaicConfig const &demosaic)
 {
-	config_->setDemosaic(demosaic);
-	pipe_->dirtyFlagsBayer |= BayerEnable::Demosaic;
+	config_->set_demosaic(demosaic);
+	pipe_->dirty_flags_bayer |= BayerEnable::Demosaic;
 }
 
-BeDemosaicConfig BackEnd::getDemosaic() const
+BeDemosaicConfig BackEnd::get_demosaic() const
 {
-	return config_->getDemosaic();
+	return config_->get_demosaic();
 }
 
-void BackEnd::setCcm(BeCcmConfig const &ccm)
+void BackEnd::set_ccm(BeCcmConfig const &ccm)
 {
-	config_->setCcm(ccm);
-	pipe_->dirtyFlagsRgb |= RgbEnable::Ccm;
+	config_->set_ccm(ccm);
+	pipe_->dirty_flags_rgb |= RgbEnable::Ccm;
 }
 
-BeCcmConfig BackEnd::getCcm() const
+BeCcmConfig BackEnd::get_ccm() const
 {
-	return config_->getCcm();
+	return config_->get_ccm();
 }
 
-void BackEnd::setSatControl(BeSatControlConfig const &sat_control)
+void BackEnd::set_sat_control(BeSatControlConfig const &sat_control)
 {
-	config_->setSatControl(sat_control);
-	pipe_->dirtyFlagsRgb |= RgbEnable::SatControl;
+	config_->set_sat_control(sat_control);
+	pipe_->dirty_flags_rgb |= RgbEnable::SatControl;
 }
 
-BeSatControlConfig BackEnd::getSatControl() const
+BeSatControlConfig BackEnd::get_sat_control() const
 {
-	return config_->getSatControl();
+	return config_->get_sat_control();
 }
 
-void BackEnd::setYcbcr(BeCcmConfig const &ycbcr)
+void BackEnd::set_ycbcr(BeCcmConfig const &ycbcr)
 {
-	config_->setYcbcr(ycbcr);
-	pipe_->dirtyFlagsRgb |= RgbEnable::Ycbcr;
+	config_->set_ycbcr(ycbcr);
+	pipe_->dirty_flags_rgb |= RgbEnable::Ycbcr;
 }
 
-BeCcmConfig BackEnd::getYcbcr() const
+BeCcmConfig BackEnd::get_ycbcr() const
 {
-	return config_->getYcbcr();
+	return config_->get_ycbcr();
 }
 
-void BackEnd::setFalseColour(BeFalseColourConfig const &false_colour)
+void BackEnd::set_false_colour(BeFalseColourConfig const &false_colour)
 {
-	config_->setFalseColour(false_colour);
-	pipe_->dirtyFlagsRgb |= RgbEnable::FalseColour;
+	config_->set_false_colour(false_colour);
+	pipe_->dirty_flags_rgb |= RgbEnable::FalseColour;
 }
 
-BeFalseColourConfig BackEnd::getFalseColour() const
+BeFalseColourConfig BackEnd::get_false_colour() const
 {
-	return config_->getFalseColour();
+	return config_->get_false_colour();
 }
 
-void BackEnd::setSharpen(BeSharpenConfig const &sharpen)
+void BackEnd::set_sharpen(BeSharpenConfig const &sharpen)
 {
-	config_->setSharpen(sharpen);
-	pipe_->dirtyFlagsRgb |= RgbEnable::Sharpen;
+	config_->set_sharpen(sharpen);
+	pipe_->dirty_flags_rgb |= RgbEnable::Sharpen;
 }
 
-BeSharpenConfig BackEnd::getSharpen() const
+BeSharpenConfig BackEnd::get_sharpen() const
 {
-	return config_->getSharpen();
+	return config_->get_sharpen();
 }
 
-void BackEnd::setShFcCombine(BeShFcCombineConfig const &sh_fc_combine)
+void BackEnd::set_sh_fc_combine(BeShFcCombineConfig const &sh_fc_combine)
 {
-	config_->setShFcCombine(sh_fc_combine);
-	pipe_->dirtyFlagsExtra |= DirtyFlag::ShFcCombine;
+	config_->set_sh_fc_combine(sh_fc_combine);
+	pipe_->dirty_flags_extra |= DirtyFlag::ShFcCombine;
 }
 
-BeShFcCombineConfig BackEnd::getShFcCombine() const
+BeShFcCombineConfig BackEnd::get_sh_fc_combine() const
 {
-	return config_->getShFcCombine();
+	return config_->get_sh_fc_combine();
 }
 
-void BackEnd::setYcbcrInverse(BeCcmConfig const &ycbcr_inverse)
+void BackEnd::set_ycbcr_inverse(BeCcmConfig const &ycbcr_inverse)
 {
-	config_->setYcbcrInverse(ycbcr_inverse);
-	pipe_->dirtyFlagsRgb |= RgbEnable::YcbcrInverse;
+	config_->set_ycbcr_inverse(ycbcr_inverse);
+	pipe_->dirty_flags_rgb |= RgbEnable::YcbcrInverse;
 }
 
-BeCcmConfig BackEnd::getYcbcrInverse() const
+BeCcmConfig BackEnd::get_ycbcr_inverse() const
 {
-	return config_->getYcbcrInverse();
+	return config_->get_ycbcr_inverse();
 }
 
-void BackEnd::setGamma(BeGammaConfig const &gamma)
+void BackEnd::set_gamma(BeGammaConfig const &gamma)
 {
-	setGamma(0, gamma);
+	set_gamma(0, gamma);
 }
 
-void BackEnd::setGamma(unsigned int i, BeGammaConfig const &gamma)
+void BackEnd::set_gamma(unsigned int i, BeGammaConfig const &gamma)
 {
-	config_->setGamma(i, gamma);
-	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::Gamma0, i);
+	config_->set_gamma(i, gamma);
+	pipe_->dirty_flags_rgb |= get_flag_for_branch(RgbEnable::Gamma0, i);
 }
 
-BeGammaConfig BackEnd::getGamma(unsigned int i) const
+BeGammaConfig BackEnd::get_gamma(unsigned int i) const
 {
-	return config_->getGamma(i);
+	return config_->get_gamma(i);
 }
 
-void BackEnd::setCrop(BeCropConfig const &crop)
+void BackEnd::set_crop(BeCropConfig const &crop)
 {
-	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
-		pipe_->configExtra.crop[i] = crop;
-	pipe_->dirtyFlagsExtra |= DirtyFlag::Crop;
+	for (unsigned int i = 0; i < variant_.back_end_num_branches(0); i++)
+		pipe_->config_extra.crop[i] = crop;
+	pipe_->dirty_flags_extra |= DirtyFlag::Crop;
 	pipe_->retile = true;
 }
 
-BeCropConfig BackEnd::getCrop() const
+BeCropConfig BackEnd::get_crop() const
 {
-	return pipe_->configExtra.crop[0];
+	return pipe_->config_extra.crop[0];
 }
 
-void BackEnd::setCrop(unsigned int i, BeCropConfig const &crop)
+void BackEnd::set_crop(unsigned int i, BeCropConfig const &crop)
 {
-	PISP_ASSERT(i < variant_.backEndNumBranches(0));
-	pipe_->configExtra.crop[i] = crop;
-	pipe_->dirtyFlagsExtra |= DirtyFlag::Crop;
+	PISP_ASSERT(i < variant_.back_end_num_branches(0));
+	pipe_->config_extra.crop[i] = crop;
+	pipe_->dirty_flags_extra |= DirtyFlag::Crop;
 	pipe_->retile = true;
 }
 
-BeCropConfig BackEnd::getCrop(unsigned int i) const
+BeCropConfig BackEnd::get_crop(unsigned int i) const
 {
-	PISP_ASSERT(i < variant_.backEndNumBranches(0));
-	return pipe_->configExtra.crop[i];
+	PISP_ASSERT(i < variant_.back_end_num_branches(0));
+	return pipe_->config_extra.crop[i];
 }
 
-void BackEnd::setPreCsc(unsigned int i, BeCcmConfig const &csc)
+void BackEnd::set_pre_csc(unsigned int i, BeCcmConfig const &csc)
 {
-	config_->setPreCsc(i, csc);
-	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::PostCsc0, i);
+	config_->set_pre_csc(i, csc);
+	pipe_->dirty_flags_rgb |= get_flag_for_branch(RgbEnable::PostCsc0, i);
 }
 
-BeCcmConfig BackEnd::getPreCsc(unsigned int i) const
+BeCcmConfig BackEnd::get_pre_csc(unsigned int i) const
 {
-	return config_->getPreCsc(i);
+	return config_->get_pre_csc(i);
 }
 
-void BackEnd::setPostCsc(unsigned int i, BeCcmConfig const &csc)
+void BackEnd::set_post_csc(unsigned int i, BeCcmConfig const &csc)
 {
-	config_->setPostCsc(i, csc);
-	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::PostCsc0, i);
+	config_->set_post_csc(i, csc);
+	pipe_->dirty_flags_rgb |= get_flag_for_branch(RgbEnable::PostCsc0, i);
 }
 
-BeCcmConfig BackEnd::getPostCsc(unsigned int i) const
+BeCcmConfig BackEnd::get_post_csc(unsigned int i) const
 {
-	return config_->getPostCsc(i);
+	return config_->get_post_csc(i);
 }
 
-void BackEnd::setDownscale(unsigned int i, BeDownscaleConfig const &downscale)
+void BackEnd::set_downscale(unsigned int i, BeDownscaleConfig const &downscale)
 {
-	config_->setDownscale(i, downscale);
-	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::Downscale0, i);
+	config_->set_downscale(i, downscale);
+	pipe_->dirty_flags_rgb |= get_flag_for_branch(RgbEnable::Downscale0, i);
 	pipe_->retile = true;
 }
 
-BeDownscaleConfig BackEnd::getDownscale(unsigned int i) const
+BeDownscaleConfig BackEnd::get_downscale(unsigned int i) const
 {
-	return config_->getDownscale(i);
+	return config_->get_downscale(i);
 }
 
-void BackEnd::setResample(unsigned int i, BeResampleConfig const &resample)
+void BackEnd::set_resample(unsigned int i, BeResampleConfig const &resample)
 {
-	config_->setResample(i, resample);
-	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::Resample0, i);
+	config_->set_resample(i, resample);
+	pipe_->dirty_flags_rgb |= get_flag_for_branch(RgbEnable::Resample0, i);
 	pipe_->retile = true;
 }
 
-BeResampleConfig BackEnd::getResample(unsigned int i) const
+BeResampleConfig BackEnd::get_resample(unsigned int i) const
 {
-	return config_->getResample(i);
+	return config_->get_resample(i);
 }
 
-void BackEnd::setOutputFormat(unsigned int i, BeOutputFormatConfig const &outputFormat)
+void BackEnd::set_output_format(unsigned int i, BeOutputFormatConfig const &output_format)
 {
-	PISP_ASSERT(i < variant_.backEndNumBranches(0));
-	config_->setOutputFormat(i, outputFormat);
-	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::Output0, i);
+	PISP_ASSERT(i < variant_.back_end_num_branches(0));
+	config_->set_output_format(i, output_format);
+	pipe_->dirty_flags_rgb |= get_flag_for_branch(RgbEnable::Output0, i);
 	// Should only need a retile if the transform has changed, othwise a finalise_tile will do.
 	pipe_->retile = true;
 }
 
-BeOutputFormatConfig BackEnd::getOutputFormat(unsigned int i) const
+BeOutputFormatConfig BackEnd::get_output_format(unsigned int i) const
 {
-	PISP_ASSERT(i < variant_.backEndNumBranches(0));
-	return config_->getOutputFormat(i);
+	PISP_ASSERT(i < variant_.back_end_num_branches(0));
+	return config_->get_output_format(i);
 }
 
-void BackEnd::setSmartResize(unsigned int i, BackEnd::SmartResize const &smartResize)
+void BackEnd::set_smart_resize(unsigned int i, BackEnd::SmartResize const &smart_resize)
 {
-	PISP_ASSERT(i < variant_.backEndNumBranches(0));
+	PISP_ASSERT(i < variant_.back_end_num_branches(0));
 	// Non-zero width and height will be interpreted as "enabled".
-	pipe_->smartResize[i] = smartResize;
-	pipe_->smartResizeDirty |= (1 << i);
+	pipe_->smart_resize[i] = smart_resize;
+	pipe_->smart_resize_dirty |= (1 << i);
 }
 
-void BackEnd::setDedistort(const BeDedistortionConfig &dedistort)
+void BackEnd::set_dedistort(const BeDedistortionConfig &dedistort)
 {
-	config_->setDedistort(dedistort);
-	pipe_->dirtyFlagsRgb |= RgbEnable::Dedistort;
+	config_->set_dedistort(dedistort);
+	pipe_->dirty_flags_rgb |= RgbEnable::Dedistort;
 	pipe_->retile = true;
 }
 
-void BackEnd::setOutputCompress(unsigned int i, const BeCompressConfig &compress)
+void BackEnd::set_output_compress(unsigned int i, const BeCompressConfig &compress)
 {
-	PISP_ASSERT(i < variant_.backEndNumBranches(0));
-	config_->setOutputCompress(i, compress);
-	pipe_->dirtyFlagsRgb |= getFlagForBranch(RgbEnable::Compress0, i);
+	PISP_ASSERT(i < variant_.back_end_num_branches(0));
+	config_->set_output_compress(i, compress);
+	pipe_->dirty_flags_rgb |= get_flag_for_branch(RgbEnable::Compress0, i);
 	// No need to retile, since outputs must in all cases meet min alignment of 16.
 }
 
-BeCompressConfig BackEnd::getOutputCompress(unsigned int i) const
+BeCompressConfig BackEnd::get_output_compress(unsigned int i) const
 {
-	return config_->getOutputCompress(i);
+	return config_->get_output_compress(i);
 }
 
-unsigned int BackEnd::getMaxDownscale() const
+unsigned int BackEnd::get_max_downscale() const
 {
 	// Return an estimate of the largest horizontal downscale we can do.
-	unsigned int maxTileWidth = sw_.maxTileWidth;
-	if (!maxTileWidth)
-		maxTileWidth = variant_.backEndMaxTileWidth(0);
+	unsigned int max_tile_width = sw_.max_tile_width;
+	if (!max_tile_width)
+		max_tile_width = variant_.back_end_max_tile_width(0);
 
 	// We reckon a 640 tile-width implementation can do 24x safely with formats that
 	// want 1 byte per pixel. This should approximately scale with the max tile width.
 	unsigned int downscale = 24;
-	const unsigned int refTileWidth = 640;
-	return downscale * maxTileWidth / refTileWidth;
+	const unsigned int ref_tile_width = 640;
+	return downscale * max_tile_width / ref_tile_width;
 }

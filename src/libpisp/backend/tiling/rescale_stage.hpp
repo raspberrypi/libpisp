@@ -23,30 +23,30 @@ public:
 	};
 	struct Config
 	{
-		Config(Length2 const &outputImageSize, Length2 const &scale, Length2 const &startContext,
-			   Length2 const &endContext, uint8_t precision, RescalerType rescalerType)
-			: outputImageSize(outputImageSize), scale(scale), startContext(startContext),
-			  endContext(endContext), precision(precision), rescalerType(rescalerType)
+		Config(Length2 const &output_image_size, Length2 const &scale, Length2 const &start_context,
+			   Length2 const &end_context, uint8_t precision, RescalerType rescaler_type)
+			: output_image_size(output_image_size), scale(scale), start_context(start_context),
+			  end_context(end_context), precision(precision), rescaler_type(rescaler_type)
 		{
 		}
-		Length2 outputImageSize;
+		Length2 output_image_size;
 		Length2 scale;
-		Length2 startContext;
-		Length2 endContext;
+		Length2 start_context;
+		Length2 end_context;
 		uint8_t precision;
-		RescalerType rescalerType;
+		RescalerType rescaler_type;
 	};
 
-	RescaleStage(char const *name, Stage *upstream, Config const &config, int structOffset);
-	virtual Length2 getOutputImageSize() const;
-	virtual void pushStartUp(int outputStart, Dir dir);
-	virtual int pushEndDown(int inputEnd, Dir dir);
-	virtual void pushEndUp(int outputEnd, Dir dir);
-	virtual void pushCropDown(Interval interval, Dir dir);
+	RescaleStage(char const *name, Stage *upstream, Config const &config, int struct_offset);
+	virtual Length2 get_output_image_size() const;
+	virtual void push_start_up(int output_start, Dir dir);
+	virtual int push_end_down(int input_end, Dir dir);
+	virtual void push_end_up(int output_end, Dir dir);
+	virtual void push_crop_down(Interval interval, Dir dir);
 
 private:
 	Config config_;
-	int roundUp;
+	int round_up;
 };
 
 } // namespace tiling

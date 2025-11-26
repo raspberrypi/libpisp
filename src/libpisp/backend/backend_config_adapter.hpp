@@ -94,7 +94,7 @@ template <typename T>
 concept EnumType = std::is_enum_v<T>;
 
 template <EnumType T>
-T getFlagForBranch(const T field, unsigned int branch)
+T get_flag_for_branch(const T field, unsigned int branch)
 {
 	return static_cast<T>(static_cast<std::underlying_type_t<T>>(field) << branch);
 }
@@ -102,9 +102,9 @@ T getFlagForBranch(const T field, unsigned int branch)
 // Global config is special case between variants!
 struct BeGlobal
 {
-	BayerEnables bayerEnables;
-	RgbEnables rgbEnables;
-	uint8_t bayerOrder;
+	BayerEnables bayer_enables;
+	RgbEnables rgb_enables;
+	uint8_t bayer_order;
 };
 
 // LSC/CAC/Downscale/Resample have extra non-register fields:
@@ -151,8 +151,8 @@ struct BeResampleConfig
 // No hardware registers for crop directly.
 struct BeCropConfig
 {
-	uint16_t offsetX = 0;
-	uint16_t offsetY = 0;
+	uint16_t offset_x = 0;
+	uint16_t offset_y = 0;
 	uint16_t width = 0;
 	uint16_t height = 0;
 };
@@ -306,142 +306,142 @@ public:
 		return std::visit(std::forward<F>(f), config_);
 	}
 
-	void setTile(unsigned int i, const BeTile &tile);
-	BeTile getTile(unsigned int i) const;
+	void set_tile(unsigned int i, const BeTile &tile);
+	BeTile get_tile(unsigned int i) const;
 
-	void setGlobal(const BeGlobal &global);
-	BeGlobal getGlobal() const;
+	void set_global(const BeGlobal &global);
+	BeGlobal get_global() const;
 
-	void setInputFormat(const ImageFormatConfig &inputFormat);
-	ImageFormatConfig getInputFormat() const;
+	void set_input_format(const ImageFormatConfig &input_format);
+	ImageFormatConfig get_input_format() const;
 
-	void setDecompress(const DecompressConfig &decompress);
-	DecompressConfig getDecompress() const;
+	void set_decompress(const DecompressConfig &decompress);
+	DecompressConfig get_decompress() const;
 
-	void setDpc(const BeDpcConfig &dpc);
-	BeDpcConfig getDpc() const;
+	void set_dpc(const BeDpcConfig &dpc);
+	BeDpcConfig get_dpc() const;
 
-	void setGeq(const BeGeqConfig &geq);
-	BeGeqConfig getGeq() const;
+	void set_geq(const BeGeqConfig &geq);
+	BeGeqConfig get_geq() const;
 
-	void setTdnInputFormat(const ImageFormatConfig &tdnInputFormat);
-	ImageFormatConfig getTdnInputFormat() const;
+	void set_tdn_input_format(const ImageFormatConfig &tdn_input_format);
+	ImageFormatConfig get_tdn_input_format() const;
 
-	void setTdnDecompress(const DecompressConfig &tdnDecompress);
-	DecompressConfig getTdnDecompress() const;
+	void set_tdn_decompress(const DecompressConfig &tdn_decompress);
+	DecompressConfig get_tdn_decompress() const;
 
-	void setTdnCompress(const CompressConfig &tdnCompress);
-	CompressConfig getTdnCompress() const;
+	void set_tdn_compress(const CompressConfig &tdn_compress);
+	CompressConfig get_tdn_compress() const;
 
-	void setTdnOutputFormat(const ImageFormatConfig &tdnOutputFormat);
-	ImageFormatConfig getTdnOutputFormat() const;
+	void set_tdn_output_format(const ImageFormatConfig &tdn_output_format);
+	ImageFormatConfig get_tdn_output_format() const;
 
-	void setSdn(const BeSdnConfig &sdn);
-	BeSdnConfig getSdn() const;
+	void set_sdn(const BeSdnConfig &sdn);
+	BeSdnConfig get_sdn() const;
 
-	void setBlc(const BlaConfig &blc);
-	BlaConfig getBlc() const;
+	void set_blc(const BlaConfig &blc);
+	BlaConfig get_blc() const;
 
-	void setStitchInputFormat(const ImageFormatConfig &stitchInputFormat);
-	ImageFormatConfig getStitchInputFormat() const;
+	void set_stitch_input_format(const ImageFormatConfig &stitch_input_format);
+	ImageFormatConfig get_stitch_input_format() const;
 
-	void setStitchDecompress(const DecompressConfig &stitchDecompress);
-	DecompressConfig getStitchDecompress() const;
+	void set_stitch_decompress(const DecompressConfig &stitch_decompress);
+	DecompressConfig get_stitch_decompress() const;
 
-	void setStitchCompress(const CompressConfig &stitchCompress);
-	CompressConfig getStitchCompress() const;
+	void set_stitch_compress(const CompressConfig &stitch_compress);
+	CompressConfig get_stitch_compress() const;
 
-	void setStitchOutputFormat(const ImageFormatConfig &stitchOutputFormat);
-	ImageFormatConfig getStitchOutputFormat() const;
+	void set_stitch_output_format(const ImageFormatConfig &stitch_output_format);
+	ImageFormatConfig get_stitch_output_format() const;
 
-	void setLsc(const BeLscConfig &lsc);
-	BeLscConfig getLsc() const;
+	void set_lsc(const BeLscConfig &lsc);
+	BeLscConfig get_lsc() const;
 
-	void setWbg(const WbgConfig &wbg);
-	WbgConfig getWbg() const;
+	void set_wbg(const WbgConfig &wbg);
+	WbgConfig get_wbg() const;
 
-	void setCdn(const BeCdnConfig &cdn);
-	BeCdnConfig getCdn() const;
+	void set_cdn(const BeCdnConfig &cdn);
+	BeCdnConfig get_cdn() const;
 
-	void setCac(const BeCacConfig &cac);
-	BeCacConfig getCac() const;
+	void set_cac(const BeCacConfig &cac);
+	BeCacConfig get_cac() const;
 
-	void setDebin(const BeDebinConfig &debin);
-	BeDebinConfig getDebin() const;
+	void set_debin(const BeDebinConfig &debin);
+	BeDebinConfig get_debin() const;
 
-	void setCcm(const BeCcmConfig &ccm);
-	BeCcmConfig getCcm() const;
+	void set_ccm(const BeCcmConfig &ccm);
+	BeCcmConfig get_ccm() const;
 
-	void setSatControl(const BeSatControlConfig &satControl);
-	BeSatControlConfig getSatControl() const;
+	void set_sat_control(const BeSatControlConfig &sat_control);
+	BeSatControlConfig get_sat_control() const;
 
-	void setYcbcr(const BeCcmConfig &ycbcr);
-	BeCcmConfig getYcbcr() const;
+	void set_ycbcr(const BeCcmConfig &ycbcr);
+	BeCcmConfig get_ycbcr() const;
 
-	void setFalseColour(const BeFalseColourConfig &falseColour);
-	BeFalseColourConfig getFalseColour() const;
+	void set_false_colour(const BeFalseColourConfig &false_colour);
+	BeFalseColourConfig get_false_colour() const;
 
-	void setSharpen(const BeSharpenConfig &sharpen);
-	BeSharpenConfig getSharpen() const;
+	void set_sharpen(const BeSharpenConfig &sharpen);
+	BeSharpenConfig get_sharpen() const;
 
-	void setShFcCombine(const BeShFcCombineConfig &shFcCombine);
-	BeShFcCombineConfig getShFcCombine() const;
+	void set_sh_fc_combine(const BeShFcCombineConfig &sh_fc_combine);
+	BeShFcCombineConfig get_sh_fc_combine() const;
 
-	void setYcbcrInverse(const BeCcmConfig &ycbcrInverse);
-	BeCcmConfig getYcbcrInverse() const;
+	void set_ycbcr_inverse(const BeCcmConfig &ycbcr_inverse);
+	BeCcmConfig get_ycbcr_inverse() const;
 
-	void setPreCsc(unsigned int i, const BeCcmConfig &csc);
-	BeCcmConfig getPreCsc(unsigned int i) const;
+	void set_pre_csc(unsigned int i, const BeCcmConfig &csc);
+	BeCcmConfig get_pre_csc(unsigned int i) const;
 
-	void setPostCsc(unsigned int i, const BeCcmConfig &csc);
-	BeCcmConfig getPostCsc(unsigned int i) const;
+	void set_post_csc(unsigned int i, const BeCcmConfig &csc);
+	BeCcmConfig get_post_csc(unsigned int i) const;
 
-	void setDownscale(unsigned int i, const BeDownscaleConfig &downscale);
-	BeDownscaleConfig getDownscale(unsigned int i) const;
+	void set_downscale(unsigned int i, const BeDownscaleConfig &downscale);
+	BeDownscaleConfig get_downscale(unsigned int i) const;
 
-	void setOutputFormat(unsigned int i, const BeOutputFormatConfig &outputFormat);
-	BeOutputFormatConfig getOutputFormat(unsigned int i) const;
+	void set_output_format(unsigned int i, const BeOutputFormatConfig &output_format);
+	BeOutputFormatConfig get_output_format(unsigned int i) const;
 
-	void setTdn(const BeTdnConfig &tdn);
-	BeTdnConfig getTdn() const;
+	void set_tdn(const BeTdnConfig &tdn);
+	BeTdnConfig get_tdn() const;
 
-	void setStitch(const BeStitchConfig &stitch);
-	BeStitchConfig getStitch() const;
+	void set_stitch(const BeStitchConfig &stitch);
+	BeStitchConfig get_stitch() const;
 
-	void setTonemap(const BeTonemapConfig &tonemap);
-	BeTonemapConfig getTonemap() const;
+	void set_tonemap(const BeTonemapConfig &tonemap);
+	BeTonemapConfig get_tonemap() const;
 
-	void setTonemap2(const BeTonemap2Config &tonemap);
-	BeTonemap2Config getTonemap2() const;
+	void set_tonemap2(const BeTonemap2Config &tonemap);
+	BeTonemap2Config get_tonemap2() const;
 
-	void setTonemap2Format(const ImageFormatConfig &format);
-	ImageFormatConfig getTonemap2Format() const;
+	void set_tonemap2_format(const ImageFormatConfig &format);
+	ImageFormatConfig get_tonemap2_format() const;
 
-	void setDemosaic(const BeDemosaicConfig &demosaic);
-	BeDemosaicConfig getDemosaic() const;
+	void set_demosaic(const BeDemosaicConfig &demosaic);
+	BeDemosaicConfig get_demosaic() const;
 
-	void setGamma(unsigned int i, const BeGammaConfig &gamma);
-	BeGammaConfig getGamma(unsigned int i) const;
+	void set_gamma(unsigned int i, const BeGammaConfig &gamma);
+	BeGammaConfig get_gamma(unsigned int i) const;
 
-	void setResample(unsigned int i, const BeResampleConfig &resample);
-	BeResampleConfig getResample(unsigned int i) const;
+	void set_resample(unsigned int i, const BeResampleConfig &resample);
+	BeResampleConfig get_resample(unsigned int i) const;
 
-	void setDedistort(const BeDedistortionConfig &dedistort);
-	BeDedistortionConfig getDedistort() const;
+	void set_dedistort(const BeDedistortionConfig &dedistort);
+	BeDedistortionConfig get_dedistort() const;
 
-	void setOutputCompress(unsigned int i, const BeCompressConfig &compress);
-	BeCompressConfig getOutputCompress(unsigned int i) const;
+	void set_output_compress(unsigned int i, const BeCompressConfig &compress);
+	BeCompressConfig get_output_compress(unsigned int i) const;
 
-	BeConfigExtra *getExtras()
+	BeConfigExtra *get_extras()
 	{
 		return extras_;
 	}
 
 private:
-	uint32_t rgbEnablesToHw(RgbEnables rgbEnables) const;
-	RgbEnables hwToRgbEnables(uint32_t hwEnables) const;
-	uint32_t bayerEnablesToHw(BayerEnables bayerEnables) const;
-	BayerEnables hwToBayerEnables(uint32_t hwEnables) const;
+	uint32_t rgb_enables_to_hw(RgbEnables rgb_enables) const;
+	RgbEnables hw_to_rgb_enables(uint32_t hw_enables) const;
+	uint32_t bayer_enables_to_hw(BayerEnables bayer_enables) const;
+	BayerEnables hw_to_bayer_enables(uint32_t hw_enables) const;
 
 	HwConfigVariant config_;
 	HwTileVariant tile_;

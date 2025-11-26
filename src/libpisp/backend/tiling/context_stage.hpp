@@ -21,11 +21,11 @@ public:
 		Crop2 context;
 		Length2 alignment;
 	};
-	ContextStage(char const *name, Stage *upstream, Config const &config, int structOffset);
-	virtual void pushStartUp(int outputStart, Dir dir);
-	virtual int pushEndDown(int inputEnd, Dir dir);
-	virtual void pushEndUp(int outputEnd, Dir dir);
-	virtual void pushCropDown(Interval interval, Dir dir);
+	ContextStage(char const *name, Stage *upstream, Config const &config, int struct_offset);
+	virtual void push_start_up(int output_start, Dir dir);
+	virtual int push_end_down(int input_end, Dir dir);
+	virtual void push_end_up(int output_end, Dir dir);
+	virtual void push_crop_down(Interval interval, Dir dir);
 
 private:
 	Config config_;

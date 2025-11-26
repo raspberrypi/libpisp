@@ -31,7 +31,7 @@ struct FormatInfo
 	unsigned int num_memory_planes;
 };
 
-static FormatInfo getV4l2Format(const std::string &format)
+static FormatInfo get_v4l2_format(const std::string &format)
 {
 	std::map<std::string, FormatInfo> formats {
 		{ "RGB888", { V4L2_PIX_FMT_RGB24, 1 } },
@@ -53,7 +53,7 @@ static FormatInfo getV4l2Format(const std::string &format)
 } // namespace
 
 V4l2Device::V4l2Device(const std::string &device)
-	: fd_(device, O_RDWR | O_NONBLOCK | O_CLOEXEC), numMemoryPlanes_(1)
+	: fd_(device, O_RDWR | O_NONBLOCK | O_CLOEXEC), num_memory_planes_(1)
 {
 	struct v4l2_capability caps;
 
@@ -62,125 +62,125 @@ V4l2Device::V4l2Device(const std::string &device)
 		throw std::runtime_error("Cannot query device caps");
 
 	if (caps.capabilities & V4L2_CAP_VIDEO_CAPTURE_MPLANE)
-		bufType_ = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+		buf_type_ = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 	else if (caps.capabilities & V4L2_CAP_VIDEO_OUTPUT_MPLANE)
-		bufType_ = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+		buf_type_ = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
 	else if (caps.capabilities & V4L2_CAP_META_OUTPUT)
-		bufType_ = V4L2_BUF_TYPE_META_OUTPUT;
+		buf_type_ = V4L2_BUF_TYPE_META_OUTPUT;
 	else
 		throw std::runtime_error("Invalid buffer_type - caps: " + std::to_string(caps.capabilities));
 }
 
 V4l2Device::~V4l2Device()
 {
-	returnBuffers();
+	return_buffers();
 	close();
 }
 
-int V4l2Device::requestBuffers(unsigned int count)
+int V4l2Device::request_buffers(unsigned int count)
 {
 	int ret;
 
-	returnBuffers();
+	return_buffers();
 
-	v4l2_requestbuffers reqBufs {};
+	v4l2_requestbuffers req_bufs {};
 
-	reqBufs.count = count;
-	reqBufs.type = bufType_;
-	reqBufs.memory = V4L2_MEMORY_MMAP;
+	req_bufs.count = count;
+	req_bufs.type = buf_type_;
+	req_bufs.memory = V4L2_MEMORY_MMAP;
 
-	ret = ioctl(fd_.get(), VIDIOC_REQBUFS, &reqBufs);
+	ret = ioctl(fd_.get(), VIDIOC_REQBUFS, &req_bufs);
 	if (ret < 0)
 		throw std::runtime_error("VIDIOC_REQBUFS failed: " + std::to_string(ret));
 
-	for (unsigned int i = 0; i < reqBufs.count; i++)
+	for (unsigned int i = 0; i < req_bufs.count; i++)
 	{
 		v4l2_plane planes[VIDEO_MAX_PLANES] = {};
 		v4l2_buffer buffer {};
 
 		buffer.index = i;
-		buffer.type = bufType_;
+		buffer.type = buf_type_;
 		buffer.memory = V4L2_MEMORY_MMAP;
-		if (!isMeta())
+		if (!is_meta())
 		{
 			buffer.m.planes = planes;
-			buffer.length = numMemoryPlanes_;
+			buffer.length = num_memory_planes_;
 		}
 
 		ret = ioctl(fd_.get(), VIDIOC_QUERYBUF, &buffer);
 		if (ret < 0)
 			throw std::runtime_error("VIDIOC_QUERYBUF failed: " + std::to_string(ret));
 
-		// Don't keep this pointer dangling when putting into v4l2Buffers_.
+		// Don't keep this pointer dangling when putting into v4l2_buffers_.
 		buffer.m.planes = NULL;
-		v4l2Buffers_.emplace_back(buffer);
-		availableBuffers_.push(i);
+		v4l2_buffers_.emplace_back(buffer);
+		available_buffers_.push(i);
 
-		for (unsigned int p = 0; p < numMemoryPlanes_; p++)
+		for (unsigned int p = 0; p < num_memory_planes_; p++)
 		{
-			size_t size = !isMeta() ? planes[p].length : buffer.length;
-			unsigned int offset = !isMeta() ? planes[p].m.mem_offset : buffer.m.offset;
+			size_t size = !is_meta() ? planes[p].length : buffer.length;
+			unsigned int offset = !is_meta() ? planes[p].m.mem_offset : buffer.m.offset;
 
 			void *mem = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_.get(), offset);
 			if (mem == MAP_FAILED)
 				throw std::runtime_error("Unable to mmap buffer");
 
-			v4l2Buffers_.back().size[p] = size;
-			v4l2Buffers_.back().mem[p] = (uint8_t *)mem;
+			v4l2_buffers_.back().size[p] = size;
+			v4l2_buffers_.back().mem[p] = (uint8_t *)mem;
 		}
 	}
 
-	return v4l2Buffers_.size();
+	return v4l2_buffers_.size();
 }
 
-void V4l2Device::returnBuffers()
+void V4l2Device::return_buffers()
 {
-	v4l2_requestbuffers reqBufs {};
+	v4l2_requestbuffers req_bufs {};
 
-	if (!v4l2Buffers_.size())
+	if (!v4l2_buffers_.size())
 		return;
 
-	for (auto const &b : v4l2Buffers_)
+	for (auto const &b : v4l2_buffers_)
 	{
-		for (unsigned int p = 0; p < numMemoryPlanes_; p++)
+		for (unsigned int p = 0; p < num_memory_planes_; p++)
 			munmap(b.mem[p], b.size[p]);
 	}
 
-	reqBufs.type = bufType_;
-	reqBufs.count = 0;
-	reqBufs.memory = V4L2_MEMORY_MMAP;
-	ioctl(fd_.get(), VIDIOC_REQBUFS, &reqBufs);
+	req_bufs.type = buf_type_;
+	req_bufs.count = 0;
+	req_bufs.memory = V4L2_MEMORY_MMAP;
+	ioctl(fd_.get(), VIDIOC_REQBUFS, &req_bufs);
 
-	v4l2Buffers_.clear();
+	v4l2_buffers_.clear();
 }
 
-std::optional<V4l2Device::Buffer> V4l2Device::acquireBuffer()
+std::optional<V4l2Device::Buffer> V4l2Device::acquire_buffer()
 {
-	if (availableBuffers_.empty())
+	if (available_buffers_.empty())
 		return {};
 
-	unsigned int index = availableBuffers_.front();
-	availableBuffers_.pop();
-	return findBuffer(index);
+	unsigned int index = available_buffers_.front();
+	available_buffers_.pop();
+	return find_buffer(index);
 }
 
-void V4l2Device::releaseBuffer(const Buffer &buffer)
+void V4l2Device::release_buffer(const Buffer &buffer)
 {
-	availableBuffers_.push(buffer.buffer.index);
+	available_buffers_.push(buffer.buffer.index);
 }
 
-int V4l2Device::queueBuffer(unsigned int index)
+int V4l2Device::queue_buffer(unsigned int index)
 {
-	std::optional<Buffer> buf = findBuffer(index);
+	std::optional<Buffer> buf = find_buffer(index);
 	if (!buf)
 		return -1;
 
 	v4l2_plane planes[VIDEO_MAX_PLANES] = {};
-		if (!isMeta())
+		if (!is_meta())
 		{
 			buf->buffer.m.planes = planes;
-			buf->buffer.length = numMemoryPlanes_;
-			for (unsigned int p = 0; p < numMemoryPlanes_; p++)
+			buf->buffer.length = num_memory_planes_;
+			for (unsigned int p = 0; p < num_memory_planes_; p++)
 		{
 			buf->buffer.m.planes[p].bytesused = buf->size[p];
 			buf->buffer.m.planes[p].length = buf->size[p];
@@ -200,24 +200,24 @@ int V4l2Device::queueBuffer(unsigned int index)
 	return ret;
 }
 
-int V4l2Device::dequeueBuffer(unsigned int timeoutMs)
+int V4l2Device::dequeue_buffer(unsigned int timeout_ms)
 {
-	short int pollEvent = isOutput() ? POLLOUT : POLLIN;
-	pollfd p = { fd_.get(), pollEvent, 0 };
+	short int poll_event = is_output() ? POLLOUT : POLLIN;
+	pollfd p = { fd_.get(), poll_event, 0 };
 
-	int ret = poll(&p, 1, timeoutMs);
+	int ret = poll(&p, 1, timeout_ms);
 	if (ret <= 0)
 		return -1;
 
-	if (!(p.revents & pollEvent))
+	if (!(p.revents & poll_event))
 		return -1;
 
 	v4l2_buffer buf = {};
 	v4l2_plane planes[VIDEO_MAX_PLANES] = {};
 
-	buf.type = bufType_;
+	buf.type = buf_type_;
 	buf.memory = V4L2_MEMORY_MMAP;
-	if (!isMeta())
+	if (!is_meta())
 	{
 		buf.m.planes = planes;
 		buf.length = VIDEO_MAX_PLANES;
@@ -230,35 +230,35 @@ int V4l2Device::dequeueBuffer(unsigned int timeoutMs)
 	return buf.index;
 }
 
-void V4l2Device::setFormat(const pisp_image_format_config &format, bool useOpaqueFormat)
+void V4l2Device::set_format(const pisp_image_format_config &format, bool use_opaque_format)
 {
 	struct v4l2_format f = {};
-	FormatInfo info = getV4l2Format(libpisp::getPispImageFormat(format.format));
+	FormatInfo info = get_v4l2_format(libpisp::get_pisp_image_format(format.format));
 
-	numMemoryPlanes_ = info.num_memory_planes;
+	num_memory_planes_ = info.num_memory_planes;
 
-	f.type = bufType_;
+	f.type = buf_type_;
 	f.fmt.pix_mp.width = format.width;
 	f.fmt.pix_mp.height = format.height;
 	f.fmt.pix_mp.pixelformat = info.v4l2_pixfmt;
 	f.fmt.pix_mp.field = V4L2_FIELD_NONE;
-	f.fmt.pix_mp.num_planes = numMemoryPlanes_;
+	f.fmt.pix_mp.num_planes = num_memory_planes_;
 
-	unsigned int numImagePlanes = libpisp::numPlanes((pisp_image_format)format.format);
+	unsigned int num_image_planes = libpisp::num_planes((pisp_image_format)format.format);
 
-	if (useOpaqueFormat || info.v4l2_pixfmt == 0)
+	if (use_opaque_format || info.v4l2_pixfmt == 0)
 	{
 		// This format is not specified by V4L2, we use an opaque buffer buffer as a workaround.
 		// Size the dimensions down so the kernel drive does not attempt to resize it.
 		f.fmt.pix_mp.width = 16;
 		f.fmt.pix_mp.height = 16;
 		f.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_YUV444M;
-		numMemoryPlanes_ = 3;
+		num_memory_planes_ = 3;
 		f.fmt.pix_mp.plane_fmt[0].bytesperline = format.stride;
 
 		f.fmt.pix_mp.plane_fmt[0].sizeimage = 0;
 		for (unsigned int i = 0; i < 3; i++)
-			f.fmt.pix_mp.plane_fmt[0].sizeimage += libpisp::getPlaneSize(format, i);
+			f.fmt.pix_mp.plane_fmt[0].sizeimage += libpisp::get_plane_size(format, i);
 
 		f.fmt.pix_mp.plane_fmt[1].sizeimage = f.fmt.pix_mp.plane_fmt[2].sizeimage = f.fmt.pix_mp.plane_fmt[0].sizeimage;
 		f.fmt.pix_mp.plane_fmt[1].bytesperline = f.fmt.pix_mp.plane_fmt[2].bytesperline = format.stride2;
@@ -266,16 +266,16 @@ void V4l2Device::setFormat(const pisp_image_format_config &format, bool useOpaqu
 	else
 	{
 		unsigned int p = 0;
-		for (; p < numMemoryPlanes_; p++)
+		for (; p < num_memory_planes_; p++)
 		{
 			const unsigned int stride = p == 0 ? format.stride : format.stride2;
 			// Wallpaper stride is not something the V4L2 kernel knows about!
 			f.fmt.pix_mp.plane_fmt[p].bytesperline = stride;
-			f.fmt.pix_mp.plane_fmt[p].sizeimage = libpisp::getPlaneSize(format, p);
+			f.fmt.pix_mp.plane_fmt[p].sizeimage = libpisp::get_plane_size(format, p);
 		}
 
-		for (; p < numImagePlanes; p++)
-			f.fmt.pix_mp.plane_fmt[numMemoryPlanes_ - 1].sizeimage += libpisp::getPlaneSize(format, p);
+		for (; p < num_image_planes; p++)
+			f.fmt.pix_mp.plane_fmt[num_memory_planes_ - 1].sizeimage += libpisp::get_plane_size(format, p);
 	}
 
 	int ret = ioctl(fd_.get(), VIDIOC_S_FMT, &f);
@@ -283,25 +283,25 @@ void V4l2Device::setFormat(const pisp_image_format_config &format, bool useOpaqu
 		throw std::runtime_error("Unable to set format: " + std::string(strerror(errno)));
 }
 
-void V4l2Device::streamOn()
+void V4l2Device::stream_on()
 {
-	int ret = ioctl(fd_.get(), VIDIOC_STREAMON, &bufType_);
+	int ret = ioctl(fd_.get(), VIDIOC_STREAMON, &buf_type_);
 	if (ret < 0)
 		throw std::runtime_error("Stream on failed: " + std::string(strerror(errno)));
 }
 
-void V4l2Device::streamOff()
+void V4l2Device::stream_off()
 {
-	int ret = ioctl(fd_.get(), VIDIOC_STREAMOFF, &bufType_);
+	int ret = ioctl(fd_.get(), VIDIOC_STREAMOFF, &buf_type_);
 	if (ret < 0)
 		throw std::runtime_error("Stream off failed: " + std::string(strerror(errno)));
 }
 
-std::optional<V4l2Device::Buffer> V4l2Device::findBuffer(unsigned int index) const
+std::optional<V4l2Device::Buffer> V4l2Device::find_buffer(unsigned int index) const
 {
-	auto it = std::find_if(v4l2Buffers_.begin(), v4l2Buffers_.end(),
+	auto it = std::find_if(v4l2_buffers_.begin(), v4l2_buffers_.end(),
 						   [index](auto const &b) { return b.buffer.index == index; });
-	if (it == v4l2Buffers_.end())
+	if (it == v4l2_buffers_.end())
 	{
 		throw std::runtime_error("find buffers failed");
 		return {};

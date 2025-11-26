@@ -36,7 +36,7 @@ std::mutex mutex_;
 boost::shared_ptr<sinks::synchronous_sink<sinks::text_ostream_backend>> console;
 boost::shared_ptr<sinks::synchronous_sink<sinks::text_file_backend>> file;
 
-void loggingFileInit(const char *filename, unsigned int level)
+void logging_file_init(const char *filename, unsigned int level)
 {
 	logging::formatter format =
 		expr::format("[libpisp %1%] %2%")
@@ -55,7 +55,7 @@ void loggingFileInit(const char *filename, unsigned int level)
 
 } // namespace
 
-void loggingInit()
+void logging_init()
 {
 	std::scoped_lock<std::mutex> l(mutex_);
 	// Default to "warning" level.
@@ -89,7 +89,7 @@ void loggingInit()
 		if (lev)
 			level = std::atoi(lev);
 
-		loggingFileInit(log_file, level);
+		logging_file_init(log_file, level);
 	}
 }
 
@@ -97,7 +97,7 @@ void loggingInit()
 
 #else
 
-void libpisp::loggingInit()
+void libpisp::logging_init()
 {
 }
 

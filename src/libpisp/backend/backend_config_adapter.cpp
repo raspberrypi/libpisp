@@ -20,7 +20,7 @@ struct EnableMapping
 	uint32_t v2;
 };
 
-const std::map<RgbEnable, EnableMapping> rgbEnableMap =
+const std::map<RgbEnable, EnableMapping> rgb_enable_map =
 {
 	{ RgbEnable::Input,			{ PISP_BE_RGB_ENABLE_INPUT,			PISP_BE_RGB_ENABLE2_INPUT } },
 	{ RgbEnable::Dedistort,		{ 0,								PISP_BE_RGB_ENABLE2_DEDISTORT } },
@@ -46,7 +46,7 @@ const std::map<RgbEnable, EnableMapping> rgbEnableMap =
 	{ RgbEnable::Compress1,		{ 0,								PISP_BE_RGB_ENABLE2_COMPRESS1 } },
 };
 
-const std::map<BayerEnable, EnableMapping> bayerEnableMap =
+const std::map<BayerEnable, EnableMapping> bayer_enable_map =
 {
 	{ BayerEnable::Input,				{ PISP_BE_BAYER_ENABLE_INPUT,				PISP_BE_BAYER_ENABLE_INPUT } },
 	{ BayerEnable::Decompress,			{ PISP_BE_BAYER_ENABLE_DECOMPRESS,			PISP_BE_BAYER_ENABLE_DECOMPRESS } },
@@ -81,57 +81,57 @@ struct overloaded : Ts... { using Ts::operator()...; };
 
 } // namespace
 
-uint32_t BackendConfigAdapter::rgbEnablesToHw(RgbEnables rgbEnables) const
+uint32_t BackendConfigAdapter::rgb_enables_to_hw(RgbEnables rgb_enables) const
 {
-	uint32_t hwEnables = 0;
+	uint32_t hw_enables = 0;
 
 	visit(
 		overloaded {
 			[&](pisp_be_config *)
 			{
-				for (auto &[enable, map] : rgbEnableMap)
-					if ((rgbEnables & enable) && map.v1)
-						hwEnables |= map.v1;
+				for (auto &[enable, map] : rgb_enable_map)
+					if ((rgb_enables & enable) && map.v1)
+						hw_enables |= map.v1;
 			},
 
 			[&](pisp_be_config2 *)
 			{
-				for (auto &[enable, map] : rgbEnableMap)
-					if ((rgbEnables & enable) && map.v2)
-						hwEnables |= map.v2;
+				for (auto &[enable, map] : rgb_enable_map)
+					if ((rgb_enables & enable) && map.v2)
+						hw_enables |= map.v2;
 			}
 		}
 	);
 
-	return hwEnables;
+	return hw_enables;
 }
 
-uint32_t BackendConfigAdapter::bayerEnablesToHw(BayerEnables bayerEnables) const
+uint32_t BackendConfigAdapter::bayer_enables_to_hw(BayerEnables bayer_enables) const
 {
-	uint32_t hwEnables = 0;
+	uint32_t hw_enables = 0;
 
 	visit(
 		overloaded {
 			[&](pisp_be_config *)
 			{
-				for (auto &[enable, map] : bayerEnableMap)
-					if ((bayerEnables & enable) && map.v1)
-						hwEnables |= map.v1;
+				for (auto &[enable, map] : bayer_enable_map)
+					if ((bayer_enables & enable) && map.v1)
+						hw_enables |= map.v1;
 			},
 
 			[&](pisp_be_config2 *)
 			{
-				for (auto &[enable, map] : bayerEnableMap)
-					if ((bayerEnables & enable) && map.v2)
-						hwEnables |= map.v2;
+				for (auto &[enable, map] : bayer_enable_map)
+					if ((bayer_enables & enable) && map.v2)
+						hw_enables |= map.v2;
 			}
 		}
 	);
 
-	return hwEnables;
+	return hw_enables;
 }
 
-RgbEnables BackendConfigAdapter::hwToRgbEnables(uint32_t hwEnables) const
+RgbEnables BackendConfigAdapter::hw_to_rgb_enables(uint32_t hw_enables) const
 {
 	RgbEnables enables = RgbEnable::None;
 
@@ -139,15 +139,15 @@ RgbEnables BackendConfigAdapter::hwToRgbEnables(uint32_t hwEnables) const
 		overloaded {
 			[&](pisp_be_config *)
 			{
-				for (auto &[enable, map] : rgbEnableMap)
-					if ((hwEnables & map.v1) && map.v1)
+				for (auto &[enable, map] : rgb_enable_map)
+					if ((hw_enables & map.v1) && map.v1)
 						enables = static_cast<RgbEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
 			},
 
 			[&](pisp_be_config2 *)
 			{
-				for (auto &[enable, map] : rgbEnableMap)
-					if ((hwEnables & map.v2) && map.v2)
+				for (auto &[enable, map] : rgb_enable_map)
+					if ((hw_enables & map.v2) && map.v2)
 						enables = static_cast<RgbEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
 			}
 		}
@@ -156,7 +156,7 @@ RgbEnables BackendConfigAdapter::hwToRgbEnables(uint32_t hwEnables) const
 	return enables;
 }
 
-BayerEnables BackendConfigAdapter::hwToBayerEnables(uint32_t hwEnables) const
+BayerEnables BackendConfigAdapter::hw_to_bayer_enables(uint32_t hw_enables) const
 {
 	BayerEnables enables = BayerEnable::None;
 
@@ -164,15 +164,15 @@ BayerEnables BackendConfigAdapter::hwToBayerEnables(uint32_t hwEnables) const
 		overloaded {
 			[&](pisp_be_config *)
 			{
-				for (auto &[enable, map] : bayerEnableMap)
-					if ((hwEnables & map.v1) && map.v1)
+				for (auto &[enable, map] : bayer_enable_map)
+					if ((hw_enables & map.v1) && map.v1)
 						enables = static_cast<BayerEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
 			},
 
 			[&](pisp_be_config2 *)
 			{
-				for (auto &[enable, map] : bayerEnableMap)
-					if ((hwEnables & map.v2) && map.v2)
+				for (auto &[enable, map] : bayer_enable_map)
+					if ((hw_enables & map.v2) && map.v2)
 						enables = static_cast<BayerEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
 			}
 		}
@@ -181,7 +181,7 @@ BayerEnables BackendConfigAdapter::hwToBayerEnables(uint32_t hwEnables) const
 	return enables;
 }
 
-void BackendConfigAdapter::setTile(unsigned int i, const BeTile &tile)
+void BackendConfigAdapter::set_tile(unsigned int i, const BeTile &tile)
 {
 	std::visit(overloaded {
 		[&tile, i](pisp_tile *tiles) {
@@ -273,7 +273,7 @@ void BackendConfigAdapter::setTile(unsigned int i, const BeTile &tile)
 }
 
 
-BeTile BackendConfigAdapter::getTile(unsigned int i) const
+BeTile BackendConfigAdapter::get_tile(unsigned int i) const
 {
 	BeTile tile{};
 
@@ -368,51 +368,51 @@ BeTile BackendConfigAdapter::getTile(unsigned int i) const
 	return tile;
 }
 
-void BackendConfigAdapter::setGlobal(const BeGlobal &global)
+void BackendConfigAdapter::set_global(const BeGlobal &global)
 {
 	visit([&global, this](auto *cfg) {
-		cfg->global.bayer_enables = bayerEnablesToHw(global.bayerEnables);
-		cfg->global.rgb_enables = rgbEnablesToHw(global.rgbEnables);
-		cfg->global.bayer_order = global.bayerOrder;
+		cfg->global.bayer_enables = bayer_enables_to_hw(global.bayer_enables);
+		cfg->global.rgb_enables = rgb_enables_to_hw(global.rgb_enables);
+		cfg->global.bayer_order = global.bayer_order;
 		cfg->global.pad[0] = cfg->global.pad[1] = cfg->global.pad[2] = 0;
 	});
 }
 
-BeGlobal BackendConfigAdapter::getGlobal() const
+BeGlobal BackendConfigAdapter::get_global() const
 {
 	BeGlobal global;
 
 	visit([&global, this](auto *cfg) {
-		global.bayerEnables = hwToBayerEnables(cfg->global.bayer_enables);
-		global.rgbEnables = hwToRgbEnables(cfg->global.rgb_enables);
-		global.bayerOrder = cfg->global.bayer_order;
+		global.bayer_enables = hw_to_bayer_enables(cfg->global.bayer_enables);
+		global.rgb_enables = hw_to_rgb_enables(cfg->global.rgb_enables);
+		global.bayer_order = cfg->global.bayer_order;
 	});
 
 	return global;
 }
 
 // Common field implementations (same type in both variants)
-void BackendConfigAdapter::setInputFormat(const ImageFormatConfig &inputFormat)
+void BackendConfigAdapter::set_input_format(const ImageFormatConfig &input_format)
 {
-	visit([&inputFormat](auto *cfg) { cfg->input_format = inputFormat; });
+	visit([&input_format](auto *cfg) { cfg->input_format = input_format; });
 }
 
-ImageFormatConfig BackendConfigAdapter::getInputFormat() const
+ImageFormatConfig BackendConfigAdapter::get_input_format() const
 {
 	return visit([](auto *cfg) -> ImageFormatConfig { return cfg->input_format; });
 }
 
-void BackendConfigAdapter::setDecompress(const DecompressConfig &decompress)
+void BackendConfigAdapter::set_decompress(const DecompressConfig &decompress)
 {
 	visit([&decompress](auto *cfg) { cfg->decompress = decompress; });
 }
 
-DecompressConfig BackendConfigAdapter::getDecompress() const
+DecompressConfig BackendConfigAdapter::get_decompress() const
 {
 	return visit([](auto *cfg) -> DecompressConfig { return cfg->decompress; });
 }
 
-void BackendConfigAdapter::setDpc(const BeDpcConfig &dpc)
+void BackendConfigAdapter::set_dpc(const BeDpcConfig &dpc)
 {
 	visit([&dpc](auto *cfg) {
 		cfg->dpc = dpc;
@@ -420,62 +420,62 @@ void BackendConfigAdapter::setDpc(const BeDpcConfig &dpc)
 	});
 }
 
-BeDpcConfig BackendConfigAdapter::getDpc() const
+BeDpcConfig BackendConfigAdapter::get_dpc() const
 {
 	return visit([](auto *cfg) -> BeDpcConfig { return cfg->dpc; });
 }
 
-void BackendConfigAdapter::setGeq(const BeGeqConfig &geq)
+void BackendConfigAdapter::set_geq(const BeGeqConfig &geq)
 {
 	visit([&geq](auto *cfg) { cfg->geq = geq; });
 }
 
-BeGeqConfig BackendConfigAdapter::getGeq() const
+BeGeqConfig BackendConfigAdapter::get_geq() const
 {
 	return visit([](auto *cfg) -> BeGeqConfig { return cfg->geq; });
 }
 
-void BackendConfigAdapter::setTdnInputFormat(const ImageFormatConfig &tdnInputFormat)
+void BackendConfigAdapter::set_tdn_input_format(const ImageFormatConfig &tdn_input_format)
 {
-	visit([&tdnInputFormat](auto *cfg) { cfg->tdn_input_format = tdnInputFormat; });
+	visit([&tdn_input_format](auto *cfg) { cfg->tdn_input_format = tdn_input_format; });
 }
 
-ImageFormatConfig BackendConfigAdapter::getTdnInputFormat() const
+ImageFormatConfig BackendConfigAdapter::get_tdn_input_format() const
 {
 	return visit([](auto *cfg) -> ImageFormatConfig { return cfg->tdn_input_format; });
 }
 
-void BackendConfigAdapter::setTdnDecompress(const DecompressConfig &tdnDecompress)
+void BackendConfigAdapter::set_tdn_decompress(const DecompressConfig &tdn_decompress)
 {
-	visit([&tdnDecompress](auto *cfg) { cfg->tdn_decompress = tdnDecompress; });
+	visit([&tdn_decompress](auto *cfg) { cfg->tdn_decompress = tdn_decompress; });
 }
 
-DecompressConfig BackendConfigAdapter::getTdnDecompress() const
+DecompressConfig BackendConfigAdapter::get_tdn_decompress() const
 {
 	return visit([](auto *cfg) -> DecompressConfig { return cfg->tdn_decompress; });
 }
 
-void BackendConfigAdapter::setTdnCompress(const CompressConfig &tdnCompress)
+void BackendConfigAdapter::set_tdn_compress(const CompressConfig &tdn_compress)
 {
-	visit([&tdnCompress](auto *cfg) { cfg->tdn_compress = tdnCompress; });
+	visit([&tdn_compress](auto *cfg) { cfg->tdn_compress = tdn_compress; });
 }
 
-CompressConfig BackendConfigAdapter::getTdnCompress() const
+CompressConfig BackendConfigAdapter::get_tdn_compress() const
 {
 	return visit([](auto *cfg) -> CompressConfig { return cfg->tdn_compress; });
 }
 
-void BackendConfigAdapter::setTdnOutputFormat(const ImageFormatConfig &tdnOutputFormat)
+void BackendConfigAdapter::set_tdn_output_format(const ImageFormatConfig &tdn_output_format)
 {
-	visit([&tdnOutputFormat](auto *cfg) { cfg->tdn_output_format = tdnOutputFormat; });
+	visit([&tdn_output_format](auto *cfg) { cfg->tdn_output_format = tdn_output_format; });
 }
 
-ImageFormatConfig BackendConfigAdapter::getTdnOutputFormat() const
+ImageFormatConfig BackendConfigAdapter::get_tdn_output_format() const
 {
 	return visit([](auto *cfg) -> ImageFormatConfig { return cfg->tdn_output_format; });
 }
 
-void BackendConfigAdapter::setSdn(const BeSdnConfig &sdn)
+void BackendConfigAdapter::set_sdn(const BeSdnConfig &sdn)
 {
 	visit([&sdn](auto *cfg) {
 		cfg->sdn = sdn;
@@ -483,12 +483,12 @@ void BackendConfigAdapter::setSdn(const BeSdnConfig &sdn)
 	});
 }
 
-BeSdnConfig BackendConfigAdapter::getSdn() const
+BeSdnConfig BackendConfigAdapter::get_sdn() const
 {
 	return visit([](auto *cfg) -> BeSdnConfig { return cfg->sdn; });
 }
 
-void BackendConfigAdapter::setBlc(const BlaConfig &blc)
+void BackendConfigAdapter::set_blc(const BlaConfig &blc)
 {
 	visit([&blc](auto *cfg) {
 		cfg->blc = blc;
@@ -496,52 +496,52 @@ void BackendConfigAdapter::setBlc(const BlaConfig &blc)
 	});
 }
 
-BlaConfig BackendConfigAdapter::getBlc() const
+BlaConfig BackendConfigAdapter::get_blc() const
 {
 	return visit([](auto *cfg) -> BlaConfig { return cfg->blc; });
 }
 
-void BackendConfigAdapter::setStitchInputFormat(const ImageFormatConfig &stitchInputFormat)
+void BackendConfigAdapter::set_stitch_input_format(const ImageFormatConfig &stitch_input_format)
 {
-	visit([&stitchInputFormat](auto *cfg) { cfg->stitch_input_format = stitchInputFormat; });
+	visit([&stitch_input_format](auto *cfg) { cfg->stitch_input_format = stitch_input_format; });
 }
 
-ImageFormatConfig BackendConfigAdapter::getStitchInputFormat() const
+ImageFormatConfig BackendConfigAdapter::get_stitch_input_format() const
 {
 	return visit([](auto *cfg) -> ImageFormatConfig { return cfg->stitch_input_format; });
 }
 
-void BackendConfigAdapter::setStitchDecompress(const DecompressConfig &stitchDecompress)
+void BackendConfigAdapter::set_stitch_decompress(const DecompressConfig &stitch_decompress)
 {
-	visit([&stitchDecompress](auto *cfg) { cfg->stitch_decompress = stitchDecompress; });
+	visit([&stitch_decompress](auto *cfg) { cfg->stitch_decompress = stitch_decompress; });
 }
 
-DecompressConfig BackendConfigAdapter::getStitchDecompress() const
+DecompressConfig BackendConfigAdapter::get_stitch_decompress() const
 {
 	return visit([](auto *cfg) -> DecompressConfig { return cfg->stitch_decompress; });
 }
 
-void BackendConfigAdapter::setStitchCompress(const CompressConfig &stitchCompress)
+void BackendConfigAdapter::set_stitch_compress(const CompressConfig &stitch_compress)
 {
-	visit([&stitchCompress](auto *cfg) { cfg->stitch_compress = stitchCompress; });
+	visit([&stitch_compress](auto *cfg) { cfg->stitch_compress = stitch_compress; });
 }
 
-CompressConfig BackendConfigAdapter::getStitchCompress() const
+CompressConfig BackendConfigAdapter::get_stitch_compress() const
 {
 	return visit([](auto *cfg) -> CompressConfig { return cfg->stitch_compress; });
 }
 
-void BackendConfigAdapter::setStitchOutputFormat(const ImageFormatConfig &stitchOutputFormat)
+void BackendConfigAdapter::set_stitch_output_format(const ImageFormatConfig &stitch_output_format)
 {
-	visit([&stitchOutputFormat](auto *cfg) { cfg->stitch_output_format = stitchOutputFormat; });
+	visit([&stitch_output_format](auto *cfg) { cfg->stitch_output_format = stitch_output_format; });
 }
 
-ImageFormatConfig BackendConfigAdapter::getStitchOutputFormat() const
+ImageFormatConfig BackendConfigAdapter::get_stitch_output_format() const
 {
 	return visit([](auto *cfg) -> ImageFormatConfig { return cfg->stitch_output_format; });
 }
 
-void BackendConfigAdapter::setLsc(const BeLscConfig &lsc)
+void BackendConfigAdapter::set_lsc(const BeLscConfig &lsc)
 {
 	visit([&lsc](auto *cfg) { 
 		cfg->lsc.grid_step_x = lsc.grid_step_x;
@@ -553,12 +553,12 @@ void BackendConfigAdapter::setLsc(const BeLscConfig &lsc)
 	extras_->lsc = lsc;
 }
 
-BeLscConfig BackendConfigAdapter::getLsc() const
+BeLscConfig BackendConfigAdapter::get_lsc() const
 {
 	return extras_->lsc;
 }
 
-void BackendConfigAdapter::setWbg(const WbgConfig &wbg)
+void BackendConfigAdapter::set_wbg(const WbgConfig &wbg)
 {
 	visit([&wbg](auto *cfg) {
 		cfg->wbg = wbg;
@@ -566,22 +566,22 @@ void BackendConfigAdapter::setWbg(const WbgConfig &wbg)
 	});
 }
 
-WbgConfig BackendConfigAdapter::getWbg() const
+WbgConfig BackendConfigAdapter::get_wbg() const
 {
 	return visit([](auto *cfg) -> WbgConfig { return cfg->wbg; });
 }
 
-void BackendConfigAdapter::setCdn(const BeCdnConfig &cdn)
+void BackendConfigAdapter::set_cdn(const BeCdnConfig &cdn)
 {
 	visit([&cdn](auto *cfg) { cfg->cdn = cdn; });
 }
 
-BeCdnConfig BackendConfigAdapter::getCdn() const
+BeCdnConfig BackendConfigAdapter::get_cdn() const
 {
 	return visit([](auto *cfg) -> BeCdnConfig { return cfg->cdn; });
 }
 
-void BackendConfigAdapter::setCac(const BeCacConfig &cac)
+void BackendConfigAdapter::set_cac(const BeCacConfig &cac)
 {
 	visit([&cac](auto *cfg) { 
 		cfg->cac.grid_step_x = cac.grid_step_x;
@@ -593,12 +593,12 @@ void BackendConfigAdapter::setCac(const BeCacConfig &cac)
 	extras_->cac = cac;
 }
 
-BeCacConfig BackendConfigAdapter::getCac() const
+BeCacConfig BackendConfigAdapter::get_cac() const
 {
 	return extras_->cac;
 }
 
-void BackendConfigAdapter::setDebin(const BeDebinConfig &debin)
+void BackendConfigAdapter::set_debin(const BeDebinConfig &debin)
 {
 	visit([&debin](auto *cfg) {
 		cfg->debin = debin;
@@ -606,12 +606,12 @@ void BackendConfigAdapter::setDebin(const BeDebinConfig &debin)
 	});
 }
 
-BeDebinConfig BackendConfigAdapter::getDebin() const
+BeDebinConfig BackendConfigAdapter::get_debin() const
 {
 	return visit([](auto *cfg) -> BeDebinConfig { return cfg->debin; });
 }
 
-void BackendConfigAdapter::setCcm(const BeCcmConfig &ccm)
+void BackendConfigAdapter::set_ccm(const BeCcmConfig &ccm)
 {
 	visit([&ccm](auto *cfg) {
 		cfg->ccm = ccm;
@@ -619,25 +619,25 @@ void BackendConfigAdapter::setCcm(const BeCcmConfig &ccm)
 	});
 }
 
-BeCcmConfig BackendConfigAdapter::getCcm() const
+BeCcmConfig BackendConfigAdapter::get_ccm() const
 {
 	return visit([](auto *cfg) -> BeCcmConfig { return cfg->ccm; });
 }
 
-void BackendConfigAdapter::setSatControl(const BeSatControlConfig &satControl)
+void BackendConfigAdapter::set_sat_control(const BeSatControlConfig &sat_control)
 {
-	visit([&satControl](auto *cfg) {
-		cfg->sat_control = satControl;
+	visit([&sat_control](auto *cfg) {
+		cfg->sat_control = sat_control;
 		cfg->sat_control.pad = 0;
 	});
 }
 
-BeSatControlConfig BackendConfigAdapter::getSatControl() const
+BeSatControlConfig BackendConfigAdapter::get_sat_control() const
 {
 	return visit([](auto *cfg) -> BeSatControlConfig { return cfg->sat_control; });
 }
 
-void BackendConfigAdapter::setYcbcr(const BeCcmConfig &ycbcr)
+void BackendConfigAdapter::set_ycbcr(const BeCcmConfig &ycbcr)
 {
 	visit([&ycbcr](auto *cfg) {
 		cfg->ycbcr = ycbcr;
@@ -645,25 +645,25 @@ void BackendConfigAdapter::setYcbcr(const BeCcmConfig &ycbcr)
 	});
 }
 
-BeCcmConfig BackendConfigAdapter::getYcbcr() const
+BeCcmConfig BackendConfigAdapter::get_ycbcr() const
 {
 	return visit([](auto *cfg) -> BeCcmConfig { return cfg->ycbcr; });
 }
 
-void BackendConfigAdapter::setFalseColour(const BeFalseColourConfig &falseColour)
+void BackendConfigAdapter::set_false_colour(const BeFalseColourConfig &false_colour)
 {
-	visit([&falseColour](auto *cfg) {
-		cfg->false_colour = falseColour;
+	visit([&false_colour](auto *cfg) {
+		cfg->false_colour = false_colour;
 		cfg->false_colour.pad[0] = cfg->false_colour.pad[1] = cfg->false_colour.pad[2] = 0;
 	});
 }
 
-BeFalseColourConfig BackendConfigAdapter::getFalseColour() const
+BeFalseColourConfig BackendConfigAdapter::get_false_colour() const
 {
 	return visit([](auto *cfg) -> BeFalseColourConfig { return cfg->false_colour; });
 }
 
-void BackendConfigAdapter::setSharpen(const BeSharpenConfig &sharpen)
+void BackendConfigAdapter::set_sharpen(const BeSharpenConfig &sharpen)
 {
 	visit([&sharpen](auto *cfg) {
 		cfg->sharpen = sharpen;
@@ -676,38 +676,38 @@ void BackendConfigAdapter::setSharpen(const BeSharpenConfig &sharpen)
 	});
 }
 
-BeSharpenConfig BackendConfigAdapter::getSharpen() const
+BeSharpenConfig BackendConfigAdapter::get_sharpen() const
 {
 	return visit([](auto *cfg) -> BeSharpenConfig { return cfg->sharpen; });
 }
 
-void BackendConfigAdapter::setShFcCombine(const BeShFcCombineConfig &shFcCombine)
+void BackendConfigAdapter::set_sh_fc_combine(const BeShFcCombineConfig &sh_fc_combine)
 {
-	visit([&shFcCombine](auto *cfg) {
-		cfg->sh_fc_combine = shFcCombine;
+	visit([&sh_fc_combine](auto *cfg) {
+		cfg->sh_fc_combine = sh_fc_combine;
 		cfg->sh_fc_combine.pad = 0;
 	});
 }
 
-BeShFcCombineConfig BackendConfigAdapter::getShFcCombine() const
+BeShFcCombineConfig BackendConfigAdapter::get_sh_fc_combine() const
 {
 	return visit([](auto *cfg) -> BeShFcCombineConfig { return cfg->sh_fc_combine; });
 }
 
-void BackendConfigAdapter::setYcbcrInverse(const BeCcmConfig &ycbcrInverse)
+void BackendConfigAdapter::set_ycbcr_inverse(const BeCcmConfig &ycbcr_inverse)
 {
-	visit([&ycbcrInverse](auto *cfg) {
-		cfg->ycbcr_inverse = ycbcrInverse;
+	visit([&ycbcr_inverse](auto *cfg) {
+		cfg->ycbcr_inverse = ycbcr_inverse;
 		cfg->ycbcr_inverse.pad[0] = cfg->ycbcr_inverse.pad[1] = 0;
 	});
 }
 
-BeCcmConfig BackendConfigAdapter::getYcbcrInverse() const
+BeCcmConfig BackendConfigAdapter::get_ycbcr_inverse() const
 {
 	return visit([](auto *cfg) -> BeCcmConfig { return cfg->ycbcr_inverse; });
 }
 
-void BackendConfigAdapter::setPreCsc(unsigned int i, const BeCcmConfig &csc)
+void BackendConfigAdapter::set_pre_csc(unsigned int i, const BeCcmConfig &csc)
 {
 	visit(overloaded {
 		[]([[maybe_unused]] pisp_be_config *cfg) {
@@ -720,7 +720,7 @@ void BackendConfigAdapter::setPreCsc(unsigned int i, const BeCcmConfig &csc)
 	});
 }
 
-BeCcmConfig BackendConfigAdapter::getPreCsc(unsigned int i) const
+BeCcmConfig BackendConfigAdapter::get_pre_csc(unsigned int i) const
 {
 	return visit(overloaded {
 		[]([[maybe_unused]] pisp_be_config *cfg) -> BeCcmConfig {
@@ -732,7 +732,7 @@ BeCcmConfig BackendConfigAdapter::getPreCsc(unsigned int i) const
 	});
 }
 
-void BackendConfigAdapter::setPostCsc(unsigned int i, const BeCcmConfig &csc)
+void BackendConfigAdapter::set_post_csc(unsigned int i, const BeCcmConfig &csc)
 {
 	visit(overloaded {
 		[&csc, i](pisp_be_config *cfg) {
@@ -746,7 +746,7 @@ void BackendConfigAdapter::setPostCsc(unsigned int i, const BeCcmConfig &csc)
 	});
 }
 
-BeCcmConfig BackendConfigAdapter::getPostCsc(unsigned int i) const
+BeCcmConfig BackendConfigAdapter::get_post_csc(unsigned int i) const
 {
 	return visit(overloaded {
 		[i](pisp_be_config *cfg) -> BeCcmConfig { return cfg->csc[i]; },
@@ -754,7 +754,7 @@ BeCcmConfig BackendConfigAdapter::getPostCsc(unsigned int i) const
 	});
 }
 
-void BackendConfigAdapter::setDownscale(unsigned int i, const BeDownscaleConfig &downscale)
+void BackendConfigAdapter::set_downscale(unsigned int i, const BeDownscaleConfig &downscale)
 {
 	visit([&downscale, i](auto *cfg) {
 		cfg->downscale[i].scale_factor_h = downscale.scale_factor_h;
@@ -767,48 +767,48 @@ void BackendConfigAdapter::setDownscale(unsigned int i, const BeDownscaleConfig 
 	extras_->downscale[i] = downscale;
 }
 
-BeDownscaleConfig BackendConfigAdapter::getDownscale(unsigned int i) const
+BeDownscaleConfig BackendConfigAdapter::get_downscale(unsigned int i) const
 {
 	return extras_->downscale[i];
 }
 
-void BackendConfigAdapter::setOutputFormat(unsigned int i, const BeOutputFormatConfig &outputFormat)
+void BackendConfigAdapter::set_output_format(unsigned int i, const BeOutputFormatConfig &output_format)
 {
 	visit(overloaded {
-		[&outputFormat, i](pisp_be_config *cfg) {
-			cfg->output_format[i].image = outputFormat.image;
-			cfg->output_format[i].transform = outputFormat.transform;
-			cfg->output_format[i].lo = outputFormat.lo;
-			cfg->output_format[i].lo2 = outputFormat.lo2;
-			cfg->output_format[i].hi = outputFormat.hi;
-			cfg->output_format[i].hi2 = outputFormat.hi2;
+		[&output_format, i](pisp_be_config *cfg) {
+			cfg->output_format[i].image = output_format.image;
+			cfg->output_format[i].transform = output_format.transform;
+			cfg->output_format[i].lo = output_format.lo;
+			cfg->output_format[i].lo2 = output_format.lo2;
+			cfg->output_format[i].hi = output_format.hi;
+			cfg->output_format[i].hi2 = output_format.hi2;
 			cfg->output_format[i].pad[0] = cfg->output_format[i].pad[1] = cfg->output_format[i].pad[2] = 0;
 		},
-		[&outputFormat, i](pisp_be_config2 *cfg) {
-			cfg->output_format[i] = outputFormat;
+		[&output_format, i](pisp_be_config2 *cfg) {
+			cfg->output_format[i] = output_format;
 		}
 	});
 }
 
-BeOutputFormatConfig BackendConfigAdapter::getOutputFormat(unsigned int i) const
+BeOutputFormatConfig BackendConfigAdapter::get_output_format(unsigned int i) const
 {
 	return visit(overloaded {
 		[i](pisp_be_config *cfg) -> BeOutputFormatConfig {
-			BeOutputFormatConfig outputFormat {};
-			outputFormat.image = cfg->output_format[i].image;
-			outputFormat.transform = cfg->output_format[i].transform;
-			outputFormat.lo = cfg->output_format[i].lo;
-			outputFormat.lo2 = cfg->output_format[i].lo2;
-			outputFormat.hi = cfg->output_format[i].hi;
-			outputFormat.hi2 = cfg->output_format[i].hi2;
-			return outputFormat;
+			BeOutputFormatConfig output_format {};
+			output_format.image = cfg->output_format[i].image;
+			output_format.transform = cfg->output_format[i].transform;
+			output_format.lo = cfg->output_format[i].lo;
+			output_format.lo2 = cfg->output_format[i].lo2;
+			output_format.hi = cfg->output_format[i].hi;
+			output_format.hi2 = cfg->output_format[i].hi2;
+			return output_format;
 		},
 		[i](pisp_be_config2 *cfg) -> BeOutputFormatConfig { return cfg->output_format[i]; }
 	});
 }
 
 // Variant-specific implementations
-void BackendConfigAdapter::setTdn(const BeTdnConfig &tdn)
+void BackendConfigAdapter::set_tdn(const BeTdnConfig &tdn)
 {
 	visit(overloaded {
 		[&tdn](pisp_be_config *cfg) {
@@ -826,7 +826,7 @@ void BackendConfigAdapter::setTdn(const BeTdnConfig &tdn)
 	});
 }
 
-BeTdnConfig BackendConfigAdapter::getTdn() const
+BeTdnConfig BackendConfigAdapter::get_tdn() const
 {
 	return visit(overloaded {
 		[](pisp_be_config *cfg) -> BeTdnConfig {
@@ -845,7 +845,7 @@ BeTdnConfig BackendConfigAdapter::getTdn() const
 	});
 }
 
-void BackendConfigAdapter::setStitch(const BeStitchConfig &stitch)
+void BackendConfigAdapter::set_stitch(const BeStitchConfig &stitch)
 {
 	visit(overloaded {
 		[&stitch](pisp_be_config *cfg) {
@@ -871,7 +871,7 @@ void BackendConfigAdapter::setStitch(const BeStitchConfig &stitch)
 	});
 }
 
-BeStitchConfig BackendConfigAdapter::getStitch() const
+BeStitchConfig BackendConfigAdapter::get_stitch() const
 {
 	return visit(overloaded {
 		[](pisp_be_config *cfg) -> BeStitchConfig {
@@ -898,7 +898,7 @@ BeStitchConfig BackendConfigAdapter::getStitch() const
 	});
 }
 
-void BackendConfigAdapter::setTonemap(const BeTonemapConfig &tonemap)
+void BackendConfigAdapter::set_tonemap(const BeTonemapConfig &tonemap)
 {
 	visit(overloaded {
 		[&tonemap](pisp_be_config *cfg) {
@@ -910,7 +910,7 @@ void BackendConfigAdapter::setTonemap(const BeTonemapConfig &tonemap)
 	});
 }
 
-BeTonemapConfig BackendConfigAdapter::getTonemap() const
+BeTonemapConfig BackendConfigAdapter::get_tonemap() const
 {
 	return visit(overloaded {
 		[](pisp_be_config *cfg) -> BeTonemapConfig {
@@ -923,7 +923,7 @@ BeTonemapConfig BackendConfigAdapter::getTonemap() const
 	});
 }
 
-void BackendConfigAdapter::setTonemap2(const BeTonemap2Config &tonemap)
+void BackendConfigAdapter::set_tonemap2(const BeTonemap2Config &tonemap)
 {
 	visit(overloaded {
 		[&tonemap]([[maybe_unused]] pisp_be_config *cfg) {
@@ -939,7 +939,7 @@ void BackendConfigAdapter::setTonemap2(const BeTonemap2Config &tonemap)
 	});
 }
 
-BeTonemap2Config BackendConfigAdapter::getTonemap2() const
+BeTonemap2Config BackendConfigAdapter::get_tonemap2() const
 {
 	return visit(overloaded {
 		[]([[maybe_unused]] pisp_be_config *cfg) -> BeTonemap2Config {
@@ -952,7 +952,7 @@ BeTonemap2Config BackendConfigAdapter::getTonemap2() const
 	});
 }
 
-void BackendConfigAdapter::setTonemap2Format(ImageFormatConfig const &format)
+void BackendConfigAdapter::set_tonemap2_format(ImageFormatConfig const &format)
 {
 	visit(overloaded {
 		[&format]([[maybe_unused]] pisp_be_config *cfg) {
@@ -964,7 +964,7 @@ void BackendConfigAdapter::setTonemap2Format(ImageFormatConfig const &format)
 	});
 }
 
-ImageFormatConfig BackendConfigAdapter::getTonemap2Format() const
+ImageFormatConfig BackendConfigAdapter::get_tonemap2_format() const
 {
 	return visit(overloaded {
 		[]([[maybe_unused]] pisp_be_config *cfg) -> ImageFormatConfig {
@@ -977,7 +977,7 @@ ImageFormatConfig BackendConfigAdapter::getTonemap2Format() const
 	});
 }
 
-void BackendConfigAdapter::setDemosaic(const BeDemosaicConfig &demosaic)
+void BackendConfigAdapter::set_demosaic(const BeDemosaicConfig &demosaic)
 {
 	visit(overloaded {
 		[&demosaic](pisp_be_config *cfg) {
@@ -992,7 +992,7 @@ void BackendConfigAdapter::setDemosaic(const BeDemosaicConfig &demosaic)
 	});
 }
 
-BeDemosaicConfig BackendConfigAdapter::getDemosaic() const
+BeDemosaicConfig BackendConfigAdapter::get_demosaic() const
 {
 	return visit(overloaded {
 		[](pisp_be_config *cfg) -> BeDemosaicConfig {
@@ -1007,7 +1007,7 @@ BeDemosaicConfig BackendConfigAdapter::getDemosaic() const
 	});
 }
 
-void BackendConfigAdapter::setGamma(unsigned int i, const BeGammaConfig &gamma)
+void BackendConfigAdapter::set_gamma(unsigned int i, const BeGammaConfig &gamma)
 {
 	visit(overloaded {
 		[&gamma](pisp_be_config *cfg) {
@@ -1022,7 +1022,7 @@ void BackendConfigAdapter::setGamma(unsigned int i, const BeGammaConfig &gamma)
 	});
 }
 
-BeGammaConfig BackendConfigAdapter::getGamma(unsigned int i) const
+BeGammaConfig BackendConfigAdapter::get_gamma(unsigned int i) const
 {
 	BeGammaConfig gamma;
 
@@ -1040,7 +1040,7 @@ BeGammaConfig BackendConfigAdapter::getGamma(unsigned int i) const
 	});
 }
 
-void BackendConfigAdapter::setResample(unsigned int i, const BeResampleConfig &resample)
+void BackendConfigAdapter::set_resample(unsigned int i, const BeResampleConfig &resample)
 {
 	visit(overloaded {
 		[&resample, i](pisp_be_config *cfg) {
@@ -1065,12 +1065,12 @@ void BackendConfigAdapter::setResample(unsigned int i, const BeResampleConfig &r
 	extras_->resample[i] = resample;
 }
 
-BeResampleConfig BackendConfigAdapter::getResample(unsigned int i) const
+BeResampleConfig BackendConfigAdapter::get_resample(unsigned int i) const
 {
 	return extras_->resample[i];
 }
 
-void BackendConfigAdapter::setDedistort(const BeDedistortionConfig &dedistort)
+void BackendConfigAdapter::set_dedistort(const BeDedistortionConfig &dedistort)
 {
 	visit(overloaded {
 		[&dedistort]([[maybe_unused]]pisp_be_config *cfg) {
@@ -1087,12 +1087,12 @@ void BackendConfigAdapter::setDedistort(const BeDedistortionConfig &dedistort)
 	});
 }
 
-BeDedistortionConfig BackendConfigAdapter::getDedistort() const
+BeDedistortionConfig BackendConfigAdapter::get_dedistort() const
 {
 	return extras_->dedistort;
 }
 
-void BackendConfigAdapter::setOutputCompress(unsigned int i, const BeCompressConfig &compress)
+void BackendConfigAdapter::set_output_compress(unsigned int i, const BeCompressConfig &compress)
 {
 	visit(overloaded {
 		[]([[maybe_unused]] pisp_be_config *cfg) {
@@ -1106,7 +1106,7 @@ void BackendConfigAdapter::setOutputCompress(unsigned int i, const BeCompressCon
 	});
 }
 
-BeCompressConfig BackendConfigAdapter::getOutputCompress(unsigned int i) const
+BeCompressConfig BackendConfigAdapter::get_output_compress(unsigned int i) const
 {
 	return visit(overloaded {
 		[]([[maybe_unused]] pisp_be_config *cfg) -> BeCompressConfig {

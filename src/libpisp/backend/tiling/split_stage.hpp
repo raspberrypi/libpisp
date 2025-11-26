@@ -17,22 +17,22 @@ class SplitStage : public Stage
 {
 public:
 	SplitStage(char const *name, Stage *upstream);
-	virtual Length2 getInputImageSize() const;
-	virtual Length2 getOutputImageSize() const;
-	virtual void setDownstream(Stage *downstream);
+	virtual Length2 get_input_image_size() const;
+	virtual Length2 get_output_image_size() const;
+	virtual void set_downstream(Stage *downstream);
 	virtual void reset();
-	virtual void pushStartUp(int outputStart, Dir dir);
-	virtual int pushEndDown(int inputEnd, Dir dir);
-	virtual void pushEndUp(int outputEnd, Dir dir);
-	virtual void pushCropDown(Interval interval, Dir dir);
-	virtual void copyOut(void *dest, Dir dir);
-	virtual bool getBranchComplete() const;
-	virtual bool getBranchInactive() const;
+	virtual void push_start_up(int output_start, Dir dir);
+	virtual int push_end_down(int input_end, Dir dir);
+	virtual void push_end_up(int output_end, Dir dir);
+	virtual void push_crop_down(Interval interval, Dir dir);
+	virtual void copy_out(void *dest, Dir dir);
+	virtual bool get_branch_complete() const;
+	virtual bool get_branch_inactive() const;
 
 private:
 	Stage *upstream_;
 	std::vector<Stage *> downstream_;
-	Interval inputInterval_;
+	Interval input_interval_;
 	unsigned int count_;
 };
 

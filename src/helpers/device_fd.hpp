@@ -21,11 +21,11 @@ public:
 	void operator=(DeviceFd const &) = delete;
 
 	DeviceFd(const std::string &file, mode_t mode)
-		: deviceFd_(-1)
+		: device_fd_(-1)
 	{
-		int deviceFd = ::open(file.c_str(), mode);
-		if (deviceFd >= 0)
-			deviceFd_ = deviceFd;
+		int device_fd = ::open(file.c_str(), mode);
+		if (device_fd >= 0)
+			device_fd_ = device_fd;
 	}
 
 	~DeviceFd()
@@ -35,16 +35,16 @@ public:
 
 	DeviceFd(DeviceFd &&other)
 	{
-		this->deviceFd_ = other.deviceFd_;
-		other.deviceFd_ = -1;
+		this->device_fd_ = other.device_fd_;
+		other.device_fd_ = -1;
 	}
 
 	DeviceFd &operator=(DeviceFd &&other)
 	{
 		if (this != &other)
 		{
-			this->deviceFd_ = other.deviceFd_;
-			other.deviceFd_ = -1;
+			this->device_fd_ = other.device_fd_;
+			other.device_fd_ = -1;
 		}
 
 		return *this;
@@ -52,24 +52,24 @@ public:
 
 	int get()
 	{
-		return deviceFd_;
+		return device_fd_;
 	}
 
 	void close()
 	{
 		if (valid())
-			::close(deviceFd_);
+			::close(device_fd_);
 
-		deviceFd_ = -1;
+		device_fd_ = -1;
 	}
 
 	bool valid()
 	{
-		return deviceFd_ >= 0;
+		return device_fd_ >= 0;
 	}
 
 private:
-	int deviceFd_;
+	int device_fd_;
 };
 
 } // namespace libpisp

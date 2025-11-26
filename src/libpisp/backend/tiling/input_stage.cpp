@@ -12,90 +12,90 @@
 
 using namespace tiling;
 
-InputStage::InputStage(char const *name, Pipeline *pipeline, Config const &config, int structOffset)
-	: BasicStage(name, pipeline, nullptr, structOffset), config_(config)
+InputStage::InputStage(char const *name, Pipeline *pipeline, Config const &config, int struct_offset)
+	: BasicStage(name, pipeline, nullptr, struct_offset), config_(config)
 {
-	pipeline->addInputStage(this);
+	pipeline->add_input_stage(this);
 	// If the compression requires more alignment than the basic X alignment, just bump the X alignment up.
-	PISP_ASSERT(config_.compressionAlignment ==
+	PISP_ASSERT(config_.compression_alignment ==
 					0 || // (assume one alignment is a multiple of the other to make life easy!)
-				config_.alignment.dx % config_.compressionAlignment == 0 ||
-				config_.compressionAlignment % config_.alignment.dx == 0);
-	config_.alignment.dx = std::max(config_.alignment.dx, config_.compressionAlignment);
+				config_.alignment.dx % config_.compression_alignment == 0 ||
+				config_.compression_alignment % config_.alignment.dx == 0);
+	config_.alignment.dx = std::max(config_.alignment.dx, config_.compression_alignment);
 }
 
-Length2 InputStage::getInputImageSize() const
+Length2 InputStage::get_input_image_size() const
 {
-	return config_.inputImageSize;
+	return config_.input_image_size;
 }
 
-Interval InputStage::getInputInterval() const
+Interval InputStage::get_input_interval() const
 {
-	return inputInterval_;
+	return input_interval_;
 }
 
-void InputStage::pushStartUp(int outputStart, Dir dir)
+void InputStage::push_start_up(int output_start, Dir dir)
 {
-	PISP_LOG(debug, "(" << name_ << ") Enter with outputStart " << outputStart);
+	PISP_LOG(debug, "(" << name_ << ") Enter with output_start " << output_start);
 
 	// We may have to read a more aligned value than we were given.
-	outputInterval_.offset = outputStart;
-	inputInterval_.offset = outputStart - outputStart % config_.alignment[dir];
+	output_interval_.offset = output_start;
+	input_interval_.offset = output_start - output_start % config_.alignment[dir];
 
-	PISP_LOG(debug, "(" << name_ << ") Exit with input_start " << inputInterval_.offset);
+	PISP_LOG(debug, "(" << name_ << ") Exit with input_start " << input_interval_.offset);
 }
 
-int InputStage::pushEndDown(int inputEnd, Dir dir)
+int InputStage::push_end_down(int input_end, Dir dir)
 {
-	PISP_LOG(debug, "(" << name_ << ") Enter with inputEnd " << inputEnd);
+	PISP_LOG(debug, "(" << name_ << ") Enter with input_end " << input_end);
 
-	if (inputEnd >= getInputImageSize()[dir])
-		inputEnd = getInputImageSize()[dir];
+	if (input_end >= get_input_image_size()[dir])
+		input_end = get_input_image_size()[dir];
 	else
 	{
 		// We don't get given pixels which we crop off as we go through the block, there's no
 		// sense in our input containing any unnecessary pixels so we adjust our input_interval
 		// directly. Watch out for the end-of-image case when we must write whatever we have.
-		inputEnd -= inputEnd % config_.alignment[dir];
+		input_end -= input_end % config_.alignment[dir];
 	}
 
-	inputInterval_.setEnd(inputEnd);
-	outputInterval_.setEnd(inputEnd);
+	input_interval_.set_end(input_end);
+	output_interval_.set_end(input_end);
 
-	PISP_LOG(debug, "(" << name_ << ") Exit with outputEnd " << inputEnd);
-	pushEndUp(downstream_->pushEndDown(inputEnd, dir), dir);
-	return inputInterval_.end();
+	PISP_LOG(debug, "(" << name_ << ") Exit with output_end " << input_end);
+	push_end_up(downstream_->push_end_down(input_end, dir), dir);
+	return input_interval_.end();
 }
 
-void InputStage::pushEndUp(int outputEnd, Dir dir)
+void InputStage::push_end_up(int output_end, Dir dir)
 {
-	PISP_LOG(debug, "(" << name_ << ") Enter with outputEnd " << outputEnd);
+	PISP_LOG(debug, "(" << name_ << ") Enter with output_end " << output_end);
 
 	int align = config_.alignment[dir];
-	int inputEnd = ((outputEnd + align - 1) / align) * align;
-	if (inputEnd > getInputImageSize()[dir])
+	int input_end = ((output_end + align - 1) / align) * align;
+	if (input_end > get_input_image_size()[dir])
 	{
-		inputEnd = getInputImageSize()[dir];
+		input_end = get_input_image_size()[dir];
 		// When compressed, we must always read a full compressed block, even if this extends beyond the nominal image width.
-		if (dir == Dir::X && config_.compressionAlignment)
-			inputEnd = ((inputEnd + config_.compressionAlignment - 1) / config_.compressionAlignment) *
-						config_.compressionAlignment;
+		if (dir == Dir::X && config_.compression_alignment)
+			input_end = ((input_end + config_.compression_alignment - 1) / config_.compression_alignment) *
+						config_.compression_alignment;
 	}
-	outputInterval_.setEnd(outputEnd);
-	inputInterval_.setEnd(inputEnd);
+	output_interval_.set_end(output_end);
+	input_interval_.set_end(input_end);
 
-	PISP_LOG(debug, "(" << name_ << ") Exit with inputEnd " << inputInterval_.end());
+	PISP_LOG(debug, "(" << name_ << ") Exit with input_end " << input_interval_.end());
 }
 
-void InputStage::pushCropDown(Interval interval, Dir dir)
+void InputStage::push_crop_down(Interval interval, Dir dir)
 {
 	PISP_LOG(debug, "(" << name_ << ") Enter with interval " << interval);
 
 	// As we're at the head of the pipeline, no one should be trying to give us extra pixels.
-	PISP_ASSERT(interval == inputInterval_);
+	PISP_ASSERT(interval == input_interval_);
 	crop_ = Crop(0, 0);
-	outputInterval_ = interval;
+	output_interval_ = interval;
 
 	PISP_LOG(debug, "(" << name_ << ") Exit with interval " << interval);
-	downstream_->pushCropDown(interval, dir);
+	downstream_->push_crop_down(interval, dir);
 }

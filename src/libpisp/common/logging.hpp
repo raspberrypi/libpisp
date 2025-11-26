@@ -33,5 +33,5 @@ do { \
 namespace libpisp
 {
 	// Call this before you try and use any logging.
-	void loggingInit();
+	void logging_init();
 } // namespace libpisp

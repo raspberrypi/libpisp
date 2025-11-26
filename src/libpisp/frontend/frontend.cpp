@@ -18,12 +18,12 @@ using namespace libpisp;
 namespace
 {
 
-inline uint32_t blockEnable(uint32_t block, unsigned int branch)
+inline uint32_t block_enable(uint32_t block, unsigned int branch)
 {
 	return block << (4 * branch);
 }
 
-void finaliseLsc(pisp_fe_lsc_config &lsc, uint16_t width, uint16_t height)
+void finalise_lsc(pisp_fe_lsc_config &lsc, uint16_t width, uint16_t height)
 {
 	if (lsc.centre_x == 0)
 		lsc.centre_x = width / 2;
@@ -54,7 +54,7 @@ void finaliseLsc(pisp_fe_lsc_config &lsc, uint16_t width, uint16_t height)
 	}
 }
 
-void finaliseAgc(pisp_fe_agc_stats_config &agc, uint16_t width, uint16_t height)
+void finalise_agc(pisp_fe_agc_stats_config &agc, uint16_t width, uint16_t height)
 {
 	if (agc.size_x == 0)
 		agc.size_x = std::max(2, ((width - 2 * agc.offset_x) / PISP_AGC_STATS_SIZE) & ~1);
@@ -66,7 +66,7 @@ void finaliseAgc(pisp_fe_agc_stats_config &agc, uint16_t width, uint16_t height)
 		agc.row_size_y = std::max(2, ((height - 2 * agc.row_offset_y) / PISP_AGC_STATS_NUM_ROW_SUMS) & ~1);
 }
 
-void finaliseAwb(pisp_fe_awb_stats_config &awb, uint16_t width, uint16_t height)
+void finalise_awb(pisp_fe_awb_stats_config &awb, uint16_t width, uint16_t height)
 {
 	 // Just a warning that ACLS algorithms might want the size calculations
 	 // here to match the Back End LSC. Here we round the cell width and height
@@ -78,7 +78,7 @@ void finaliseAwb(pisp_fe_awb_stats_config &awb, uint16_t width, uint16_t height)
 		awb.size_y = 2 * std::max(1, ((height - 2 * awb.offset_y + PISP_AWB_STATS_SIZE) / (2 * PISP_AWB_STATS_SIZE)));
 }
 
-void finaliseCdaf(pisp_fe_cdaf_stats_config &cdaf, uint16_t width, uint16_t height)
+void finalise_cdaf(pisp_fe_cdaf_stats_config &cdaf, uint16_t width, uint16_t height)
 {
 	if (cdaf.size_x == 0)
 		cdaf.size_x = std::max(2, ((width - 2 * cdaf.offset_x) / PISP_CDAF_STATS_SIZE) & ~1);
@@ -86,7 +86,7 @@ void finaliseCdaf(pisp_fe_cdaf_stats_config &cdaf, uint16_t width, uint16_t heig
 		cdaf.size_y = std::max(2, ((height - 2 * cdaf.offset_y) / PISP_CDAF_STATS_SIZE) & ~1);
 }
 
-void finaliseDownscale(pisp_fe_downscale_config &downscale, uint16_t width, uint16_t height)
+void finalise_downscale(pisp_fe_downscale_config &downscale, uint16_t width, uint16_t height)
 {
 	int s, wrecip;
 
@@ -113,73 +113,73 @@ void finaliseDownscale(pisp_fe_downscale_config &downscale, uint16_t width, uint
 	downscale.recip = ((16384 << s) + (wrecip >> 1)) / wrecip;
 }
 
-void finaliseCompression(pisp_fe_config const &feConfig, int i)
+void finalise_compression(pisp_fe_config const &fe_config, int i)
 {
-	uint32_t fmt = feConfig.ch[i].output.format.format;
-	uint32_t enables = feConfig.global.enables;
+	uint32_t fmt = fe_config.ch[i].output.format.format;
+	uint32_t enables = fe_config.global.enables;
 
-	if (PISP_IMAGE_FORMAT_COMPRESSED(fmt) && !(enables & blockEnable(PISP_FE_ENABLE_COMPRESS0, i)))
+	if (PISP_IMAGE_FORMAT_COMPRESSED(fmt) && !(enables & block_enable(PISP_FE_ENABLE_COMPRESS0, i)))
 		PISP_LOG(fatal, "FrontEnd::finalise: output compressed but compression not enabled");
 
-	if (!PISP_IMAGE_FORMAT_COMPRESSED(fmt) && (enables & blockEnable(PISP_FE_ENABLE_COMPRESS0, i)))
+	if (!PISP_IMAGE_FORMAT_COMPRESSED(fmt) && (enables & block_enable(PISP_FE_ENABLE_COMPRESS0, i)))
 		PISP_LOG(fatal, "FrontEnd::finalise: output uncompressed but compression enabled");
 
-	if ((enables & blockEnable(PISP_FE_ENABLE_COMPRESS0, i)) && !PISP_IMAGE_FORMAT_BPS_8(fmt))
+	if ((enables & block_enable(PISP_FE_ENABLE_COMPRESS0, i)) && !PISP_IMAGE_FORMAT_BPS_8(fmt))
 		PISP_LOG(fatal, "FrontEnd::finalise: compressed output is not 8 bit");
 }
 
 template <typename T>
-std::enable_if_t<std::is_integral_v<T>> inline div2RoundE(T &val)
+std::enable_if_t<std::is_integral_v<T>> inline div2_round_e(T &val)
 {
 	// Divide by 2 and round to the next even number.
 	val = ((val + 2) & ~3) >> 1;
 }
 
-void decimateConfig(pisp_fe_config &feConfig)
+void decimate_config(pisp_fe_config &fe_config)
 {
-	if (feConfig.global.enables & PISP_FE_ENABLE_LSC)
+	if (fe_config.global.enables & PISP_FE_ENABLE_LSC)
 	{
-		div2RoundE(feConfig.lsc.centre_x);
-		div2RoundE(feConfig.lsc.centre_y);
+		div2_round_e(fe_config.lsc.centre_x);
+		div2_round_e(fe_config.lsc.centre_y);
 	}
 
-	if (feConfig.global.enables & PISP_FE_ENABLE_CDAF_STATS)
+	if (fe_config.global.enables & PISP_FE_ENABLE_CDAF_STATS)
 	{
-		div2RoundE(feConfig.cdaf_stats.offset_x);
-		div2RoundE(feConfig.cdaf_stats.offset_y);
-		div2RoundE(feConfig.cdaf_stats.size_x);
-		div2RoundE(feConfig.cdaf_stats.size_y);
-		div2RoundE(feConfig.cdaf_stats.skip_x);
-		div2RoundE(feConfig.cdaf_stats.skip_y);
+		div2_round_e(fe_config.cdaf_stats.offset_x);
+		div2_round_e(fe_config.cdaf_stats.offset_y);
+		div2_round_e(fe_config.cdaf_stats.size_x);
+		div2_round_e(fe_config.cdaf_stats.size_y);
+		div2_round_e(fe_config.cdaf_stats.skip_x);
+		div2_round_e(fe_config.cdaf_stats.skip_y);
 	}
 
-	if (feConfig.global.enables & PISP_FE_ENABLE_AWB_STATS)
+	if (fe_config.global.enables & PISP_FE_ENABLE_AWB_STATS)
 	{
-		div2RoundE(feConfig.awb_stats.offset_x);
-		div2RoundE(feConfig.awb_stats.offset_y);
-		div2RoundE(feConfig.awb_stats.size_x);
-		div2RoundE(feConfig.awb_stats.size_y);
+		div2_round_e(fe_config.awb_stats.offset_x);
+		div2_round_e(fe_config.awb_stats.offset_y);
+		div2_round_e(fe_config.awb_stats.size_x);
+		div2_round_e(fe_config.awb_stats.size_y);
 	}
 
-	if (feConfig.global.enables & PISP_FE_ENABLE_AGC_STATS)
+	if (fe_config.global.enables & PISP_FE_ENABLE_AGC_STATS)
 	{
-		div2RoundE(feConfig.agc_stats.offset_x);
-		div2RoundE(feConfig.agc_stats.offset_y);
-		div2RoundE(feConfig.agc_stats.size_x);
-		div2RoundE(feConfig.agc_stats.size_y);
-		div2RoundE(feConfig.agc_stats.row_offset_x);
-		div2RoundE(feConfig.agc_stats.row_offset_y);
-		div2RoundE(feConfig.agc_stats.row_size_x);
-		div2RoundE(feConfig.agc_stats.row_size_y);
+		div2_round_e(fe_config.agc_stats.offset_x);
+		div2_round_e(fe_config.agc_stats.offset_y);
+		div2_round_e(fe_config.agc_stats.size_x);
+		div2_round_e(fe_config.agc_stats.size_y);
+		div2_round_e(fe_config.agc_stats.row_offset_x);
+		div2_round_e(fe_config.agc_stats.row_offset_y);
+		div2_round_e(fe_config.agc_stats.row_size_x);
+		div2_round_e(fe_config.agc_stats.row_size_y);
 	}
 
 	for (unsigned int i = 0; i < PISP_FLOATING_STATS_NUM_ZONES; i++)
 	{
-		pisp_fe_floating_stats_region &region = feConfig.floating_stats.regions[i];
-		div2RoundE(region.offset_x);
-		div2RoundE(region.offset_y);
-		div2RoundE(region.size_x);
-		div2RoundE(region.size_y);
+		pisp_fe_floating_stats_region &region = fe_config.floating_stats.regions[i];
+		div2_round_e(region.offset_x);
+		div2_round_e(region.offset_y);
+		div2_round_e(region.size_x);
+		div2_round_e(region.size_y);
 	}
 }
 
@@ -189,7 +189,7 @@ FrontEnd::FrontEnd(bool streaming, PiSPVariant const &variant, int align) : vari
 {
 	pisp_fe_input_config input;
 
-	memset(&feConfig_, 0, sizeof(feConfig_));
+	memset(&fe_config_, 0, sizeof(fe_config_));
 	memset(&input, 0, sizeof(input));
 
 	input.streaming = !!streaming;
@@ -204,358 +204,358 @@ FrontEnd::FrontEnd(bool streaming, PiSPVariant const &variant, int align) : vari
 	}
 	else
 	{
-		feConfig_.output_axi.maxlen_flags = 0xaf;
-		feConfig_.output_axi.cache_prot = 0x32;
-		feConfig_.output_axi.qos = 0x8410;
-		feConfig_.output_axi.thresh = 0x0140;
-		feConfig_.output_axi.throttle = 0x4100;
-		feConfig_.dirty_flags_extra |= PISP_FE_DIRTY_OUTPUT_AXI;
+		fe_config_.output_axi.maxlen_flags = 0xaf;
+		fe_config_.output_axi.cache_prot = 0x32;
+		fe_config_.output_axi.qos = 0x8410;
+		fe_config_.output_axi.thresh = 0x0140;
+		fe_config_.output_axi.throttle = 0x4100;
+		fe_config_.dirty_flags_extra |= PISP_FE_DIRTY_OUTPUT_AXI;
 	}
 
 	pisp_fe_global_config global;
-	getGlobal(global);
+	get_global(global);
 	global.enables |= PISP_FE_ENABLE_INPUT;
-	setGlobal(global);
-	setInput(input);
+	set_global(global);
+	set_input(input);
 }
 
 FrontEnd::~FrontEnd()
 {
 }
 
-void FrontEnd::setGlobal(pisp_fe_global_config const &global)
+void FrontEnd::set_global(pisp_fe_global_config const &global)
 {
 	// label anything that has become enabled as dirty
-	feConfig_.dirty_flags |= (global.enables & ~feConfig_.global.enables);
-	feConfig_.global = global;
-	feConfig_.dirty_flags_extra |= PISP_FE_DIRTY_GLOBAL;
+	fe_config_.dirty_flags |= (global.enables & ~fe_config_.global.enables);
+	fe_config_.global = global;
+	fe_config_.dirty_flags_extra |= PISP_FE_DIRTY_GLOBAL;
 }
 
-void FrontEnd::getGlobal(pisp_fe_global_config &global) const
+void FrontEnd::get_global(pisp_fe_global_config &global) const
 {
-	global = feConfig_.global;
+	global = fe_config_.global;
 }
 
-void FrontEnd::setInput(pisp_fe_input_config const &input)
+void FrontEnd::set_input(pisp_fe_input_config const &input)
 {
-	feConfig_.input = input;
-	feConfig_.dirty_flags |= PISP_FE_ENABLE_INPUT;
+	fe_config_.input = input;
+	fe_config_.dirty_flags |= PISP_FE_ENABLE_INPUT;
 }
 
-void FrontEnd::setDecompress(pisp_decompress_config const &decompress)
+void FrontEnd::set_decompress(pisp_decompress_config const &decompress)
 {
-	feConfig_.decompress = decompress;
-	feConfig_.dirty_flags |= PISP_FE_ENABLE_DECOMPRESS;
+	fe_config_.decompress = decompress;
+	fe_config_.dirty_flags |= PISP_FE_ENABLE_DECOMPRESS;
 }
 
-void FrontEnd::setDecompand(pisp_fe_decompand_config const &decompand)
+void FrontEnd::set_decompand(pisp_fe_decompand_config const &decompand)
 {
-	feConfig_.decompand = decompand;
-	feConfig_.decompand.pad = 0;
-	feConfig_.dirty_flags |= PISP_FE_ENABLE_DECOMPAND;
+	fe_config_.decompand = decompand;
+	fe_config_.decompand.pad = 0;
+	fe_config_.dirty_flags |= PISP_FE_ENABLE_DECOMPAND;
 }
 
-void FrontEnd::setDpc(pisp_fe_dpc_config const &dpc)
+void FrontEnd::set_dpc(pisp_fe_dpc_config const &dpc)
 {
-	feConfig_.dpc = dpc;
-	feConfig_.dirty_flags |= PISP_FE_ENABLE_DPC;
+	fe_config_.dpc = dpc;
+	fe_config_.dirty_flags |= PISP_FE_ENABLE_DPC;
 }
 
-void FrontEnd::setBla(pisp_bla_config const &bla)
+void FrontEnd::set_bla(pisp_bla_config const &bla)
 {
-	feConfig_.bla = bla;
-	feConfig_.dirty_flags |= PISP_FE_ENABLE_BLA;
+	fe_config_.bla = bla;
+	fe_config_.dirty_flags |= PISP_FE_ENABLE_BLA;
 }
 
-void FrontEnd::setStatsCrop(pisp_fe_crop_config const &statsCrop)
+void FrontEnd::set_stats_crop(pisp_fe_crop_config const &stats_crop)
 {
-	feConfig_.stats_crop = statsCrop;
-	feConfig_.dirty_flags |= PISP_FE_ENABLE_STATS_CROP;
+	fe_config_.stats_crop = stats_crop;
+	fe_config_.dirty_flags |= PISP_FE_ENABLE_STATS_CROP;
 }
 
-void FrontEnd::setStatsDecimate(pisp_fe_stats_decimate_config const &stats_decimate)
+void FrontEnd::set_stats_decimate(pisp_fe_stats_decimate_config const &stats_decimate)
 {
-	feConfig_.stats_decimate = stats_decimate;
-	feConfig_.stats_decimate.pad = 0;
-	feConfig_.dirty_flags |= PISP_FE_ENABLE_DECIMATE;
+	fe_config_.stats_decimate = stats_decimate;
+	fe_config_.stats_decimate.pad = 0;
+	fe_config_.dirty_flags |= PISP_FE_ENABLE_DECIMATE;
 }
 
-void FrontEnd::setBlc(pisp_bla_config const &blc)
+void FrontEnd::set_blc(pisp_bla_config const &blc)
 {
-	feConfig_.blc = blc;
-	feConfig_.dirty_flags |= PISP_FE_ENABLE_BLC;
+	fe_config_.blc = blc;
+	fe_config_.dirty_flags |= PISP_FE_ENABLE_BLC;
 }
 
-void FrontEnd::setLsc(pisp_fe_lsc_config const &lsc)
+void FrontEnd::set_lsc(pisp_fe_lsc_config const &lsc)
 {
-	feConfig_.lsc = lsc;
-	feConfig_.dirty_flags |= PISP_FE_ENABLE_LSC;
+	fe_config_.lsc = lsc;
+	fe_config_.dirty_flags |= PISP_FE_ENABLE_LSC;
 }
 
-void FrontEnd::setRgby(pisp_fe_rgby_config const &rgby)
+void FrontEnd::set_rgby(pisp_fe_rgby_config const &rgby)
 {
-	feConfig_.rgby = rgby;
-	feConfig_.dirty_flags |= PISP_FE_ENABLE_RGBY;
+	fe_config_.rgby = rgby;
+	fe_config_.dirty_flags |= PISP_FE_ENABLE_RGBY;
 }
 
-void FrontEnd::setAgcStats(pisp_fe_agc_stats_config const &agcStats)
+void FrontEnd::set_agc_stats(pisp_fe_agc_stats_config const &agc_stats)
 {
-	feConfig_.agc_stats = agcStats;
-	feConfig_.dirty_flags |= PISP_FE_ENABLE_AGC_STATS;
+	fe_config_.agc_stats = agc_stats;
+	fe_config_.dirty_flags |= PISP_FE_ENABLE_AGC_STATS;
 }
 
-void FrontEnd::getAgcStats(pisp_fe_agc_stats_config &agcStats) const
+void FrontEnd::get_agc_stats(pisp_fe_agc_stats_config &agc_stats) const
 {
-	agcStats = feConfig_.agc_stats;
+	agc_stats = fe_config_.agc_stats;
 }
 
-void FrontEnd::setAwbStats(pisp_fe_awb_stats_config const &awbStats)
+void FrontEnd::set_awb_stats(pisp_fe_awb_stats_config const &awb_stats)
 {
-	feConfig_.awb_stats = awbStats;
-	feConfig_.dirty_flags |= PISP_FE_ENABLE_AWB_STATS;
+	fe_config_.awb_stats = awb_stats;
+	fe_config_.dirty_flags |= PISP_FE_ENABLE_AWB_STATS;
 }
 
-void FrontEnd::getAwbStats(pisp_fe_awb_stats_config &awbStats) const
+void FrontEnd::get_awb_stats(pisp_fe_awb_stats_config &awb_stats) const
 {
-	awbStats = feConfig_.awb_stats;
+	awb_stats = fe_config_.awb_stats;
 }
 
-void FrontEnd::setFloatingStats(pisp_fe_floating_stats_config const &floatingStats)
+void FrontEnd::set_floating_stats(pisp_fe_floating_stats_config const &floating_stats)
 {
-	feConfig_.floating_stats = floatingStats;
-	feConfig_.dirty_flags_extra |= PISP_FE_DIRTY_FLOATING;
+	fe_config_.floating_stats = floating_stats;
+	fe_config_.dirty_flags_extra |= PISP_FE_DIRTY_FLOATING;
 }
 
-void FrontEnd::setCdafStats(pisp_fe_cdaf_stats_config const &cdafStats)
+void FrontEnd::set_cdaf_stats(pisp_fe_cdaf_stats_config const &cdaf_stats)
 {
-	feConfig_.cdaf_stats = cdafStats;
-	feConfig_.dirty_flags |= PISP_FE_ENABLE_CDAF_STATS;
+	fe_config_.cdaf_stats = cdaf_stats;
+	fe_config_.dirty_flags |= PISP_FE_ENABLE_CDAF_STATS;
 }
 
-void FrontEnd::getCdafStats(pisp_fe_cdaf_stats_config &cdafStats) const
+void FrontEnd::get_cdaf_stats(pisp_fe_cdaf_stats_config &cdaf_stats) const
 {
-	cdafStats = feConfig_.cdaf_stats;
+	cdaf_stats = fe_config_.cdaf_stats;
 }
 
-void FrontEnd::setCrop(unsigned int outputNum, pisp_fe_crop_config const &crop)
+void FrontEnd::set_crop(unsigned int output_num, pisp_fe_crop_config const &crop)
 {
-	PISP_ASSERT(outputNum < variant_.frontEndNumBranches(0));
+	PISP_ASSERT(output_num < variant_.front_end_num_branches(0));
 
-	feConfig_.ch[outputNum].crop = crop;
-	feConfig_.dirty_flags |= blockEnable(PISP_FE_ENABLE_CROP0, outputNum);
+	fe_config_.ch[output_num].crop = crop;
+	fe_config_.dirty_flags |= block_enable(PISP_FE_ENABLE_CROP0, output_num);
 }
 
-void FrontEnd::setDownscale(unsigned int outputNum, pisp_fe_downscale_config const &downscale)
+void FrontEnd::set_downscale(unsigned int output_num, pisp_fe_downscale_config const &downscale)
 {
-	PISP_ASSERT(outputNum < variant_.frontEndNumBranches(0));
-	PISP_ASSERT(variant_.frontEndDownscalerAvailable(0, outputNum));
+	PISP_ASSERT(output_num < variant_.front_end_num_branches(0));
+	PISP_ASSERT(variant_.front_end_downscaler_available(0, output_num));
 
-	feConfig_.ch[outputNum].downscale = downscale;
-	feConfig_.dirty_flags |= blockEnable(PISP_FE_ENABLE_DOWNSCALE0, outputNum);
+	fe_config_.ch[output_num].downscale = downscale;
+	fe_config_.dirty_flags |= block_enable(PISP_FE_ENABLE_DOWNSCALE0, output_num);
 }
 
-void FrontEnd::setCompress(unsigned int outputNum, pisp_compress_config const &compress)
+void FrontEnd::set_compress(unsigned int output_num, pisp_compress_config const &compress)
 {
-	PISP_ASSERT(outputNum < variant_.frontEndNumBranches(0));
+	PISP_ASSERT(output_num < variant_.front_end_num_branches(0));
 
-	feConfig_.ch[outputNum].compress = compress;
-	feConfig_.dirty_flags |= blockEnable(PISP_FE_ENABLE_COMPRESS0, outputNum);
+	fe_config_.ch[output_num].compress = compress;
+	fe_config_.dirty_flags |= block_enable(PISP_FE_ENABLE_COMPRESS0, output_num);
 }
 
-void FrontEnd::setOutputFormat(unsigned int outputNum, pisp_image_format_config const &outputFormat)
+void FrontEnd::set_output_format(unsigned int output_num, pisp_image_format_config const &output_format)
 {
-	PISP_ASSERT(outputNum < variant_.frontEndNumBranches(0));
+	PISP_ASSERT(output_num < variant_.front_end_num_branches(0));
 
-	feConfig_.ch[outputNum].output.format = outputFormat;
-	feConfig_.dirty_flags |= blockEnable(PISP_FE_ENABLE_OUTPUT0, outputNum);
+	fe_config_.ch[output_num].output.format = output_format;
+	fe_config_.dirty_flags |= block_enable(PISP_FE_ENABLE_OUTPUT0, output_num);
 }
 
-void FrontEnd::setOutputIntrLines(unsigned int outputNum, int ilines)
+void FrontEnd::set_output_intr_lines(unsigned int output_num, int lines)
 {
-	PISP_ASSERT(outputNum < variant_.frontEndNumBranches(0));
+	PISP_ASSERT(output_num < variant_.front_end_num_branches(0));
 
-	feConfig_.ch[outputNum].output.ilines = ilines;
-	feConfig_.dirty_flags |= blockEnable(PISP_FE_ENABLE_OUTPUT0, outputNum);
+	fe_config_.ch[output_num].output.ilines = lines;
+	fe_config_.dirty_flags |= block_enable(PISP_FE_ENABLE_OUTPUT0, output_num);
 }
 
-void FrontEnd::setOutputBuffer(unsigned int outputNum, pisp_fe_output_buffer_config const &outputBuffer)
+void FrontEnd::set_output_buffer(unsigned int output_num, pisp_fe_output_buffer_config const &output_buffer)
 {
-	PISP_ASSERT(outputNum < variant_.frontEndNumBranches(0));
+	PISP_ASSERT(output_num < variant_.front_end_num_branches(0));
 
-	feConfig_.output_buffer[outputNum] = outputBuffer;
+	fe_config_.output_buffer[output_num] = output_buffer;
 	// Assume these always get written.
 }
 
-void FrontEnd::getInput(pisp_fe_input_config &input) const
+void FrontEnd::get_input(pisp_fe_input_config &input) const
 {
-	input = feConfig_.input;
+	input = fe_config_.input;
 }
 
-void FrontEnd::getInputBuffer(pisp_fe_input_buffer_config &inputBuffer) const
+void FrontEnd::get_input_buffer(pisp_fe_input_buffer_config &input_buffer) const
 {
-	inputBuffer = feConfig_.input_buffer;
+	input_buffer = fe_config_.input_buffer;
 }
 
-void FrontEnd::getDecompress(pisp_decompress_config &decompress) const
+void FrontEnd::get_decompress(pisp_decompress_config &decompress) const
 {
-	decompress = feConfig_.decompress;
+	decompress = fe_config_.decompress;
 }
 
-void FrontEnd::getDecompand(pisp_fe_decompand_config &decompand) const
+void FrontEnd::get_decompand(pisp_fe_decompand_config &decompand) const
 {
-	decompand = feConfig_.decompand;
+	decompand = fe_config_.decompand;
 }
 
-void FrontEnd::getDpc(pisp_fe_dpc_config &dpc) const
+void FrontEnd::get_dpc(pisp_fe_dpc_config &dpc) const
 {
-	dpc = feConfig_.dpc;
+	dpc = fe_config_.dpc;
 }
 
-void FrontEnd::getBla(pisp_bla_config &bla) const
+void FrontEnd::get_bla(pisp_bla_config &bla) const
 {
-	bla = feConfig_.bla;
+	bla = fe_config_.bla;
 }
 
-void FrontEnd::getStatsCrop(pisp_fe_crop_config &statsCrop) const
+void FrontEnd::get_stats_crop(pisp_fe_crop_config &stats_crop) const
 {
-	statsCrop = feConfig_.stats_crop;
+	stats_crop = fe_config_.stats_crop;
 }
 
-void FrontEnd::getBlc(pisp_bla_config &blc) const
+void FrontEnd::get_blc(pisp_bla_config &blc) const
 {
-	blc = feConfig_.blc;
+	blc = fe_config_.blc;
 }
 
-void FrontEnd::getRgby(pisp_fe_rgby_config &rgby) const
+void FrontEnd::get_rgby(pisp_fe_rgby_config &rgby) const
 {
-	rgby = feConfig_.rgby;
+	rgby = fe_config_.rgby;
 }
 
-void FrontEnd::getLsc(pisp_fe_lsc_config &lsc) const
+void FrontEnd::get_lsc(pisp_fe_lsc_config &lsc) const
 {
-	lsc = feConfig_.lsc;
+	lsc = fe_config_.lsc;
 }
 
-void FrontEnd::getFloatingStats(pisp_fe_floating_stats_config &floatingStats) const
+void FrontEnd::get_floating_stats(pisp_fe_floating_stats_config &floating_stats) const
 {
-	floatingStats = feConfig_.floating_stats;
+	floating_stats = fe_config_.floating_stats;
 }
 
-void FrontEnd::getCrop(unsigned int outputNum, pisp_fe_crop_config &crop) const
+void FrontEnd::get_crop(unsigned int output_num, pisp_fe_crop_config &crop) const
 {
-	PISP_ASSERT(outputNum < variant_.frontEndNumBranches(0));
-	crop = feConfig_.ch[outputNum].crop;
+	PISP_ASSERT(output_num < variant_.front_end_num_branches(0));
+	crop = fe_config_.ch[output_num].crop;
 }
 
-void FrontEnd::getDownscale(unsigned int outputNum, pisp_fe_downscale_config &downscale) const
+void FrontEnd::get_downscale(unsigned int output_num, pisp_fe_downscale_config &downscale) const
 {
-	PISP_ASSERT(outputNum < variant_.frontEndNumBranches(0));
-	downscale = feConfig_.ch[outputNum].downscale;
+	PISP_ASSERT(output_num < variant_.front_end_num_branches(0));
+	downscale = fe_config_.ch[output_num].downscale;
 }
 
-void FrontEnd::getCompress(unsigned int outputNum, pisp_compress_config &compress) const
+void FrontEnd::get_compress(unsigned int output_num, pisp_compress_config &compress) const
 {
-	PISP_ASSERT(outputNum < variant_.frontEndNumBranches(0));
-	compress = feConfig_.ch[outputNum].compress;
+	PISP_ASSERT(output_num < variant_.front_end_num_branches(0));
+	compress = fe_config_.ch[output_num].compress;
 }
 
-void FrontEnd::getOutputFormat(unsigned int outputNum, pisp_image_format_config &outputFormat) const
+void FrontEnd::get_output_format(unsigned int output_num, pisp_image_format_config &output_format) const
 {
-	PISP_ASSERT(outputNum < variant_.frontEndNumBranches(0));
-	outputFormat = feConfig_.ch[outputNum].output.format;
+	PISP_ASSERT(output_num < variant_.front_end_num_branches(0));
+	output_format = fe_config_.ch[output_num].output.format;
 }
 
-void FrontEnd::getOutputBuffer(unsigned int outputNum, pisp_fe_output_buffer_config &outputBuffer) const
+void FrontEnd::get_output_buffer(unsigned int output_num, pisp_fe_output_buffer_config &output_buffer) const
 {
-	PISP_ASSERT(outputNum < variant_.frontEndNumBranches(0));
-	outputBuffer = feConfig_.output_buffer[outputNum];
+	PISP_ASSERT(output_num < variant_.front_end_num_branches(0));
+	output_buffer = fe_config_.output_buffer[output_num];
 }
 
-int FrontEnd::getOutputIntrLines(unsigned int outputNum) const
+int FrontEnd::get_output_intr_lines(unsigned int output_num) const
 {
-	PISP_ASSERT(outputNum < variant_.frontEndNumBranches(0));
-	return feConfig_.ch[outputNum].output.ilines;
+	PISP_ASSERT(output_num < variant_.front_end_num_branches(0));
+	return fe_config_.ch[output_num].output.ilines;
 }
 
 void FrontEnd::prepare(pisp_fe_config *config)
 {
 	// Only finalise blocks that are dirty *and* enabled.
-	uint32_t dirtyFlags = feConfig_.dirty_flags & feConfig_.global.enables;
-	uint16_t width = feConfig_.input.format.width, height = feConfig_.input.format.height;
+	uint32_t dirty_flags = fe_config_.dirty_flags & fe_config_.global.enables;
+	uint16_t width = fe_config_.input.format.width, height = fe_config_.input.format.height;
 
-	if (feConfig_.global.enables & PISP_FE_ENABLE_STATS_CROP)
+	if (fe_config_.global.enables & PISP_FE_ENABLE_STATS_CROP)
 	{
-		width = feConfig_.stats_crop.width;
-		height = feConfig_.stats_crop.height;
+		width = fe_config_.stats_crop.width;
+		height = fe_config_.stats_crop.height;
 	}
 
-	if (dirtyFlags & PISP_FE_ENABLE_LSC)
-		finaliseLsc(feConfig_.lsc, width, height);
-	if (dirtyFlags & PISP_FE_ENABLE_AGC_STATS)
-		finaliseAgc(feConfig_.agc_stats, width, height);
-	if (dirtyFlags & PISP_FE_ENABLE_AWB_STATS)
-		finaliseAwb(feConfig_.awb_stats, width, height);
-	if (dirtyFlags & PISP_FE_ENABLE_CDAF_STATS)
-		finaliseCdaf(feConfig_.cdaf_stats, width, height);
+	if (dirty_flags & PISP_FE_ENABLE_LSC)
+		finalise_lsc(fe_config_.lsc, width, height);
+	if (dirty_flags & PISP_FE_ENABLE_AGC_STATS)
+		finalise_agc(fe_config_.agc_stats, width, height);
+	if (dirty_flags & PISP_FE_ENABLE_AWB_STATS)
+		finalise_awb(fe_config_.awb_stats, width, height);
+	if (dirty_flags & PISP_FE_ENABLE_CDAF_STATS)
+		finalise_cdaf(fe_config_.cdaf_stats, width, height);
 
-	width = feConfig_.input.format.width, height = feConfig_.input.format.height;
+	width = fe_config_.input.format.width, height = fe_config_.input.format.height;
 	for (int i = 0; i < PISP_FE_NUM_OUTPUTS; i++)
 	{
-		if (dirtyFlags & blockEnable(PISP_FE_ENABLE_DOWNSCALE0, i))
+		if (dirty_flags & block_enable(PISP_FE_ENABLE_DOWNSCALE0, i))
 		{
-			int cwidth = width, cheight = height;
+			int c_width = width, c_height = height;
 
-			if (feConfig_.global.enables & blockEnable(PISP_FE_ENABLE_CROP0, i))
-				cwidth = feConfig_.ch[i].crop.width, cheight = feConfig_.ch[i].crop.height;
+			if (fe_config_.global.enables & block_enable(PISP_FE_ENABLE_CROP0, i))
+				c_width = fe_config_.ch[i].crop.width, c_height = fe_config_.ch[i].crop.height;
 
-			finaliseDownscale(feConfig_.ch[i].downscale, cwidth, cheight);
+			finalise_downscale(fe_config_.ch[i].downscale, c_width, c_height);
 		}
 
-		if (dirtyFlags & (blockEnable(PISP_FE_ENABLE_OUTPUT0, i) | blockEnable(PISP_FE_ENABLE_COMPRESS0, i)))
-			finaliseCompression(feConfig_, i);
+		if (dirty_flags & (block_enable(PISP_FE_ENABLE_OUTPUT0, i) | block_enable(PISP_FE_ENABLE_COMPRESS0, i)))
+			finalise_compression(fe_config_, i);
 
-		if (dirtyFlags & blockEnable(PISP_FE_ENABLE_OUTPUT0, i))
+		if (dirty_flags & block_enable(PISP_FE_ENABLE_OUTPUT0, i))
 		{
-			pisp_image_format_config &imageConfig = feConfig_.ch[i].output.format;
+			pisp_image_format_config &image_config = fe_config_.ch[i].output.format;
 
-			fixOutputSize(i);
-			if (!imageConfig.stride)
-				computeStrideAlign(imageConfig, align_);
+			fix_output_size(i);
+			if (!image_config.stride)
+				compute_stride_align(image_config, align_);
 		}
 	}
 
-	*config = feConfig_;
+	*config = fe_config_;
 
 	// Fixup any grid offsets/sizes if stats decimation is enabled.
 	if (config->global.enables & PISP_FE_ENABLE_DECIMATE)
-		decimateConfig(*config);
+		decimate_config(*config);
 
-	feConfig_.dirty_flags = feConfig_.dirty_flags_extra = 0;
+	fe_config_.dirty_flags = fe_config_.dirty_flags_extra = 0;
 }
 
-void FrontEnd::fixOutputSize(unsigned int outputNum)
+void FrontEnd::fix_output_size(unsigned int output_num)
 {
-	PISP_ASSERT(outputNum < variant_.frontEndNumBranches(0));
+	PISP_ASSERT(output_num < variant_.front_end_num_branches(0));
 
-	pisp_image_format_config &imageConfig = feConfig_.ch[outputNum].output.format;
+	pisp_image_format_config &image_config = fe_config_.ch[output_num].output.format;
 
-	imageConfig.width = imageConfig.height = 0;
+	image_config.width = image_config.height = 0;
 
-	if (feConfig_.global.enables & blockEnable(PISP_FE_ENABLE_OUTPUT0, outputNum))
+	if (fe_config_.global.enables & block_enable(PISP_FE_ENABLE_OUTPUT0, output_num))
 	{
-		imageConfig.width = feConfig_.input.format.width;
-		imageConfig.height = feConfig_.input.format.height;
+		image_config.width = fe_config_.input.format.width;
+		image_config.height = fe_config_.input.format.height;
 
-		if (feConfig_.global.enables & blockEnable(PISP_FE_ENABLE_CROP0, outputNum))
+		if (fe_config_.global.enables & block_enable(PISP_FE_ENABLE_CROP0, output_num))
 		{
-			imageConfig.width = feConfig_.ch[outputNum].crop.width;
-			imageConfig.width = feConfig_.ch[outputNum].crop.height;
+			image_config.width = fe_config_.ch[output_num].crop.width;
+			image_config.width = fe_config_.ch[output_num].crop.height;
 		}
 
-		if (feConfig_.global.enables & blockEnable(PISP_FE_ENABLE_DOWNSCALE0, outputNum))
+		if (fe_config_.global.enables & block_enable(PISP_FE_ENABLE_DOWNSCALE0, output_num))
 		{
-			imageConfig.width = feConfig_.ch[outputNum].downscale.output_width;
-			imageConfig.height = feConfig_.ch[outputNum].downscale.output_height;
+			image_config.width = fe_config_.ch[output_num].downscale.output_width;
+			image_config.height = fe_config_.ch[output_num].downscale.output_height;
 		}
 	}
 }

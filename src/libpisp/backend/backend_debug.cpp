@@ -43,7 +43,7 @@ const std::map<std::size_t, uint32_t> mask {
 
 // clang-format off
 
-const std::vector<ConfigBlock> beConfig {
+const std::vector<ConfigBlock> be_config {
 	{
 		"global", offsetof(pisp_be_config, global),
 		{
@@ -416,7 +416,7 @@ const std::vector<ConfigBlock> beConfig {
 	/* The "axi" field here is never configured or used; the real BE_AXI register is not part of the config */
 };
 
-const ConfigBlock tilesConfig {
+const ConfigBlock tiles_config {
 	"tiles", 0,
 	{
 		{ "edge", offsetof(pisp_tile, edge), sizeof(uint8_t), 1 },
@@ -472,11 +472,11 @@ void write_val(uint8_t *ptr, uint32_t offset, uint32_t size, uint32_t val)
 
 } // namespace
 
-std::string BackEnd::getJsonConfig(pisp_be_tiles_config *config)
+std::string BackEnd::get_json_config(pisp_be_tiles_config *config)
 {
-	json j = { {"version", 1.0}, {"be_revision", variant_.backEndVersion()} };
+	json j = { {"version", 1.0}, {"be_revision", variant_.back_end_version()} };
 
-	for (auto const &param : beConfig)
+	for (auto const &param : be_config)
 	{
 		json b;
 		for (auto const &field : param.fields)
@@ -497,7 +497,7 @@ std::string BackEnd::getJsonConfig(pisp_be_tiles_config *config)
 	for (unsigned int t = 0; t < config->num_tiles; t++)
 	{
 		json b;
-		for (auto const &field : tilesConfig.fields)
+		for (auto const &field : tiles_config.fields)
 		{
 			if (field.num == 1)
 			{
@@ -515,12 +515,12 @@ std::string BackEnd::getJsonConfig(pisp_be_tiles_config *config)
 	return j.dump(4);
 }
 
-void BackEnd::setJsonConfig(const std::string &jsonStr)
+void BackEnd::set_json_config(const std::string &json_str)
 {
-	json j = json::parse(jsonStr);
+	json j = json::parse(json_str);
 
-	pisp_be_config *config = &pipe_->hwConfig;
-	for (auto const &param : beConfig)
+	pisp_be_config *config = &pipe_->hw_config;
+	for (auto const &param : be_config)
 	{
 		for (auto const &field : param.fields)
 		{
@@ -539,9 +539,9 @@ void BackEnd::setJsonConfig(const std::string &jsonStr)
 	}
 
 	// Clear any dirty flags so no reconfiguration happens on the next Prepare() call.
-	pipe_->dirtyFlagsBayer = BayerEnable::None;
-	pipe_->dirtyFlagsRgb = RgbEnable::None;
-	pipe_->dirtyFlagsExtra = DirtyFlag::None;
+	pipe_->dirty_flags_bayer = BayerEnable::None;
+	pipe_->dirty_flags_rgb = RgbEnable::None;
+	pipe_->dirty_flags_extra = DirtyFlag::None;
 
 	// But do retile the pipeline to get the tile structures setup correctly.
 	pipe_->retile = true;

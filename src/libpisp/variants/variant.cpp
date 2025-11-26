@@ -17,58 +17,58 @@ namespace libpisp
 const PiSPVariant BCM2712_C0 {
 	.name = "BCM2712_C0",
 	.id = 0x0001,
-	.feVersion = 0x00114666,
-	.beVersion = 0x02252700,
-	.numFe = 2,
-	.numBe = 1,
-	.numFeBranches = { 2, 2 },
-	.feStatsMaxWidth = { 6144, 6144 },
-	.feDownscaler = { { { true, true }, { true, true } } },
-	.feDownscalerMaxWidth = { { { 6144, 4096 }, { 6144, 4096 } } },
-	.beMaxTileWidth = 640,
-	.numBeBranches = { 2 },
-	.beIntegralImages = { { { false, false } } },
-	.beDownscaler = { { { false, true } } },
-	.beRgb32Support = false,
+	.fe_version = 0x00114666,
+	.be_version = 0x02252700,
+	.num_fe = 2,
+	.num_be = 1,
+	.num_fe_branches = { 2, 2 },
+	.fe_stats_max_width = { 6144, 6144 },
+	.fe_downscaler = { { { true, true }, { true, true } } },
+	.fe_downscaler_max_width = { { { 6144, 4096 }, { 6144, 4096 } } },
+	.be_max_tile_width = 640,
+	.num_be_branches = { 2 },
+	.be_integral_images = { { { false, false } } },
+	.be_downscaler = { { { false, true } } },
+	.be_rgb32_support = false,
 };
 
 const PiSPVariant BCM2712_D0 {
 	.name = "BCM2712_D0",
 	.id = 0x0002,	
-	.feVersion = 0x00114666,
-	.beVersion = 0x02252701,
-	.numFe = 2,
-	.numBe = 1,
-	.numFeBranches = { 2, 2 },
-	.feStatsMaxWidth = { 6144, 6144 },
-	.feDownscaler = { { { true, true }, { true, true } } },
-	.feDownscalerMaxWidth = { { { 6144, 4096 }, { 6144, 4096 } } },
-	.beMaxTileWidth = 640,
-	.numBeBranches = { 2 },
-	.beIntegralImages = { { { false, false } } },
-	.beDownscaler = { { { false, true } } },
-	.beRgb32Support = true,
+	.fe_version = 0x00114666,
+	.be_version = 0x02252701,
+	.num_fe = 2,
+	.num_be = 1,
+	.num_fe_branches = { 2, 2 },
+	.fe_stats_max_width = { 6144, 6144 },
+	.fe_downscaler = { { { true, true }, { true, true } } },
+	.fe_downscaler_max_width = { { { 6144, 4096 }, { 6144, 4096 } } },
+	.be_max_tile_width = 640,
+	.num_be_branches = { 2 },
+	.be_integral_images = { { { false, false } } },
+	.be_downscaler = { { { false, true } } },
+	.be_rgb32_support = true,
 };
 
 const PiSPVariant BERYL {
 	.name = "BERYL",
 	.id = 0x0003,
-	.feVersion = 0x00114666,
-	.beVersion = 0x00352320,
-	.numFe = 2,
-	.numBe = 1,
-	.numFeBranches = { 2, 2 },
-	.feStatsMaxWidth = { 6144, 6144 },
-	.feDownscaler = { { { true, true }, { true, true } } },
-	.feDownscalerMaxWidth = { { { 6144, 4096 }, { 6144, 4096 } } },
-	.beMaxTileWidth = 9126,
-	.numBeBranches = { 2 },
-	.beIntegralImages = { { { false, false } } },
-	.beDownscaler = { { { true, true } } },
-	.beRgb32Support = true,
+	.fe_version = 0x00114666,
+	.be_version = 0x00352320,
+	.num_fe = 2,
+	.num_be = 1,
+	.num_fe_branches = { 2, 2 },
+	.fe_stats_max_width = { 6144, 6144 },
+	.fe_downscaler = { { { true, true }, { true, true } } },
+	.fe_downscaler_max_width = { { { 6144, 4096 }, { 6144, 4096 } } },
+	.be_max_tile_width = 9126,
+	.num_be_branches = { 2 },
+	.be_integral_images = { { { false, false } } },
+	.be_downscaler = { { { true, true } } },
+	.be_rgb32_support = true,
 };
 
-const std::vector<PiSPVariant> &getVariants()
+const std::vector<PiSPVariant> &get_variants()
 {
 	static const std::vector<PiSPVariant> variants {
 		BCM2712_C0,
@@ -79,13 +79,13 @@ const std::vector<PiSPVariant> &getVariants()
 	return variants;
 }
 
-std::optional<PiSPVariant> getVariant(unsigned int feVersion, unsigned int beVersion)
+std::optional<PiSPVariant> get_variant(unsigned int fe_version, unsigned int be_version)
 {
-	const std::vector<PiSPVariant> &variants = getVariants();
+	const std::vector<PiSPVariant> &variants = get_variants();
 
 	auto it = std::find_if(variants.begin(), variants.end(),
-				   [feVersion, beVersion](const auto &hw) { return hw.frontEndVersion() == feVersion &&
-																	 hw.backEndVersion() == beVersion; });
+				   [fe_version, be_version](const auto &hw) { return hw.front_end_version() == fe_version &&
+																	 hw.back_end_version() == be_version; });
 
 	if (it == variants.end())
 		return {};

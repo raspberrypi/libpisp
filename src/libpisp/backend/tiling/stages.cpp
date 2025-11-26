@@ -13,87 +13,87 @@
 
 using namespace tiling;
 
-Stage::Stage(char const *name, Pipeline *pipeline, int structOffset)
-	: name_(name), pipeline_(pipeline), structOffset_(structOffset)
+Stage::Stage(char const *name, Pipeline *pipeline, int struct_offset)
+	: name_(name), pipeline_(pipeline), struct_offset_(struct_offset)
 {
 	if (pipeline)
-		pipeline->addStage(this);
+		pipeline->add_stage(this);
 }
 
-Pipeline *Stage::getPipeline() const
+Pipeline *Stage::get_pipeline() const
 {
 	return pipeline_;
 }
 
-void Stage::mergeRegions(void *dest, void *xSrc, void *ySrc) const
+void Stage::merge_regions(void *dest, void *x_src, void *y_src) const
 {
-	if (structOffset_ >= 0) // Hacky test to exclude stages that don't store a Region in each Tile
+	if (struct_offset_ >= 0) // Hacky test to exclude stages that don't store a Region in each Tile
 	{
-		Region *destRegion = (Region *)((int8_t *)dest + structOffset_);
-		Region *xSrc_region = (Region *)((int8_t *)xSrc + structOffset_);
-		Region *ySrc_region = (Region *)((int8_t *)ySrc + structOffset_);
-		destRegion->input[Dir::X] = xSrc_region->input[Dir::X];
-		destRegion->crop[Dir::X] = xSrc_region->crop[Dir::X];
-		destRegion->output[Dir::X] = xSrc_region->output[Dir::X];
-		destRegion->input[Dir::Y] = ySrc_region->input[Dir::Y];
-		destRegion->crop[Dir::Y] = ySrc_region->crop[Dir::Y];
-		destRegion->output[Dir::Y] = ySrc_region->output[Dir::Y];
+		Region *dest_region = (Region *)((int8_t *)dest + struct_offset_);
+		Region *x_src_region = (Region *)((int8_t *)x_src + struct_offset_);
+		Region *y_src_region = (Region *)((int8_t *)y_src + struct_offset_);
+		dest_region->input[Dir::X] = x_src_region->input[Dir::X];
+		dest_region->crop[Dir::X] = x_src_region->crop[Dir::X];
+		dest_region->output[Dir::X] = x_src_region->output[Dir::X];
+		dest_region->input[Dir::Y] = y_src_region->input[Dir::Y];
+		dest_region->crop[Dir::Y] = y_src_region->crop[Dir::Y];
+		dest_region->output[Dir::Y] = y_src_region->output[Dir::Y];
 	}
 }
 
-BasicStage::BasicStage(char const *name, Pipeline *pipeline, Stage *upstream, int structOffset)
-	: Stage(name, pipeline, structOffset), upstream_(upstream), downstream_(nullptr)
+BasicStage::BasicStage(char const *name, Pipeline *pipeline, Stage *upstream, int struct_offset)
+	: Stage(name, pipeline, struct_offset), upstream_(upstream), downstream_(nullptr)
 {
 	if (upstream)
-		upstream->setDownstream(this);
+		upstream->set_downstream(this);
 }
 
-Length2 BasicStage::getInputImageSize() const
+Length2 BasicStage::get_input_image_size() const
 {
-	return upstream_->getOutputImageSize();
+	return upstream_->get_output_image_size();
 }
 
-Length2 BasicStage::getOutputImageSize() const
+Length2 BasicStage::get_output_image_size() const
 {
-	return getInputImageSize();
+	return get_input_image_size();
 }
 
-void BasicStage::setDownstream(Stage *downstream)
+void BasicStage::set_downstream(Stage *downstream)
 {
 	downstream_ = downstream;
 }
 
 void BasicStage::reset()
 {
-	inputInterval_ = Interval(0, 0);
+	input_interval_ = Interval(0, 0);
 	crop_ = Crop(0, 0);
-	outputInterval_ = Interval(0, 0);
+	output_interval_ = Interval(0, 0);
 }
 
-void BasicStage::copyOut(void *dest, Dir dir)
+void BasicStage::copy_out(void *dest, Dir dir)
 {
-	if (structOffset_ >= 0)
+	if (struct_offset_ >= 0)
 	{
-		Region *region = (Region *)((uint8_t *)dest + structOffset_);
+		Region *region = (Region *)((uint8_t *)dest + struct_offset_);
 
-		PISP_LOG(debug, "(" << name_ << ") complete: " << getBranchComplete() << " inactive: " << getBranchInactive());
-		if (getBranchComplete() || getBranchInactive())
+		PISP_LOG(debug, "(" << name_ << ") complete: " << get_branch_complete() << " inactive: " << get_branch_inactive());
+		if (get_branch_complete() || get_branch_inactive())
 			BasicStage::reset();
 
-		region->input[dir] = inputInterval_;
+		region->input[dir] = input_interval_;
 		region->crop[dir] = crop_;
-		region->output[dir] = outputInterval_;
+		region->output[dir] = output_interval_;
 	}
 }
 
-bool BasicStage::getBranchComplete() const
+bool BasicStage::get_branch_complete() const
 {
-	return downstream_->getBranchComplete();
+	return downstream_->get_branch_complete();
 }
 
-bool BasicStage::getBranchInactive() const
+bool BasicStage::get_branch_inactive() const
 {
 	if (!upstream_)
 		return false;
-	return upstream_->getBranchInactive();
+	return upstream_->get_branch_inactive();
 }
