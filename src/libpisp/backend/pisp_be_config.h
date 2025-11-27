@@ -942,6 +942,9 @@ struct pisp_tile {
 // Precision of distance SD reciprocal, in lo-res cell units.
 #define PISP_BE_TONEMAP2_RECIP_PRECISION 10
 
+#define PISP_BE_TONEMAP2_MAX_SIZE 512
+#define PISP_BE_TONEMAP2_INPUT_FORMAT (PISP_IMAGE_FORMAT_BPS_16)
+
 struct pisp_be_tonemap2_config {
 	// 0 bytes
 	__u16 grid_step_x;
