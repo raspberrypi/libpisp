@@ -610,23 +610,6 @@ struct pisp_be_resample_config {
 } __attribute__((packed));
 
 /**
- * struct pisp_be_resample_extra - PiSP Back End Resample config
- *
- * Resample configuration
- *
- * @scaled_width:	Width in pixels of the scaled output
- * @scaled_height:	Height in pixels of the scaled output
- * @initial_phase_h:	Initial horizontal phase
- * @initial_phase_v:	Initial vertical phase
- */
-struct pisp_be_resample_extra {
-	__u16 scaled_width;
-	__u16 scaled_height;
-	__s16 initial_phase_h[3];
-	__s16 initial_phase_v[3];
-} __attribute__((packed));
-
-/**
  * struct pisp_be_downscale_config - PiSP Back End Downscale config
  *
  * Downscale configuration
@@ -980,6 +963,11 @@ struct pisp_be_tonemap2_config {
 	__u16 boost_neg;
 	__u16 boost_pos;
 	// 2348 bytes
+};
+
+struct pisp_be_tonemap2_buffer_config {
+	/* low 32 bits followed by high 32 bits */
+	uint32_t addr[2];
 };
 
 #define PISP_BE_DDX_LOG_GRID_SIZE 5
