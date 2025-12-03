@@ -679,7 +679,7 @@ void BackEnd::update_smart_resize()
 		if (!input_height)
 			input_height = post_transpose_height();
 
-		if ((pipe_->smart_resize_dirty & (1 << i)) || (pipe_->dirty_flags_extra & PISP_BE_DIRTY_CROP))
+		if ((pipe_->smart_resize_dirty & (1 << i)) || (pipe_->dirty_flags_extra & DirtyFlag::Crop))
 		{
 			if (pipe_->smart_resize[i].width && pipe_->smart_resize[i].height)
 			{

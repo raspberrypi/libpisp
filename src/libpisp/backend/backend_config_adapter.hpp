@@ -44,7 +44,7 @@ enum class RgbEnable : uint32_t
 	Compress1		= 0x00800000,
 };
 
-CREATE_BITFIELD(RgbEnables, RgbEnable);
+using RgbEnables = Bitfield<RgbEnable>;
 
 enum class BayerEnable : uint32_t
 {
@@ -78,7 +78,7 @@ enum class BayerEnable : uint32_t
 	Tonemap2Input	= 0x04000000,
 };
 
-CREATE_BITFIELD(BayerEnables, BayerEnable);
+using BayerEnables = Bitfield<BayerEnable>;
 
 enum class DirtyFlag : uint32_t
 {
@@ -88,10 +88,7 @@ enum class DirtyFlag : uint32_t
 	ShFcCombine	= 0x00000004,
 };
 
-CREATE_BITFIELD(DirtyFlags, DirtyFlag);
-
-template <typename T>
-concept EnumType = std::is_enum_v<T>;
+using DirtyFlags = Bitfield<DirtyFlag>;
 
 template <EnumType T>
 T get_flag_for_branch(const T field, unsigned int branch)

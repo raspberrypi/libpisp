@@ -6,147 +6,140 @@
 namespace libpisp
 {
 
+// Concept to constrain types to enums only
 template <typename T>
+concept EnumType = std::is_enum_v<T>;
+
+template <EnumType T>
 class Bitfield
 {
-	static_assert(std::is_enum<T>::value, "Bitfield<T>: T must be an enum type");
-	using Type = typename std::underlying_type<T>::type;
+	using Type = std::underlying_type_t<T>;
 
 public:
 	Type value;
 
-	constexpr Bitfield() : value(0) {}
-	constexpr Bitfield(T e) : value(static_cast<Type>(e)) {}
-	explicit constexpr Bitfield(Type v) : value(v) {}
-	constexpr Bitfield(Bitfield const &b) : value(b.value) {}
+	constexpr Bitfield() noexcept : value(0) {}
+	constexpr Bitfield(T e) noexcept : value(static_cast<Type>(e)) {}
+	explicit constexpr Bitfield(Type v) noexcept : value(v) {}
+	constexpr Bitfield(Bitfield const &b) noexcept : value(b.value) {}
 	constexpr Bitfield(Bitfield &&b) noexcept : value(b.value) {}
 
-	constexpr operator Type() const { return value; }
-	constexpr operator T() const { return static_cast<T>(value); }
+	constexpr operator Type() const noexcept { return value; }
+	constexpr operator T() const noexcept { return static_cast<T>(value); }
 
 	// Assignment
-	Bitfield &operator=(Bitfield const &) = default;
-	Bitfield &operator=(Bitfield &&) = default;
+	Bitfield &operator=(Bitfield const &) noexcept = default;
+	Bitfield &operator=(Bitfield &&) noexcept = default;
 
-	Bitfield &operator=(T e)
+	Bitfield &operator=(T e) noexcept
 	{
 		value = static_cast<Type>(e);
 		return *this;
 	}
 
-	// Prevent assignment from raw integers
+	// Prevent assignment and operations with raw integers (type safety)
 	Bitfield &operator=(Type v) = delete;
-	Bitfield &operator|(Type v) = delete;
+	Bitfield &operator|=(Type v) = delete;
+	Bitfield &operator&=(Type v) = delete;
+	Bitfield &operator^=(Type v) = delete;
 
-	Bitfield &operator|=(T e)
-	{
-		value |= static_cast<Type>(e);
-		return *this;
-	}
-	Bitfield &operator&=(T e)
-	{
-		value &= static_cast<Type>(e);
-		return *this;
-	}
-	Bitfield &operator^=(T e)
-	{
-		value ^= static_cast<Type>(e);
-		return *this;
-	}
-
-	Bitfield &operator|=(Bitfield other)
+	Bitfield &operator|=(Bitfield other) noexcept
 	{
 		value |= other.value;
 		return *this;
 	}
-	Bitfield &operator&=(Bitfield other)
+	Bitfield &operator&=(Bitfield other) noexcept
 	{
 		value &= other.value;
 		return *this;
 	}
-	Bitfield &operator^=(Bitfield other)
+	Bitfield &operator^=(Bitfield other) noexcept
 	{
 		value ^= other.value;
 		return *this;
 	}
 
-	friend constexpr Bitfield operator|(Bitfield a, Bitfield b) { return Bitfield(a.value | b.value); }
-	friend constexpr Bitfield operator|(Bitfield a, T b) { return Bitfield(a.value | static_cast<Type>(b)); }
-	friend constexpr Bitfield operator|(T a, Bitfield b) { return Bitfield(static_cast<Type>(a) | b.value); }
+	// Bitwise operators
+	friend constexpr Bitfield operator|(Bitfield a, Bitfield b) noexcept { return Bitfield(a.value | b.value); }
+	friend constexpr Bitfield operator&(Bitfield a, Bitfield b) noexcept { return Bitfield(a.value & b.value); }
+	friend constexpr Bitfield operator^(Bitfield a, Bitfield b) noexcept { return Bitfield(a.value ^ b.value); }
 
-	friend constexpr Bitfield operator&(Bitfield a, Bitfield b) { return Bitfield(a.value & b.value); }
-	friend constexpr Bitfield operator&(Bitfield a, T b) { return Bitfield(a.value & static_cast<Type>(b)); }
-	friend constexpr Bitfield operator&(T a, Bitfield b) { return Bitfield(static_cast<Type>(a) & b.value); }
+	// Prevent mixing Bitfield with raw integers in binary operations (type safety)
+	friend constexpr Bitfield operator|(Bitfield a, Type b) = delete;
+	friend constexpr Bitfield operator|(Type a, Bitfield b) = delete;
+	friend constexpr Bitfield operator&(Bitfield a, Type b) = delete;
+	friend constexpr Bitfield operator&(Type a, Bitfield b) = delete;
+	friend constexpr Bitfield operator^(Bitfield a, Type b) = delete;
+	friend constexpr Bitfield operator^(Type a, Bitfield b) = delete;
 
-	friend constexpr Bitfield operator^(Bitfield a, Bitfield b) { return Bitfield(a.value ^ b.value); }
-	friend constexpr Bitfield operator^(Bitfield a, T b) { return Bitfield(a.value ^ static_cast<Type>(b)); }
-	friend constexpr Bitfield operator^(T a, Bitfield b) { return Bitfield(static_cast<Type>(a) ^ b.value); }
+	constexpr Bitfield operator~() const noexcept { return Bitfield(~value); }
 
-	constexpr Bitfield operator~() const { return Bitfield(~value); }
+	// Comparison operators
+	friend constexpr bool operator==(Bitfield a, Bitfield b) noexcept { return a.value == b.value; }
+	friend constexpr bool operator!=(Bitfield a, Bitfield b) noexcept { return a.value != b.value; }
+	friend constexpr bool operator==(Bitfield a, T b) noexcept { return a.value == static_cast<Type>(b); }
+	friend constexpr bool operator!=(Bitfield a, T b) noexcept { return a.value != static_cast<Type>(b); }
+	friend constexpr bool operator==(T a, Bitfield b) noexcept { return static_cast<Type>(a) == b.value; }
+	friend constexpr bool operator!=(T a, Bitfield b) noexcept { return static_cast<Type>(a) != b.value; }
 
-	constexpr bool any() const { return value != 0; }
-	constexpr bool none() const { return value == 0; }
-	explicit constexpr operator bool() const { return any(); }
+	// Query methods
+	constexpr bool any() const noexcept { return value != 0; }
+	constexpr bool none() const noexcept { return value == 0; }
+	explicit constexpr operator bool() const noexcept { return any(); }
 
-	constexpr bool contains(T e) const { return (value & static_cast<Type>(e)) != 0; }
+	constexpr bool contains(T e) const noexcept { return (value & static_cast<Type>(e)) != 0; }
 };
 
-template <typename T>
-inline constexpr typename std::enable_if<std::is_enum<T>::value, T>::type operator|(T a, T b)
+// Bitwise operators for enum types (allow combining enum values with | & ^)
+template <EnumType T>
+inline constexpr T operator|(T a, T b) noexcept
 {
-	using U = typename std::underlying_type<T>::type;
+	using U = std::underlying_type_t<T>;
 	return static_cast<T>(static_cast<U>(a) | static_cast<U>(b));
 }
 
-template <typename T>
-inline constexpr typename std::enable_if<std::is_enum<T>::value, T>::type operator&(T a, T b)
+template <EnumType T>
+inline constexpr T operator&(T a, T b) noexcept
 {
-	using U = typename std::underlying_type<T>::type;
+	using U = std::underlying_type_t<T>;
 	return static_cast<T>(static_cast<U>(a) & static_cast<U>(b));
 }
 
-template <typename T>
-inline constexpr typename std::enable_if<std::is_enum<T>::value, T>::type operator^(T a, T b)
+template <EnumType T>
+inline constexpr T operator^(T a, T b) noexcept
 {
-	using U = typename std::underlying_type<T>::type;
+	using U = std::underlying_type_t<T>;
 	return static_cast<T>(static_cast<U>(a) ^ static_cast<U>(b));
 }
 
-template <typename T>
-inline typename std::enable_if<std::is_enum<T>::value, T &>::type operator|=(T &a, T b)
+// Compound assignment operators for enum types
+template <EnumType T>
+inline T &operator|=(T &a, T b) noexcept
 {
 	a = a | b;
 	return a;
 }
 
-template <typename T>
-inline typename std::enable_if<std::is_enum<T>::value, T &>::type operator&=(T &a, T b)
+template <EnumType T>
+inline T &operator&=(T &a, T b) noexcept
 {
 	a = a & b;
 	return a;
 }
 
-template <typename T>
-inline typename std::enable_if<std::is_enum<T>::value, T &>::type operator^=(T &a, T b)
+template <EnumType T>
+inline T &operator^=(T &a, T b) noexcept
 {
 	a = a ^ b;
 	return a;
 }
 
-template <typename T>
-inline constexpr typename std::enable_if<std::is_enum<T>::value, T>::type operator~(T a)
+// Bitwise NOT operator for enum types
+template <EnumType T>
+inline constexpr T operator~(T a) noexcept
 {
-	using U = typename std::underlying_type<T>::type;
+	using U = std::underlying_type_t<T>;
 	return static_cast<T>(~static_cast<U>(a));
 }
-
-#define CREATE_BITFIELD(ClassName, EnumType) \
-class ClassName : public Bitfield<EnumType> \
-{ \
-public: \
-	using Bitfield::Bitfield; /* inherit constructors */ \
-	/* Allow construction from base class (needed for operator returns) */ \
-	ClassName(Bitfield<EnumType> const &b) : Bitfield<EnumType>(b) {} \
-};
 
 } // namespace libpisp
