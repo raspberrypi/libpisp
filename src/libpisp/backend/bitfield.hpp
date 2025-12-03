@@ -36,6 +36,7 @@ public:
 
 	// Prevent assignment from raw integers
 	Bitfield &operator=(Type v) = delete;
+	Bitfield &operator|(Type v) = delete;
 
 	Bitfield &operator|=(T e)
 	{

@@ -19,7 +19,7 @@
 namespace libpisp
 {
 
-class FrontEnd final
+class FrontEnd
 {
 public:
 	static constexpr uint32_t ScalePrecision = 10;

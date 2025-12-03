@@ -84,7 +84,7 @@ typedef struct {
 typedef struct {
 	uint8_t streaming;
 	uint8_t pad[3];
-	pisp_image_format_config format;
+	struct pisp_image_format_config format;
 	pisp_fe_input_axi_config axi;
 	/* Extra cycles delay before issuing each burst request */
 	uint8_t holdoff;
@@ -92,7 +92,7 @@ typedef struct {
 } pisp_fe_input_config;
 
 typedef struct {
-	pisp_image_format_config format;
+	struct pisp_image_format_config format;
 	uint16_t ilines;
 	uint8_t pad[2];
 } pisp_fe_output_config;
@@ -272,7 +272,7 @@ typedef struct {
 typedef struct {
 	pisp_fe_crop_config crop;
 	pisp_fe_downscale_config downscale;
-	pisp_compress_config compress;
+	struct pisp_compress_config compress;
 	pisp_fe_output_config output;
 	uint32_t pad;
 } pisp_fe_output_branch_config;
@@ -286,13 +286,13 @@ typedef struct {
 	/* processing configuration: */
 	pisp_fe_global_config global;
 	pisp_fe_input_config input;
-	pisp_decompress_config decompress;
+	struct pisp_decompress_config decompress;
 	pisp_fe_decompand_config decompand;
-	pisp_bla_config bla;
+	struct pisp_bla_config bla;
 	pisp_fe_dpc_config dpc;
 	pisp_fe_crop_config stats_crop;
 	pisp_fe_stats_decimate_config stats_decimate;
-	pisp_bla_config blc;
+	struct pisp_bla_config blc;
 	pisp_fe_rgby_config rgby;
 	pisp_fe_lsc_config lsc;
 	pisp_fe_agc_stats_config agc_stats;

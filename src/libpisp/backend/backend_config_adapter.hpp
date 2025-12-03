@@ -142,6 +142,8 @@ struct BeResampleConfig
 	uint16_t scale_factor_v = 0;
 	// TODO make this a union with H/V coeffs?
 	std::optional<std::array<int16_t, PISP_BE_RESAMPLE_FILTER_SIZE>> coef {};
+	std::optional<std::array<int16_t, PISP_BE_RESAMPLE_FILTER_SIZE>> coef_h {};
+	std::optional<std::array<int16_t, PISP_BE_RESAMPLE_FILTER_SIZE>> coef_v{};
 	uint16_t scaled_width = 0; // Non-register field
 	uint16_t scaled_height = 0; // Non-register field
 	std::array<int16_t, 3> initial_phase_h {}; // Non-register field
@@ -176,7 +178,7 @@ struct BeStitchConfig
 	uint8_t motion_threshold_256 = 0;
 	uint8_t motion_threshold_recip = 0;
 
-	// v2
+	// v2 (pisp_be_tdn2_config)
 	uint16_t black_level = 0;
 	uint16_t ratio = 0;
 	uint16_t noise_constant = 0;

@@ -88,6 +88,17 @@ enum pisp_be_rgb_enable {
 #define PISP_BE_RGB_ENABLE_OUTPUT(i) (PISP_BE_RGB_ENABLE_OUTPUT0 << (i))
 #define PISP_BE_RGB_ENABLE_COMPRESS(i) (PISP_BE_RGB_ENABLE_COMPRESS0 << (i))
 
+
+#define PISP_BE_RGB_ENABLE2_CSC(i) (PISP_BE_RGB_ENABLE2_CSC0 << (i))
+#define PISP_BE_RGB_ENABLE2_PRE_CSC(i) (PISP_BE_RGB_ENABLE2_PRE_CSC0 << (i))
+#define PISP_BE_RGB_ENABLE2_GAMMA(i) (PISP_BE_RGB_ENABLE2_GAMMA0 << (i))
+#define PISP_BE_RGB_ENABLE2_POST_CSC(i) (PISP_BE_RGB_ENABLE2_POST_CSC0 << (i))
+#define PISP_BE_RGB_ENABLE2_DOWNSCALE(i) (PISP_BE_RGB_ENABLE2_DOWNSCALE0 << (i))
+#define PISP_BE_RGB_ENABLE2_RESAMPLE(i) (PISP_BE_RGB_ENABLE2_RESAMPLE0 << (i))
+#define PISP_BE_RGB_ENABLE2_OUTPUT(i) (PISP_BE_RGB_ENABLE2_OUTPUT0 << (i))
+#define PISP_BE_RGB_ENABLE2_COMPRESS(i) (PISP_BE_RGB_ENABLE2_COMPRESS0 << (i))
+
+
 /*
  * We use the enable flags to show when blocks are "dirty", but we need some
  * extra ones too.
@@ -967,7 +978,7 @@ struct pisp_be_tonemap2_config {
 
 struct pisp_be_tonemap2_buffer_config {
 	/* low 32 bits followed by high 32 bits */
-	uint32_t addr[2];
+	__u32 addr[2];
 };
 
 #define PISP_BE_DDX_LOG_GRID_SIZE 5
@@ -1037,6 +1048,15 @@ struct pisp_be_output_format_config2 {
 	__u16 hi2;
 } __attribute__((packed));
 
+typedef struct pisp_be_tdn_output_buffer_config pisp_be_tonemap2_input_buffer_config;
+
+typedef enum {
+	PISP_BE_CHROMA_COSITED = 0x0,
+	PISP_BE_CHROMA_H_INTER = 0x1,
+	PISP_BE_CHROMA_V_INTER = 0x2,
+	PISP_BE_CHROMA_INTERSTITIAL = (PISP_BE_CHROMA_H_INTER | PISP_BE_CHROMA_V_INTER)
+} pisp_be_chroma_pos;
+
 enum pisp_be_rgb_enable2 {
 	PISP_BE_RGB_ENABLE2_INPUT = 0x0000001,
 	PISP_BE_RGB_ENABLE2_DEDISTORT = 0x0000002,
@@ -1071,32 +1091,32 @@ enum pisp_be_rgb_enable2 {
 
 struct pisp_tile2 {
 	// 0 bytes
-	uint32_t input_addr_offset;
-	uint32_t input_addr_offset2;
+	__u32 input_addr_offset;
+	__u32 input_addr_offset2;
 	__u16 input_offset_x;
 	__u16 input_offset_y;
 	__u16 input_width;
 	__u16 input_height;
 	// 16 bytes
-	uint32_t tdn_input_addr_offset;
-	uint32_t tdn_output_addr_offset;
-	uint32_t stitch_input_addr_offset;
-	uint32_t stitch_output_addr_offset;
+	__u32 tdn_input_addr_offset;
+	__u32 tdn_output_addr_offset;
+	__u32 stitch_input_addr_offset;
+	__u32 stitch_output_addr_offset;
 	// 32 bytes
-	uint32_t lsc_grid_offset_x;
-	uint32_t lsc_grid_offset_y;
+	__u32 lsc_grid_offset_x;
+	__u32 lsc_grid_offset_y;
 	// 40 bytes
-	uint32_t cac_grid_offset_x;
-	uint32_t cac_grid_offset_y;
+	__u32 cac_grid_offset_x;
+	__u32 cac_grid_offset_y;
 	// 48 bytes
 	// at this point we insert Tonemap and Dedistort tile parameters for Beryl
-	uint32_t tonemap_grid_offset_x;
-	uint32_t tonemap_grid_offset_y;
-	uint32_t tonemap_lores_offset_x;
-	uint32_t tonemap_lores_offset_y;
+	__u32 tonemap_grid_offset_x;
+	__u32 tonemap_grid_offset_y;
+	__u32 tonemap_lores_offset_x;
+	__u32 tonemap_lores_offset_y;
 	// 64 bytes
-	uint32_t dedistort_grid_offset_x;
-	uint32_t dedistort_grid_offset_y;
+	__u32 dedistort_grid_offset_x;
+	__u32 dedistort_grid_offset_y;
 	// 72 bytes
 	__u16 crop_x_start[PISP_BACK_END_NUM_OUTPUTS];
 	__u16 crop_x_end[PISP_BACK_END_NUM_OUTPUTS];
@@ -1122,53 +1142,53 @@ struct pisp_tile2 {
 	__u16 output_width[PISP_BACK_END_NUM_OUTPUTS];
 	__u16 output_height[PISP_BACK_END_NUM_OUTPUTS];
 	// 132 bytes
-	uint32_t output_addr_offset[PISP_BACK_END_NUM_OUTPUTS];
-	uint32_t output_addr_offset2[PISP_BACK_END_NUM_OUTPUTS];
+	__u32 output_addr_offset[PISP_BACK_END_NUM_OUTPUTS];
+	__u32 output_addr_offset2[PISP_BACK_END_NUM_OUTPUTS];
 	// 148 bytes
 	__u8 pad1[12];
 	// 160 bytes
 } __attribute__((packed));
 
 struct pisp_be_config2 {
-	pisp_be_global_config global;
-	pisp_image_format_config input_format;
-	pisp_decompress_config decompress;
-	pisp_be_dpc_config dpc;
-	pisp_be_geq_config geq;
-	pisp_image_format_config tdn_input_format;
-	pisp_decompress_config tdn_decompress;
-	pisp_be_tdn2_config tdn;
-	pisp_compress_config tdn_compress;
-	pisp_image_format_config tdn_output_format;
-	pisp_be_sdn_config sdn;
-	pisp_bla_config blc;
-	pisp_compress_config stitch_compress;
-	pisp_image_format_config stitch_output_format;
-	pisp_image_format_config stitch_input_format;
-	pisp_decompress_config stitch_decompress;
-	pisp_be_tdn2_config stitch;
-	pisp_be_lsc_config lsc;
-	pisp_wbg_config wbg;
-	pisp_be_cdn_config cdn;
-	pisp_be_cac_config cac;
-	pisp_be_debin_config debin;
-	pisp_image_format_config tonemap2_format; /* inserted for Beryl */
-	pisp_be_tonemap2_config tonemap2; /* for Beryl, replaces tonemap */
-	pisp_be_demosaic2_config demosaic;
-	pisp_be_dedistort_config dedistort; /* inserted for Beryl */
-	pisp_be_ccm_config ccm;
-	pisp_be_sat_control_config sat_control;
-	pisp_be_ccm_config ycbcr;
-	pisp_be_sharpen_config sharpen;
-	pisp_be_false_colour_config false_colour;
-	pisp_be_sh_fc_combine_config sh_fc_combine;
-	pisp_be_ccm_config ycbcr_inverse;
-	pisp_be_ccm_config pre_csc[PISP_BACK_END_NUM_OUTPUTS];
-	pisp_be_gamma2_config gamma[PISP_BACK_END_NUM_OUTPUTS];
-	pisp_be_ccm_config post_csc[PISP_BACK_END_NUM_OUTPUTS];
-	pisp_be_downscale_config downscale[PISP_BACK_END_NUM_OUTPUTS];
-	pisp_be_resample2_config resample[PISP_BACK_END_NUM_OUTPUTS];
-	pisp_be_output_format_config2
+	struct pisp_be_global_config global;
+	struct pisp_image_format_config input_format;
+	struct pisp_decompress_config decompress;
+	struct pisp_be_dpc_config dpc;
+	struct pisp_be_geq_config geq;
+	struct pisp_image_format_config tdn_input_format;
+	struct pisp_decompress_config tdn_decompress;
+	struct pisp_be_tdn2_config tdn;
+	struct pisp_compress_config tdn_compress;
+	struct pisp_image_format_config tdn_output_format;
+	struct pisp_be_sdn_config sdn;
+	struct pisp_bla_config blc;
+	struct pisp_compress_config stitch_compress;
+	struct pisp_image_format_config stitch_output_format;
+	struct pisp_image_format_config stitch_input_format;
+	struct pisp_decompress_config stitch_decompress;
+	struct pisp_be_tdn2_config stitch;
+	struct pisp_be_lsc_config lsc;
+	struct pisp_wbg_config wbg;
+	struct pisp_be_cdn_config cdn;
+	struct pisp_be_cac_config cac;
+	struct pisp_be_debin_config debin;
+	struct pisp_image_format_config tonemap2_format; /* inserted for Beryl */
+	struct pisp_be_tonemap2_config tonemap2; /* for Beryl, replaces tonemap */
+	struct pisp_be_demosaic2_config demosaic;
+	struct pisp_be_dedistort_config dedistort; /* inserted for Beryl */
+	struct pisp_be_ccm_config ccm;
+	struct pisp_be_sat_control_config sat_control;
+	struct pisp_be_ccm_config ycbcr;
+	struct pisp_be_sharpen_config sharpen;
+	struct pisp_be_false_colour_config false_colour;
+	struct pisp_be_sh_fc_combine_config sh_fc_combine;
+	struct pisp_be_ccm_config ycbcr_inverse;
+	struct pisp_be_ccm_config pre_csc[PISP_BACK_END_NUM_OUTPUTS];
+	struct pisp_be_gamma2_config gamma[PISP_BACK_END_NUM_OUTPUTS];
+	struct pisp_be_ccm_config post_csc[PISP_BACK_END_NUM_OUTPUTS];
+	struct pisp_be_downscale_config downscale[PISP_BACK_END_NUM_OUTPUTS];
+	struct pisp_be_resample2_config resample[PISP_BACK_END_NUM_OUTPUTS];
+	struct pisp_be_output_format_config2
 				output_format[PISP_BACK_END_NUM_OUTPUTS];
 	struct pisp_compress_config compress[PISP_BACK_END_NUM_OUTPUTS];
 	// Add padding here if necessary to make a multiple of 32 bytes.
@@ -1192,7 +1212,7 @@ struct pisp_be_tiles_config {
 
 		// v2
 		struct {
-			pisp_be_config2 config;
+			struct pisp_be_config2 config;
 			struct pisp_tile2 tiles[PISP_BACK_END_NUM_TILES];
 		} __attribute__((packed)) v2;
 	};

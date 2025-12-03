@@ -1055,13 +1055,16 @@ void BackendConfigAdapter::set_resample(unsigned int i, const BeResampleConfig &
 		},
 
 		[&resample, i](pisp_be_config2 *cfg) {
+			auto const &coef_h = resample.coef_h ? resample.coef_h : resample.coef;
+			auto const &coef_v = resample.coef_v ? resample.coef_v : *resample.coef;
+
 			cfg->resample[i].scale_factor_h = resample.scale_factor_h;
 			cfg->resample[i].scale_factor_v = resample.scale_factor_v;
-			if (resample.coef)
-			{
-				std::memcpy(cfg->resample[i].coef_h, resample.coef->data(), sizeof(cfg->resample[i].coef_h));
-				std::memcpy(cfg->resample[i].coef_v, resample.coef->data(), sizeof(cfg->resample[i].coef_v));
-			}
+
+			if (coef_h)
+				std::memcpy(cfg->resample[i].coef_h, coef_h->data(), sizeof(cfg->resample[i].coef_h));
+			if (coef_v)
+				std::memcpy(cfg->resample[i].coef_v, coef_v->data(), sizeof(cfg->resample[i].coef_v));
 		}
 	});
 
