@@ -1008,7 +1008,7 @@ struct pisp_be_demosaic2_config {
 
 	__u8 threshold_scale;
 	__u8 pad[3];
-};
+} __attribute__((packed));
 
 struct pisp_be_resample2_config {
 	__u16 scale_factor_h, scale_factor_v;
@@ -1214,6 +1214,7 @@ struct pisp_be_tiles_config {
 		struct {
 			struct pisp_be_config2 config;
 			struct pisp_tile2 tiles[PISP_BACK_END_NUM_TILES];
+			__u32 num_tiles;
 		} __attribute__((packed)) v2;
 	};
 } __attribute__((packed));

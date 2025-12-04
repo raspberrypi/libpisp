@@ -1255,9 +1255,18 @@ void BackEnd::prepare(pisp_be_tiles_config *config)
 	{
 		// Allow passing of empty pointer, if only pipe_->hw_config should be filled
 		// 4. Write the config and tiles to the provided buffer to send to the hardware.
-		config->num_tiles = pipe_->num_tiles_x * pipe_->num_tiles_y;
-		memcpy(config->tiles, pipe_->tiles.data(), config->num_tiles * sizeof(pisp_tile));
-		config->config = pipe_->hw_config;
+		if (variant_ >= BERYL)
+		{
+			config->v2.num_tiles = pipe_->num_tiles_x * pipe_->num_tiles_y;
+			config->v2.config = pipe_->hw_config_v2;
+			std::copy(pipe_->tiles2.begin(), pipe_->tiles2.begin() + config->v2.num_tiles, config->v2.tiles);
+		}
+		else
+		{
+			config->num_tiles = pipe_->num_tiles_x * pipe_->num_tiles_y;
+			config->config = pipe_->hw_config;
+			std::copy(pipe_->tiles.begin(), pipe_->tiles.begin() + config->num_tiles, config->tiles);
+		}
 
 		// 5. Clear any dirty flags for the next configuration update.
 		pipe_->dirty_flags_bayer = BayerEnable::None;

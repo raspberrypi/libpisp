@@ -14,7 +14,6 @@
 #include <span>
 #include <string>
 #include <type_traits>
-#include <variant>
 #include <vector>
 
 #include "common/shm_mutex.hpp"
@@ -199,6 +198,7 @@ private:
 	struct PipelineConfig
 	{
 		pisp_be_config hw_config {};
+		pisp_be_config2 hw_config_v2 {};
 		BeConfigExtra config_extra {};
 
 		BayerEnables dirty_flags_bayer;

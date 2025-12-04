@@ -27,8 +27,12 @@ BackEnd::BackEnd(SoftwareConfig const &sw_config, PiSPVariant const &variant, st
 		pipe_ = reinterpret_cast<PipelineConfig *>(config_storage.data());
 	else
 		pipe_ = &internal_pipeline_config_;
-	
-	config_ = std::make_unique<BackendConfigAdapter>(&pipe_->hw_config, pipe_->tiles.data(), &pipe_->config_extra);
+
+	if (variant < BERYL)
+		config_ = std::make_unique<BackendConfigAdapter>(&pipe_->hw_config, pipe_->tiles.data(), &pipe_->config_extra);
+	else
+		config_ =
+			std::make_unique<BackendConfigAdapter>(&pipe_->hw_config_v2, pipe_->tiles2.data(), &pipe_->config_extra);
 
 	const char *env = std::getenv("LIBPISP_BE_CONFIG_FILE");
 	initialise_default_config(env ? std::string(env) : sw_config.defaults_file);
@@ -43,7 +47,7 @@ void BackEnd::set_global(BeGlobal const &global)
 	RgbEnables current_rgb_enables = config_->get_global().rgb_enables;
 	BayerEnables current_bayer_enables = config_->get_global().bayer_enables;
 
-	RgbEnables changed_rgb_enables(global.rgb_enables ^ current_rgb_enables);
+	RgbEnables changed_rgb_enables = global.rgb_enables ^ current_rgb_enables;
 
 	if (changed_rgb_enables & (RgbEnable::Downscale0 | RgbEnable::Downscale1 |
 							 RgbEnable::Resample0 | RgbEnable::Resample1))
