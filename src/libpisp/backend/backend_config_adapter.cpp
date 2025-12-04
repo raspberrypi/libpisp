@@ -1030,6 +1030,7 @@ BeGammaConfig BackendConfigAdapter::get_gamma(unsigned int i) const
 {
 	BeGammaConfig gamma;
 
+	// TODO: Replace with std::copy?
 	return visit(overloaded {
 		[&gamma](pisp_be_config *cfg) -> BeGammaConfig {
 			for (unsigned int j = 0; j < PISP_BE_GAMMA_LUT_SIZE; j++)
@@ -1050,6 +1051,7 @@ void BackendConfigAdapter::set_resample(unsigned int i, const BeResampleConfig &
 		[&resample, i](pisp_be_config *cfg) {
 			cfg->resample[i].scale_factor_h = resample.scale_factor_h;
 			cfg->resample[i].scale_factor_v = resample.scale_factor_v;
+			// TODO: Replace with std::copy?
 			if (resample.coef)
 				std::memcpy(cfg->resample[i].coef, resample.coef->data(), sizeof(cfg->resample[i].coef));
 		},
