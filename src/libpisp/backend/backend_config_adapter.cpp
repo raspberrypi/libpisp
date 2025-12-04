@@ -141,14 +141,16 @@ RgbEnables BackendConfigAdapter::hw_to_rgb_enables(uint32_t hw_enables) const
 			{
 				for (auto &[enable, map] : rgb_enable_map)
 					if ((hw_enables & map.v1) && map.v1)
-						enables = static_cast<RgbEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
+						//enables = static_cast<RgbEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
+						enables |= enable;
 			},
 
 			[&](pisp_be_config2 *)
 			{
 				for (auto &[enable, map] : rgb_enable_map)
 					if ((hw_enables & map.v2) && map.v2)
-						enables = static_cast<RgbEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
+						enables |= enable;
+						//enables = static_cast<RgbEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
 			}
 		}
 	);
@@ -166,14 +168,16 @@ BayerEnables BackendConfigAdapter::hw_to_bayer_enables(uint32_t hw_enables) cons
 			{
 				for (auto &[enable, map] : bayer_enable_map)
 					if ((hw_enables & map.v1) && map.v1)
-						enables = static_cast<BayerEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
+						//enables = static_cast<BayerEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
+						enables |= enable;
 			},
 
 			[&](pisp_be_config2 *)
 			{
 				for (auto &[enable, map] : bayer_enable_map)
 					if ((hw_enables & map.v2) && map.v2)
-						enables = static_cast<BayerEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
+						//enables = static_cast<BayerEnables>(static_cast<uint32_t>(enables) | static_cast<uint32_t>(enable));
+						enables |= enable;
 			}
 		}
 	);

@@ -315,7 +315,7 @@ void BackEnd::finalise_tdn()
 	ImageFormatConfig tdn_output_format = config_->get_tdn_output_format();
 	const BayerEnables bayer_enables = config_->get_global().bayer_enables;
 	
-	int tdn_enabled = bayer_enables & BayerEnable::Tdn;
+	bool tdn_enabled = (bayer_enables & BayerEnable::Tdn);
 	int tdn_input_enabled = bayer_enables & BayerEnable::TdnInput;
 	int tdn_decompress_enabled = bayer_enables & BayerEnable::TdnDecompress;
 	int tdn_compress_enabled = bayer_enables & BayerEnable::TdnCompress;

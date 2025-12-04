@@ -13,17 +13,17 @@ concept EnumType = std::is_enum_v<T>;
 template <EnumType T>
 class Bitfield
 {
+private:
 	using Type = std::underlying_type_t<T>;
-
-public:
 	Type value;
 
+	explicit constexpr Bitfield(Type v) noexcept : value(v) {}
+
+public:
 	constexpr Bitfield() noexcept : value(0) {}
 	constexpr Bitfield(T e) noexcept : value(static_cast<Type>(e)) {}
-	explicit constexpr Bitfield(Type v) noexcept : value(v) {}
 	constexpr Bitfield(Bitfield const &b) noexcept : value(b.value) {}
 	constexpr Bitfield(Bitfield &&b) noexcept : value(b.value) {}
-
 	constexpr operator Type() const noexcept { return value; }
 	constexpr operator T() const noexcept { return static_cast<T>(value); }
 
@@ -36,12 +36,6 @@ public:
 		value = static_cast<Type>(e);
 		return *this;
 	}
-
-	// Prevent assignment and operations with raw integers (type safety)
-	Bitfield &operator=(Type v) = delete;
-	Bitfield &operator|=(Type v) = delete;
-	Bitfield &operator&=(Type v) = delete;
-	Bitfield &operator^=(Type v) = delete;
 
 	Bitfield &operator|=(Bitfield other) noexcept
 	{
@@ -64,13 +58,18 @@ public:
 	friend constexpr Bitfield operator&(Bitfield a, Bitfield b) noexcept { return Bitfield(a.value & b.value); }
 	friend constexpr Bitfield operator^(Bitfield a, Bitfield b) noexcept { return Bitfield(a.value ^ b.value); }
 
-	// Prevent mixing Bitfield with raw integers in binary operations (type safety)
-	friend constexpr Bitfield operator|(Bitfield a, Type b) = delete;
-	friend constexpr Bitfield operator|(Type a, Bitfield b) = delete;
-	friend constexpr Bitfield operator&(Bitfield a, Type b) = delete;
-	friend constexpr Bitfield operator&(Type a, Bitfield b) = delete;
-	friend constexpr Bitfield operator^(Bitfield a, Type b) = delete;
-	friend constexpr Bitfield operator^(Type a, Bitfield b) = delete;
+	// Prevent mixing Bitfield with raw integers in binary operations for type safety
+	template <typename U>
+	requires std::is_integral_v<U>
+	friend constexpr Bitfield operator|(Bitfield, U) = delete;
+
+	template <typename U>
+	requires std::is_integral_v<U>
+	friend constexpr Bitfield operator&(Bitfield, U) = delete;
+
+	template <typename U>
+	requires std::is_integral_v<U>
+	friend constexpr Bitfield operator^(Bitfield, U) = delete;
 
 	constexpr Bitfield operator~() const noexcept { return Bitfield(~value); }
 
