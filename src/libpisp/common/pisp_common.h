@@ -148,7 +148,7 @@ enum pisp_image_format {
 	((fmt) &                                                               \
 	 (PISP_IMAGE_FORMAT_HOG_SIGNED | PISP_IMAGE_FORMAT_HOG_UNSIGNED))
 #define PISP_IMAGE_FORMAT_X_VALUE(fmt)                                     \
-	((fmt) & PISP_IMAGE_FORMAT_X_VALUE)
+	(((fmt) & PISP_IMAGE_FORMAT_X_VALUE) ? 255 : 0)
 
 #define PISP_WALLPAPER_WIDTH 128 /* in bytes */
 
