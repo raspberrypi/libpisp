@@ -1050,9 +1050,9 @@ void BackEnd::retile_pipeline(TilingConfig const &tiling_config)
 				}
 			}
 
-			// Phase difference between planes cannot be > 0.5 pixels on the output dimensions.
-			if (rgb_enables & get_flag_for_branch(RgbEnable::Resample0, j))
+			if (variant_ < BERYL && rgb_enables & get_flag_for_branch(RgbEnable::Resample0, j))
 			{
+				// Phase difference between planes cannot be > 0.5 pixels on the output dimensions.
 				const BeResampleConfig &resample = config_->get_resample(j);
 				int phase_max = (resample.scale_factor_h * UnityPhase / 2) >> ScalePrecision;
 				if (std::abs(t.resample_phase_x[0 * variant_.back_end_num_branches(0) + j] -
