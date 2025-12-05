@@ -449,20 +449,20 @@ BeGammaConfig BackEnd::get_gamma(unsigned int i) const
 void BackEnd::set_crop(BeCropConfig const &crop)
 {
 	for (unsigned int i = 0; i < variant_.back_end_num_branches(0); i++)
-		pipe_->config_extra.crop[i] = crop;
+		config_->set_crop(i, crop);
 	pipe_->dirty_flags_extra |= DirtyFlag::Crop;
 	pipe_->retile = true;
 }
 
 BeCropConfig BackEnd::get_crop() const
 {
-	return pipe_->config_extra.crop[0];
+	return config_->get_crop(0);
 }
 
 void BackEnd::set_crop(unsigned int i, BeCropConfig const &crop)
 {
 	PISP_ASSERT(i < variant_.back_end_num_branches(0));
-	pipe_->config_extra.crop[i] = crop;
+	config_->set_crop(i, crop);
 	pipe_->dirty_flags_extra |= DirtyFlag::Crop;
 	pipe_->retile = true;
 }
@@ -470,7 +470,7 @@ void BackEnd::set_crop(unsigned int i, BeCropConfig const &crop)
 BeCropConfig BackEnd::get_crop(unsigned int i) const
 {
 	PISP_ASSERT(i < variant_.back_end_num_branches(0));
-	return pipe_->config_extra.crop[i];
+	return config_->get_crop(i);
 }
 
 void BackEnd::set_pre_csc(unsigned int i, BeCcmConfig const &csc)

@@ -425,17 +425,14 @@ public:
 	void set_resample(unsigned int i, const BeResampleConfig &resample);
 	BeResampleConfig get_resample(unsigned int i) const;
 
+	void set_crop(unsigned int i, BeCropConfig const &crop);
+	BeCropConfig get_crop(unsigned int i) const;
+	
 	void set_dedistort(const BeDedistortionConfig &dedistort);
 	BeDedistortionConfig get_dedistort() const;
 
 	void set_output_compress(unsigned int i, const BeCompressConfig &compress);
 	BeCompressConfig get_output_compress(unsigned int i) const;
-
-	// TOOD: Probably remove this and just return extra fields in get_*
-	BeConfigExtra *get_extras()
-	{
-		return extras_;
-	}
 
 private:
 	uint32_t rgb_enables_to_hw(RgbEnables rgb_enables) const;

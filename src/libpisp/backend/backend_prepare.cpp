@@ -621,8 +621,8 @@ void BackEnd::finalise_config()
 		if (enabled)
 		{
 			// crop is enabled when it contains non-zero width/height
-			uint16_t w = config_->get_extras()->crop[j].width ? config_->get_extras()->crop[j].width : post_transpose_width();
-			uint16_t h = config_->get_extras()->crop[j].width ? config_->get_extras()->crop[j].height : post_transpose_height();
+			uint16_t w = config_->get_crop(j).width ? config_->get_crop(j).width : post_transpose_width();
+			uint16_t h = config_->get_crop(j).width ? config_->get_crop(j).height : post_transpose_height();
 
 			if (dirty_flags_rgb & get_flag_for_branch(RgbEnable::Downscale0, j))
 			{
@@ -635,8 +635,8 @@ void BackEnd::finalise_config()
 			if (rgb_enables & get_flag_for_branch(RgbEnable::Downscale0, j))
 			{
 				// If the downscale is enabled, we update the input width/height for the resample stage.
-				w = config_->get_extras()->downscale[j].scaled_width;
-				h = config_->get_extras()->downscale[j].scaled_height;
+				w = config_->get_downscale(j).scaled_width;
+				h = config_->get_downscale(j).scaled_height;
 			}
 
 			if (dirty_flags_rgb & get_flag_for_branch(RgbEnable::Resample0, j))
@@ -672,10 +672,10 @@ void BackEnd::update_smart_resize()
 	for (unsigned int i = 0; i < variant_.back_end_num_branches(0); i++)
 	{
 		// First get the size of the input to the rescalers. The crops are zero when not in use.
-		uint16_t input_width = config_->get_extras()->crop[i].width;
+		uint16_t input_width = config_->get_crop(i).width;
 		if (!input_width)
 			input_width = post_transpose_width();
-		uint16_t input_height = config_->get_extras()->crop[i].height;
+		uint16_t input_height = config_->get_crop(i).height;
 		if (!input_height)
 			input_height = post_transpose_height();
 
@@ -816,7 +816,6 @@ void BackEnd::update_tiles()
 	if (pipe_->retile)
 	{
 		TilingConfig tiling_config;
-		const BeConfigExtra *ce = config_->get_extras();
 		RgbEnables rgb_enables = config_->get_global().rgb_enables;
 
 		pipe_->retile = false;
@@ -831,9 +830,10 @@ void BackEnd::update_tiles()
 			const BeOutputFormatConfig &output_format = config_->get_output_format(i);
 			const BeDownscaleConfig &downscale = config_->get_downscale(i);
 			const BeResampleConfig &resample = config_->get_resample(i);
+			const BeCropConfig &crop = config_->get_crop(i);			
 
-			tiling_config.crop[i] = tiling::Interval2(tiling::Interval(ce->crop[i].offset_x, ce->crop[i].width),
-													  tiling::Interval(ce->crop[i].offset_y, ce->crop[i].height));
+			tiling_config.crop[i] = tiling::Interval2(tiling::Interval(crop.offset_x, crop.width),
+													  tiling::Interval(crop.offset_y, crop.height));
 
 			if (tiling_config.crop[i].x.length == 0 || tiling_config.crop[i].y.length == 0)
 				tiling_config.crop[i] = tiling::Interval2(tiling::Interval(0, post_transpose_width()),
@@ -845,7 +845,7 @@ void BackEnd::update_tiles()
 			tiling_config.resample_factor[i] =
 				tiling::Length2(resample.scale_factor_h, resample.scale_factor_v);
 			tiling_config.downscale_image_size[i] =
-				tiling::Length2(ce->downscale[i].scaled_width, ce->downscale[i].scaled_height);
+				tiling::Length2(downscale.scaled_width, downscale.scaled_height);
 			tiling_config.output_image_size[i] =
 				tiling::Length2(output_format.image.width, output_format.image.height);
 			tiling_config.output_max_alignment[i] =
@@ -1041,9 +1041,9 @@ void BackEnd::retile_pipeline(TilingConfig const &tiling_config)
 						((interpolated_pix_y % NumPhases) << ScalePrecision) / NumPhases;
 					// Account for any user defined initial phase - this could be negative!
 					t.resample_phase_x[p * variant_.back_end_num_branches(0) + j] +=
-						config_->get_extras()->resample[j].initial_phase_h[p];
+						config_->get_resample(j).initial_phase_h[p];
 					t.resample_phase_y[p * variant_.back_end_num_branches(0) + j] +=
-						config_->get_extras()->resample[j].initial_phase_v[p];
+						config_->get_resample(j).initial_phase_v[p];
 					// Have to be within this range, else some calculation went wrong.
 					PISP_ASSERT(t.resample_phase_x[p * variant_.back_end_num_branches(0) + j] <= (2 * UnityPhase - 1));
 					PISP_ASSERT(t.resample_phase_y[p * variant_.back_end_num_branches(0) + j] <= (2 * UnityPhase - 1));
@@ -1109,14 +1109,14 @@ void BackEnd::finalise_tiling()
 
 		if (bayer_enables & BayerEnable::Lsc)
 		{
-			t.lsc_grid_offset_x = (t.input_offset_x + config_->get_extras()->lsc.offset_x) * lsc.grid_step_x;
-			t.lsc_grid_offset_y = (t.input_offset_y + config_->get_extras()->lsc.offset_y) * lsc.grid_step_y;
+			t.lsc_grid_offset_x = (t.input_offset_x + config_->get_lsc().offset_x) * lsc.grid_step_x;
+			t.lsc_grid_offset_y = (t.input_offset_y + config_->get_lsc().offset_y) * lsc.grid_step_y;
 		}
 
 		if (bayer_enables & BayerEnable::Cac)
 		{
-			t.cac_grid_offset_x = (t.input_offset_x + config_->get_extras()->cac.offset_x) * cac.grid_step_x;
-			t.cac_grid_offset_y = (t.input_offset_y + config_->get_extras()->cac.offset_y) * cac.grid_step_y;
+			t.cac_grid_offset_x = (t.input_offset_x + config_->get_cac().offset_x) * cac.grid_step_x;
+			t.cac_grid_offset_y = (t.input_offset_y + config_->get_cac().offset_y) * cac.grid_step_y;
 		}
 
 		if (config_->get_global().rgb_enables & RgbEnable::Dedistort)
@@ -1126,8 +1126,8 @@ void BackEnd::finalise_tiling()
 			// or they have identical grid boundaries (though different grid sizes), which is typically true.
 			
 			// TODO: Make get_dedstort() add the extras field?
-			t.dedistort_grid_offset_x = (t.input_offset_x + config_->get_extras()->dedistort.offset_x) * dd.grid_step_x;
-			t.dedistort_grid_offset_y = (t.input_offset_y + config_->get_extras()->dedistort.offset_y) * dd.grid_step_y;
+			t.dedistort_grid_offset_x = (t.input_offset_x + config_->get_dedistort().offset_x) * dd.grid_step_x;
+			t.dedistort_grid_offset_y = (t.input_offset_y + config_->get_dedistort().offset_y) * dd.grid_step_y;
 		}
 
 		if (bayer_enables & BayerEnable::Tonemap2)
@@ -1168,11 +1168,11 @@ void BackEnd::get_output_size(int i, uint16_t *width, uint16_t *height, ImageFor
 	if (pipe_->smart_resize[i].width && pipe_->smart_resize[i].height)
 		*width = pipe_->smart_resize[i].width, *height = pipe_->smart_resize[i].height;
 	else if (config_->get_global().rgb_enables & get_flag_for_branch(RgbEnable::Resample0, i))
-		*width = config_->get_extras()->resample[i].scaled_width, *height = config_->get_extras()->resample[i].scaled_height;
+		*width = config_->get_resample(i).scaled_width, *height = config_->get_resample(i).scaled_height;
 	else if (config_->get_global().rgb_enables & get_flag_for_branch(RgbEnable::Downscale0, i))
-		*width = config_->get_extras()->downscale[i].scaled_width, *height = config_->get_extras()->downscale[i].scaled_height;
-	else if (config_->get_extras()->crop[i].width) // crop width and height will be zero when crop disabled
-		*width = config_->get_extras()->crop[i].width, *height = config_->get_extras()->crop[i].height;
+		*width = config_->get_downscale(i).scaled_width, *height = config_->get_downscale(i).scaled_height;
+	else if (config_->get_crop(i).width) // crop width and height will be zero when crop disabled
+		*width = config_->get_crop(i).width, *height = config_->get_crop(i).height;
 	else if (config_->get_global().bayer_enables & BayerEnable::Transpose)
 		*width = ifmt.height, *height = ifmt.width;
 	else

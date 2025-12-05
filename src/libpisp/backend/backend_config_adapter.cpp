@@ -1082,6 +1082,17 @@ BeResampleConfig BackendConfigAdapter::get_resample(unsigned int i) const
 	return extras_->resample[i];
 }
 
+void BackendConfigAdapter::set_crop(unsigned int i, BeCropConfig const &crop)
+{
+	// Not a hardware register set.
+	extras_->crop[i] = crop;
+}
+
+BeCropConfig BackendConfigAdapter::get_crop(unsigned int i) const
+{
+	return extras_->crop[i];
+}
+
 void BackendConfigAdapter::set_dedistort(const BeDedistortionConfig &dedistort)
 {
 	visit(overloaded {
