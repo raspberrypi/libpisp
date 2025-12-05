@@ -1048,8 +1048,6 @@ struct pisp_be_output_format_config2 {
 	__u16 hi2;
 } __attribute__((packed));
 
-typedef struct pisp_be_tdn_output_buffer_config pisp_be_tonemap2_input_buffer_config;
-
 typedef enum {
 	PISP_BE_CHROMA_COSITED = 0x0,
 	PISP_BE_CHROMA_H_INTER = 0x1,

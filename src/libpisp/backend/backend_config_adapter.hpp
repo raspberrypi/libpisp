@@ -72,7 +72,6 @@ enum class BayerEnable : uint32_t
 	Cac				= 0x00100000,
 	Debin			= 0x00200000,
 	Demosaic		= 0x00400000,
-	TonemapInput	= 0x00800000,
 	Transpose		= 0x01000000,
 	Tonemap2		= 0x02000000,
 	Tonemap2Input	= 0x04000000,
