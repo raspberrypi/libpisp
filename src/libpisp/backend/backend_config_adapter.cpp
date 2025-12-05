@@ -865,7 +865,7 @@ void BackendConfigAdapter::set_stitch(const BeStitchConfig &stitch)
 			cfg->stitch.black_level = stitch.black_level;
 			cfg->stitch.ratio = stitch.ratio;
 			cfg->stitch.noise_constant = stitch.noise_constant;
-			cfg->stitch.noise_slope = stitch.threshold;
+			cfg->stitch.noise_slope = stitch.noise_slope;
 			cfg->stitch.reset = stitch.reset;
 			cfg->stitch.apply_threshold = stitch.apply_threshold;
 			cfg->stitch.swap_inputs = stitch.swap_inputs;
@@ -893,6 +893,7 @@ BeStitchConfig BackendConfigAdapter::get_stitch() const
 			stitch.black_level = cfg->stitch.black_level;
 			stitch.ratio = cfg->stitch.ratio;
 			stitch.noise_constant = cfg->stitch.noise_constant;
+			stitch.noise_slope = cfg->stitch.noise_slope;
 			stitch.threshold = cfg->stitch.threshold;
 			stitch.reset = cfg->stitch.reset;
 			stitch.apply_threshold = cfg->stitch.apply_threshold;
