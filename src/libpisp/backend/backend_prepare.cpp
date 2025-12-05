@@ -879,7 +879,7 @@ void BackEnd::update_tiles()
 				for (unsigned j = 0; j <= PISP_BE_DDX_GRID_SIZE; ++j)
 				{
 					// Since we're ignoring context, assume sub-pixel accuracy is not needed either!
-					int ipos = xpos + (*(dd.lut.data() + (j * (PISP_BE_DDX_GRID_SIZE + 1)) + i + 8) >> 4);
+					int ipos = xpos + ((dd.lut[j][i] + 8) >> 4);
 					ipos = std::clamp(ipos, 0, 0 + post_transpose_width());
 					if (ipos < left)
 						left = ipos;

@@ -1090,7 +1090,7 @@ void BackendConfigAdapter::set_dedistort(const BeDedistortionConfig &dedistort)
 			cfg->dedistort.grid_step_x = dedistort.grid_step_x;
 			cfg->dedistort.grid_step_y = dedistort.grid_step_y;
 			cfg->dedistort.pad = 0;
-			std::memcpy(cfg->dedistort.lut, dedistort.lut.data(), dedistort.lut.size());
+			std::memcpy(cfg->dedistort.lut, dedistort.lut, sizeof(dedistort.lut));
 			extras_->dedistort = dedistort;
 		}
 	});
