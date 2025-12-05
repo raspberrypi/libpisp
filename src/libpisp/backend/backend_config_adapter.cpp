@@ -554,13 +554,13 @@ void BackendConfigAdapter::set_lsc(const BeLscConfig &lsc)
 		std::memcpy(cfg->lsc.lut_packed, lsc.lut_packed.data(), sizeof(cfg->lsc.lut_packed));
 	});
 
-	// Store the extras as well!
-	extras_->lsc = lsc;
+	// Store the non-register config as well!
+	non_reg_->lsc = lsc;
 }
 
 BeLscConfig BackendConfigAdapter::get_lsc() const
 {
-	return extras_->lsc;
+	return non_reg_->lsc;
 }
 
 void BackendConfigAdapter::set_wbg(const WbgConfig &wbg)
@@ -594,13 +594,13 @@ void BackendConfigAdapter::set_cac(const BeCacConfig &cac)
 		std::memcpy(cfg->cac.lut, cac.lut.data(), sizeof(cfg->cac.lut));
 	});
 
-	// Store the extras as well!
-	extras_->cac = cac;
+	// Store the non-register config as well!
+	non_reg_->cac = cac;
 }
 
 BeCacConfig BackendConfigAdapter::get_cac() const
 {
-	return extras_->cac;
+	return non_reg_->cac;
 }
 
 void BackendConfigAdapter::set_debin(const BeDebinConfig &debin)
@@ -768,13 +768,13 @@ void BackendConfigAdapter::set_downscale(unsigned int i, const BeDownscaleConfig
 		cfg->downscale[i].scale_recip_v = downscale.scale_recip_v;
 	});
 
-	// Store the extras as well!
-	extras_->downscale[i] = downscale;
+	// Store the non-register config as well!
+	non_reg_->downscale[i] = downscale;
 }
 
 BeDownscaleConfig BackendConfigAdapter::get_downscale(unsigned int i) const
 {
-	return extras_->downscale[i];
+	return non_reg_->downscale[i];
 }
 
 void BackendConfigAdapter::set_output_format(unsigned int i, const BeOutputFormatConfig &output_format)
@@ -1073,24 +1073,24 @@ void BackendConfigAdapter::set_resample(unsigned int i, const BeResampleConfig &
 		}
 	});
 
-	// Store the extras as well!
-	extras_->resample[i] = resample;
+	// Store the non-register config as well!
+	non_reg_->resample[i] = resample;
 }
 
 BeResampleConfig BackendConfigAdapter::get_resample(unsigned int i) const
 {
-	return extras_->resample[i];
+	return non_reg_->resample[i];
 }
 
 void BackendConfigAdapter::set_crop(unsigned int i, BeCropConfig const &crop)
 {
 	// Not a hardware register set.
-	extras_->crop[i] = crop;
+	non_reg_->crop[i] = crop;
 }
 
 BeCropConfig BackendConfigAdapter::get_crop(unsigned int i) const
 {
-	return extras_->crop[i];
+	return non_reg_->crop[i];
 }
 
 void BackendConfigAdapter::set_dedistort(const BeDedistortionConfig &dedistort)
@@ -1105,14 +1105,14 @@ void BackendConfigAdapter::set_dedistort(const BeDedistortionConfig &dedistort)
 			cfg->dedistort.grid_step_y = dedistort.grid_step_y;
 			cfg->dedistort.pad = 0;
 			std::memcpy(cfg->dedistort.lut, dedistort.lut, sizeof(dedistort.lut));
-			extras_->dedistort = dedistort;
+			non_reg_->dedistort = dedistort;
 		}
 	});
 }
 
 BeDedistortionConfig BackendConfigAdapter::get_dedistort() const
 {
-	return extras_->dedistort;
+	return non_reg_->dedistort;
 }
 
 void BackendConfigAdapter::set_output_compress(unsigned int i, const BeCompressConfig &compress)

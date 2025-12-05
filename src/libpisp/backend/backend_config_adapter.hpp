@@ -288,8 +288,8 @@ public:
 	using HwConfigVariant = std::variant<pisp_be_config *,  pisp_be_config2 *>;
 	using HwTileVariant = std::variant<pisp_tile *,  pisp_tile2 *>;
 
-	BackendConfigAdapter(HwConfigVariant config, HwTileVariant tile, BeNonRegConfig *extras)
-		: config_(config), tile_(tile), extras_(extras)
+	BackendConfigAdapter(HwConfigVariant config, HwTileVariant tile, BeNonRegConfig *non_reg)
+		: config_(config), tile_(tile), non_reg_(non_reg)
 	{
 	}
 	
@@ -442,7 +442,7 @@ private:
 
 	HwConfigVariant config_;
 	HwTileVariant tile_;
-	BeNonRegConfig *extras_;
+	BeNonRegConfig *non_reg_;
 };
 
 } // namespace libpisp

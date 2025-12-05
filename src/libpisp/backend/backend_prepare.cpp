@@ -1124,8 +1124,6 @@ void BackEnd::finalise_tiling()
 			const BeDedistortionConfig &dd = config_->get_dedistort();
 			// XXX Dedistort currently "borrows" CAC grid offsets! Assume either they're never used together,
 			// or they have identical grid boundaries (though different grid sizes), which is typically true.
-			
-			// TODO: Make get_dedstort() add the extras field?
 			t.dedistort_grid_offset_x = (t.input_offset_x + config_->get_dedistort().offset_x) * dd.grid_step_x;
 			t.dedistort_grid_offset_y = (t.input_offset_y + config_->get_dedistort().offset_y) * dd.grid_step_y;
 		}
