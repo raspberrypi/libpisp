@@ -431,6 +431,7 @@ public:
 	void set_output_compress(unsigned int i, const BeCompressConfig &compress);
 	BeCompressConfig get_output_compress(unsigned int i) const;
 
+	// TOOD: Probably remove this and just return extra fields in get_*
 	BeConfigExtra *get_extras()
 	{
 		return extras_;
