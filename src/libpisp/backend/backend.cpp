@@ -15,8 +15,8 @@
 
 using namespace libpisp;
 
-BackEnd::BackEnd(SoftwareConfig const &sw_config, PiSPVariant const &variant, std::span<uint8_t> config_storage)
-	: sw_(sw_config), variant_(variant)
+BackEnd::BackEnd(SoftwareConfig const &non_reg_config, PiSPVariant const &variant, std::span<uint8_t> config_storage)
+	: sw_(non_reg_config), variant_(variant)
 {
 	unsigned int max_tile_width = variant_.back_end_max_tile_width(0);
 
@@ -29,13 +29,13 @@ BackEnd::BackEnd(SoftwareConfig const &sw_config, PiSPVariant const &variant, st
 		pipe_ = &internal_pipeline_config_;
 
 	if (variant < BERYL)
-		config_ = std::make_unique<BackendConfigAdapter>(&pipe_->hw_config, pipe_->tiles.data(), &pipe_->config_extra);
+		config_ = std::make_unique<BackendConfigAdapter>(&pipe_->hw_config, pipe_->tiles.data(), &pipe_->non_reg_config);
 	else
 		config_ =
-			std::make_unique<BackendConfigAdapter>(&pipe_->hw_config_v2, pipe_->tiles2.data(), &pipe_->config_extra);
+			std::make_unique<BackendConfigAdapter>(&pipe_->hw_config_v2, pipe_->tiles2.data(), &pipe_->non_reg_config);
 
 	const char *env = std::getenv("LIBPISP_BE_CONFIG_FILE");
-	initialise_default_config(env ? std::string(env) : sw_config.defaults_file);
+	initialise_default_config(env ? std::string(env) : non_reg_config.defaults_file);
 }
 
 BackEnd::~BackEnd()

@@ -60,7 +60,7 @@ public:
 		uint16_t height;
 	};
 
-	BackEnd(SoftwareConfig const &sw_config, PiSPVariant const &variant, std::span<uint8_t> config_storage = {});
+	BackEnd(SoftwareConfig const &non_reg_config, PiSPVariant const &variant, std::span<uint8_t> config_storage = {});
 	~BackEnd();
 
 	void set_global(BeGlobal const &global);
@@ -199,7 +199,7 @@ private:
 	{
 		pisp_be_config hw_config {};
 		pisp_be_config2 hw_config_v2 {};
-		BeConfigExtra config_extra {};
+		BeNonRegConfig non_reg_config {};
 
 		BayerEnables dirty_flags_bayer;
 		RgbEnables dirty_flags_rgb;

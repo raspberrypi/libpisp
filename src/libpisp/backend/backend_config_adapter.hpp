@@ -221,7 +221,7 @@ using BeTonemapConfig = struct pisp_be_tonemap_config;
 using BeCompressConfig = struct pisp_compress_config;
 using BeTonemap2Config = struct pisp_be_tonemap2_config;
 
-struct BeConfigExtra
+struct BeNonRegConfig
 {
 	BeLscConfig lsc {};
 	BeCacConfig cac {};
@@ -288,7 +288,7 @@ public:
 	using HwConfigVariant = std::variant<pisp_be_config *,  pisp_be_config2 *>;
 	using HwTileVariant = std::variant<pisp_tile *,  pisp_tile2 *>;
 
-	BackendConfigAdapter(HwConfigVariant config, HwTileVariant tile, BeConfigExtra *extras)
+	BackendConfigAdapter(HwConfigVariant config, HwTileVariant tile, BeNonRegConfig *extras)
 		: config_(config), tile_(tile), extras_(extras)
 	{
 	}
@@ -442,7 +442,7 @@ private:
 
 	HwConfigVariant config_;
 	HwTileVariant tile_;
-	BeConfigExtra *extras_;
+	BeNonRegConfig *extras_;
 };
 
 } // namespace libpisp
