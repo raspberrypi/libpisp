@@ -820,12 +820,13 @@ void BackendConfigAdapter::set_tdn(const BeTdnConfig &tdn)
 			cfg->tdn.ratio = tdn.ratio;
 			cfg->tdn.noise_constant = tdn.noise_constant;
 			cfg->tdn.noise_slope = tdn.noise_slope;
-			cfg->tdn.reset = tdn.reset;
 			cfg->tdn.threshold = tdn.threshold;
+			cfg->tdn.reset = tdn.reset;
 			cfg->tdn.pad = 0;
 		},
 		[&tdn](pisp_be_config2 *cfg) {
 			cfg->tdn = tdn;
+			cfg->tdn.pad = 0;
 		}
 	});
 }
@@ -839,8 +840,8 @@ BeTdnConfig BackendConfigAdapter::get_tdn() const
 			tdn.ratio = cfg->tdn.ratio;
 			tdn.noise_constant = cfg->tdn.noise_constant;
 			tdn.noise_slope = cfg->tdn.noise_slope;
-			tdn.reset = cfg->tdn.reset;
 			tdn.threshold = cfg->tdn.threshold;
+			tdn.reset = cfg->tdn.reset;
 			return tdn;
 		},
 		[](pisp_be_config2 *cfg) -> BeTdnConfig {
