@@ -11,7 +11,6 @@
 #include <cstring>
 
 #include "common/logging.hpp"
-#include "common/pisp_common.h"
 
 using namespace libpisp;
 
