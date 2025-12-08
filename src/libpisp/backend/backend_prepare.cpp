@@ -225,6 +225,7 @@ void BackEnd::finalise_dedistort()
 
 void BackEnd::finalise_tonemap2()
 {
+	const ImageFormatConfig &format = config_->get_tonemap2_format();
 	BeTonemap2Config tonemap = config_->get_tonemap2();
 	uint16_t width = post_transpose_width(), height = post_transpose_height();
 
@@ -236,9 +237,9 @@ void BackEnd::finalise_tonemap2()
 		tonemap.grid_step_y = (PISP_BE_TONEMAP2_GRID_SIZE << P) / height;
 
 	if (tonemap.lores_step_x == 0 && width != 0)
-		tonemap.lores_step_x = std::max(1, (width << PISP_BE_TONEMAP2_LORES_PRECISION) / width);
+		tonemap.lores_step_x = std::max(1, (format.width << PISP_BE_TONEMAP2_LORES_PRECISION) / width);
 	if (tonemap.lores_step_y == 0 && height != 0)
-		tonemap.lores_step_y = std::max(1, (height << PISP_BE_TONEMAP2_LORES_PRECISION) / height);
+		tonemap.lores_step_y = std::max(1, (format.height << PISP_BE_TONEMAP2_LORES_PRECISION) / height);
 
 	if (tonemap.spatial_gain_slope == 0 && tonemap.spatial_gain_knee != 0)
 	{
@@ -1180,13 +1181,13 @@ void BackEnd::get_output_size(int i, uint16_t *width, uint16_t *height, ImageFor
 uint16_t BackEnd::post_transpose_width()
 {
 	return (config_->get_global().bayer_enables & BayerEnable::Transpose) ? config_->get_input_format().height
-																		: config_->get_input_format().width;
+																		  : config_->get_input_format().width;
 }
 
 uint16_t BackEnd::post_transpose_height()
 {
 	return (config_->get_global().bayer_enables & BayerEnable::Transpose) ? config_->get_input_format().width
-																		: config_->get_input_format().height;
+																		  : config_->get_input_format().height;
 }
 
 bool BackEnd::compute_output_image_format(unsigned int i, ImageFormatConfig &fmt,
@@ -1258,12 +1259,14 @@ void BackEnd::prepare(pisp_be_tiles_config *config)
 		// 4. Write the config and tiles to the provided buffer to send to the hardware.
 		if (variant_ >= BERYL)
 		{
+			config->version = 2;
 			config->v2.num_tiles = pipe_->num_tiles_x * pipe_->num_tiles_y;
 			config->v2.config = pipe_->hw_config_v2;
 			std::copy(pipe_->tiles2.begin(), pipe_->tiles2.begin() + config->v2.num_tiles, config->v2.tiles);
 		}
 		else
 		{
+			config->version = 1;
 			config->num_tiles = pipe_->num_tiles_x * pipe_->num_tiles_y;
 			config->config = pipe_->hw_config;
 			std::copy(pipe_->tiles.begin(), pipe_->tiles.begin() + config->num_tiles, config->tiles);
