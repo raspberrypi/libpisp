@@ -194,6 +194,21 @@ public:
 		return sizeof(PipelineConfig);
 	}
 
+	void lock()
+	{
+		pthread_mutex_lock(&pipe_->mutex);
+	}
+
+	void unlock()
+	{
+		pthread_mutex_unlock(&pipe_->mutex);
+	}
+
+	bool try_lock()
+	{
+		return pthread_mutex_trylock(&pipe_->mutex) == 0;
+	}
+
 private:
 	struct PipelineConfig
 	{
@@ -215,6 +230,7 @@ private:
 		std::array<pisp_tile2, PISP_BACK_END_NUM_TILES> tiles2 {};
 		unsigned int num_tiles_x = 0;
 		unsigned int num_tiles_y = 0;
+		pthread_mutex_t mutex;
 	};
 
 	static_assert(std::is_standard_layout<PipelineConfig>::value, "PipelineConfig must be a standard layout type");

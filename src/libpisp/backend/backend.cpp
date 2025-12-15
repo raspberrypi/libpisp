@@ -33,12 +33,20 @@ BackEnd::BackEnd(SoftwareConfig const &non_reg_config, PiSPVariant const &varian
 		config_ =
 			std::make_unique<BackendConfigAdapter>(&pipe_->hw_config_v2, pipe_->tiles2.data(), &pipe_->non_reg_config);
 
+	pthread_mutexattr_t attr;
+	pthread_mutexattr_init(&attr);
+	pthread_mutexattr_setrobust(&attr, PTHREAD_MUTEX_ROBUST);
+	pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+	pthread_mutex_init(&pipe_->mutex, &attr);
+	pthread_mutexattr_destroy(&attr);
+
 	const char *env = std::getenv("LIBPISP_BE_CONFIG_FILE");
 	initialise_default_config(env ? std::string(env) : non_reg_config.defaults_file);
 }
 
 BackEnd::~BackEnd()
 {
+	pthread_mutex_destroy(&pipe_->mutex);
 }
 
 void BackEnd::set_global(BeGlobal const &global)
