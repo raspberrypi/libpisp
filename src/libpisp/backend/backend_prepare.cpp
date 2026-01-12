@@ -1013,7 +1013,7 @@ void BackEnd::retile_pipeline(TilingConfig const &tiling_config)
 
 				// Variant Beryl onwards use the same phase for all planes.
 				if (p > 0 && variant_ >= BERYL)
-					break;
+					continue;
 
 				if (rgb_enables & get_flag_for_branch(RgbEnable::Downscale0, j))
 				{

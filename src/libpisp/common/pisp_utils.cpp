@@ -12,7 +12,7 @@
 
 #include "backend/pisp_be_config.h"
 
-#include "config_types.hpp"
+#include "pisp_common.h"
 #include "logging.hpp"
 
 namespace libpisp
@@ -74,7 +74,7 @@ uint32_t compute_x_offset(uint32_t /* pisp_image_format */ format, int x)
 	return x_offset;
 }
 
-void compute_stride_align(ImageFormatConfig &config, int align, bool preserve_subsample_ratio)
+void compute_stride_align(pisp_image_format_config &config, int align, bool preserve_subsample_ratio)
 {
 	if (PISP_IMAGE_FORMAT_WALLPAPER(config.format))
 	{
@@ -121,24 +121,24 @@ void compute_stride_align(ImageFormatConfig &config, int align, bool preserve_su
 	config.stride2 = (config.stride2 + align - 1) & ~(align - 1);
 }
 
-void compute_stride(ImageFormatConfig &config, bool preserve_subsample_ratio)
+void compute_stride(pisp_image_format_config &config, bool preserve_subsample_ratio)
 {
 	// Our preferred alignment is really 64 bytes, though 16 should work too. Use 16 for now, as it gives better test coverage.
 	compute_stride_align(config, PISP_BACK_END_OUTPUT_MIN_ALIGN, preserve_subsample_ratio);
 }
 
-void compute_optimal_stride(ImageFormatConfig &config, bool preserve_subsample_ratio)
+void compute_optimal_stride(pisp_image_format_config &config, bool preserve_subsample_ratio)
 {
 	// Use our preferred alignment of 64 bytes.
 	compute_stride_align(config, PISP_BACK_END_OUTPUT_MAX_ALIGN, preserve_subsample_ratio);
 }
 
-void compute_optimal_stride(ImageFormatConfig &config)
+void compute_optimal_stride(pisp_image_format_config &config)
 {
 	compute_optimal_stride(config, false);
 }
 
-void compute_addr_offset(const ImageFormatConfig &config, int x, int y, uint32_t *addr_offset,
+void compute_addr_offset(const pisp_image_format_config &config, int x, int y, uint32_t *addr_offset,
 						 uint32_t *addr_offset2)
 {
 	if (PISP_IMAGE_FORMAT_WALLPAPER(config.format))
@@ -208,7 +208,7 @@ int num_planes(pisp_image_format format)
 	return planes;
 }
 
-std::size_t get_plane_size(const ImageFormatConfig &config, int plane)
+std::size_t get_plane_size(const pisp_image_format_config &config, int plane)
 {
 	uint64_t stride = std::abs(plane ? config.stride2 : config.stride); // in case vflipped?
 	uint64_t plane_size = 0;

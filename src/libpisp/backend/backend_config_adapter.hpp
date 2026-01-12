@@ -12,7 +12,6 @@
 #include <variant>
 
 #include "bitfield.hpp"
-#include "common/config_types.hpp"
 #include "pisp_be_config.h"
 
 namespace libpisp
@@ -202,10 +201,14 @@ struct BeDedistortionConfig
     uint16_t offset_y = 0; // Non-register field
 };
 
-// Backend-specific type aliases
+// Identical to the current HW structures
+using ImageFormatConfig = struct pisp_image_format_config;
+using DecompressConfig = struct pisp_decompress_config;
+using CompressConfig = struct pisp_compress_config;
 using BeDpcConfig = struct pisp_be_dpc_config;
 using BeGeqConfig = struct pisp_be_geq_config;
 using BeSdnConfig = struct pisp_be_sdn_config;
+using BlaConfig = struct pisp_bla_config;
 using WbgConfig = struct pisp_wbg_config;
 using BeCdnConfig = struct pisp_be_cdn_config;
 using BeDebinConfig = struct pisp_be_debin_config;
@@ -215,7 +218,7 @@ using BeFalseColourConfig = struct pisp_be_false_colour_config;
 using BeSharpenConfig = struct pisp_be_sharpen_config;
 using BeShFcCombineConfig = struct pisp_be_sh_fc_combine_config;
 using BeTonemapConfig = struct pisp_be_tonemap_config;
-using BeCompressConfig = CompressConfig;
+using BeCompressConfig = struct pisp_compress_config;
 using BeTonemap2Config = struct pisp_be_tonemap2_config;
 
 struct BeNonRegConfig

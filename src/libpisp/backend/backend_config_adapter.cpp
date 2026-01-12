@@ -1061,7 +1061,7 @@ void BackendConfigAdapter::set_resample(unsigned int i, const BeResampleConfig &
 
 		[&resample, i](pisp_be_config2 *cfg) {
 			auto const &coef_h = resample.coef_h ? resample.coef_h : resample.coef;
-			auto const &coef_v = resample.coef_v ? resample.coef_v : resample.coef;
+			auto const &coef_v = resample.coef_v ? resample.coef_v : *resample.coef;
 
 			cfg->resample[i].scale_factor_h = resample.scale_factor_h;
 			cfg->resample[i].scale_factor_v = resample.scale_factor_v;
