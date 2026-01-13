@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <functional>
 
 #include "backend_device.hpp"
 #include "libpisp/backend/backend_config_adapter.hpp"
@@ -30,7 +31,7 @@ BackendDevice::BackendDevice(const std::string &device)
 	nodes_.at("pispbe-config").stream_on();
 	config_buffer_ = nodes_.at("pispbe-config").acquire_buffer().value();
 
-		const std::vector<libpisp::PiSPVariant> &variants = libpisp::get_variants();
+	const std::vector<libpisp::PiSPVariant> &variants = libpisp::get_variants();
 	const media_device_info info = MediaDevice().device_info(media_dev_);
 	auto variant = std::find_if(variants.begin(), variants.end(),
 								[&info](const auto &v) { return v.back_end_version() == info.hw_revision; });
@@ -39,84 +40,82 @@ BackendDevice::BackendDevice(const std::string &device)
 	be_ = std::make_unique<libpisp::BackEnd>(libpisp::BackEnd::SoftwareConfig({}), *variant);
 }
 
+
 BackendDevice::~BackendDevice()
 {
 	nodes_.at("pispbe-config").stream_off();
 }
 
-void BackendDevice::setup(unsigned int buffer_count, bool use_opaque_format)
+void BackendDevice::prepare(const pisp_be_tiles_config &config, unsigned int buffer_count, bool use_opaque_format)
 {
-	BeGlobal global = be_->get_global();
+	struct NodeConfig
+	{
+		const char *name;
+		std::function<bool(const BeGlobal &)> enabled;
+		std::function<ImageFormatConfig(const BackEnd *)> get_format;
+	};
 
-	pisp_be_tiles_config config = {};
-	be_->prepare(&config);
+	// clang-format off
+	const NodeConfig node_configs[] =
+	{
+		{  "pispbe-input",
+			[](const BeGlobal &g) { return (g.rgb_enables & RgbEnable::Input) || (g.bayer_enables & BayerEnable::Input); },
+			[](const BackEnd *be) { return be->get_input_format(); } },
 
+		{ "pispbe-output0",
+			[](const BeGlobal &g) { return g.rgb_enables & RgbEnable::Output0; },
+		  	[](const BackEnd *be) { return be->get_output_format(0).image; } },
+
+		{ "pispbe-output1",
+			[](const BeGlobal &g) { return g.rgb_enables & RgbEnable::Output1; },
+		  	[](const BackEnd *be) { return be->get_output_format(1).image; } },
+
+		{ "pispbe-tdn_input",
+			[](const BeGlobal &g) { return g.bayer_enables & BayerEnable::TdnInput; },
+			[](const BackEnd *be) { return be->get_tdn_input_format(); } },
+
+		{ "pispbe-tdn_output",
+			[](const BeGlobal &g) { return g.bayer_enables & BayerEnable::TdnOutput; },
+			[](const BackEnd *be) { return be->get_tdn_output_format(); } },
+
+		{ "pispbe-stitch_input",
+			[](const BeGlobal &g) { return g.bayer_enables & BayerEnable::StitchInput; },
+		  	[](const BackEnd *be) { return be->get_stitch_input_format(); } },
+
+		{ "pispbe-stitch_output",
+			[](const BeGlobal &g) { return g.bayer_enables & BayerEnable::StitchOutput; },
+		  	[](const BackEnd *be) { return be->get_stitch_output_format(); } },
+	};
+	// clang-format on
+
+	// Copy the provided config into the BE object.
+	// Avoid a prepare() in such cases as the caller is assumed to have done it.
+	be_->inject_config(config);
+
+	const BeGlobal &global = be_->get_global();
 	nodes_enabled_.clear();
 
-	if ((global.rgb_enables & RgbEnable::Input) || (global.bayer_enables & BayerEnable::Input))
+	for (const auto &node_config : node_configs)
 	{
-		nodes_.at("pispbe-input").set_format(config.config.input_format, use_opaque_format);
-		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-input").return_buffers();
-		nodes_.at("pispbe-input").request_buffers(buffer_count);
-		nodes_enabled_.emplace("pispbe-input");
-	}
-
-	if (global.rgb_enables & RgbEnable::Output0)
-	{
-		nodes_.at("pispbe-output0").set_format(config.config.output_format[0].image, use_opaque_format);
-		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-output0").return_buffers();
-		nodes_.at("pispbe-output0").request_buffers(buffer_count);
-		nodes_enabled_.emplace("pispbe-output0");
-	}
-
-	if (global.rgb_enables & RgbEnable::Output1)
-	{
-		nodes_.at("pispbe-output1").set_format(config.config.output_format[1].image, use_opaque_format);
-		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-output1").return_buffers();
-		nodes_.at("pispbe-output1").request_buffers(buffer_count);
-		nodes_enabled_.emplace("pispbe-output1");
-	}
-
-	if (global.bayer_enables & BayerEnable::TdnInput)
-	{
-		nodes_.at("pispbe-tdn_input").set_format(config.config.tdn_input_format, use_opaque_format);
-		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-tdn_input").return_buffers();
-		nodes_.at("pispbe-tdn_input").request_buffers(buffer_count);
-		nodes_enabled_.emplace("pispbe-tdn_input");
-	}
-
-	if (global.bayer_enables & BayerEnable::TdnOutput)
-	{
-		nodes_.at("pispbe-tdn_output").set_format(config.config.tdn_output_format, use_opaque_format);
-		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-tdn_output").return_buffers();
-		nodes_.at("pispbe-tdn_output").request_buffers(buffer_count);
-		nodes_enabled_.emplace("pispbe-tdn_output");
-	}
-
-	if (global.bayer_enables & BayerEnable::StitchInput)
-	{
-		nodes_.at("pispbe-stitch_input").set_format(config.config.stitch_input_format, use_opaque_format);
-		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-stitch_input").return_buffers();
-		nodes_.at("pispbe-stitch_input").request_buffers(buffer_count);
-		nodes_enabled_.emplace("pispbe-stitch_input");
-	}
-
-	if (global.bayer_enables & BayerEnable::StitchOutput)
-	{
-		nodes_.at("pispbe-stitch_output").set_format(config.config.stitch_output_format, use_opaque_format);
-		// Release old/allocate a single buffer.
-		nodes_.at("pispbe-stitch_output").return_buffers();
-		nodes_.at("pispbe-stitch_output").request_buffers(buffer_count);
-		nodes_enabled_.emplace("pispbe-stitch_output");
+		if (node_config.enabled(global))
+		{
+			nodes_.at(node_config.name).set_format(node_config.get_format(be_.get()), use_opaque_format);
+			// Release old/allocate a single buffer.
+			nodes_.at(node_config.name).return_buffers();
+			nodes_.at(node_config.name).request_buffers(buffer_count);
+			nodes_enabled_.emplace(node_config.name);
+		}
 	}
 
 	std::memcpy(reinterpret_cast<pisp_be_tiles_config *>(config_buffer_.mem[0]), &config, sizeof(config));
+}
+
+void BackendDevice::prepare(unsigned int buffer_count, bool use_opaque_format)
+{
+	pisp_be_tiles_config config = {};
+
+	be_->prepare(&config);
+	prepare(config, buffer_count, use_opaque_format);
 }
 
 std::map<std::string, V4l2Device::Buffer> BackendDevice::acquire_buffers()

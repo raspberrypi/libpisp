@@ -25,7 +25,8 @@ public:
 	BackendDevice(const std::string &device = "");
 	~BackendDevice();
 
-	void setup(unsigned int buffer_count = 1, bool use_opaque_format = false);
+	void prepare(const pisp_be_tiles_config &config, unsigned int buffer_count, bool use_opaque_format);
+	void prepare(unsigned int buffer_count = 1, bool use_opaque_format = false);
 	int run(const std::map<std::string, V4l2Device::Buffer> &buffers);
 
 	bool valid() const
@@ -50,10 +51,6 @@ public:
 
 	std::map<std::string, V4l2Device::Buffer> acquire_buffers();
 	void release_buffer(const std::map<std::string, V4l2Device::Buffer> &buffers);
-	V4l2Device::Buffer &config_buffer()
-	{
-		return config_buffer_;
-	}
 
 private:
 	bool valid_;

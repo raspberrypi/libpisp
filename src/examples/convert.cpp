@@ -342,7 +342,7 @@ int main(int argc, char *argv[])
 	be->set_crop(0, { 0, 0, i.width, i.height });
         be->set_smart_resize(0, { o.image.width, o.image.height });
 
-	backend_device.setup();
+	backend_device.prepare();
 	auto buffers = backend_device.acquire_buffers();
 
 	std::string input_filename = args["input"].as<std::string>();

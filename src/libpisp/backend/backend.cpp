@@ -583,3 +583,17 @@ unsigned int BackEnd::get_max_downscale() const
 	const unsigned int ref_tile_width = 640;
 	return downscale * max_tile_width / ref_tile_width;
 }
+
+void BackEnd::inject_config(const pisp_be_tiles_config &config)
+{
+	if (variant_ < BERYL)
+	{
+		memcpy(&pipe_->hw_config, &config.config, sizeof(config));
+		memcpy(pipe_->tiles.data(), config.tiles, sizeof(config.tiles));
+	}
+	else
+	{
+		memcpy(&pipe_->hw_config_v2, &config.v2, sizeof(config.v2));
+		memcpy(pipe_->tiles2.data(), config.v2.tiles, sizeof(config.v2.tiles));
+	}
+}

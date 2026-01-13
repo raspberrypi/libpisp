@@ -171,6 +171,8 @@ public:
 
 	unsigned int get_max_downscale() const;
 
+	void inject_config(const pisp_be_tiles_config &config);
+
 	std::string get_json_config(pisp_be_tiles_config *config);
 	void set_json_config(const std::string &json_config);
 
