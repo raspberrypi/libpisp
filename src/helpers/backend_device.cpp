@@ -85,6 +85,10 @@ void BackendDevice::prepare(const pisp_be_tiles_config &config, unsigned int buf
 		{ "pispbe-stitch_output",
 			[](const BeGlobal &g) { return g.bayer_enables & BayerEnable::StitchOutput; },
 		  	[](const BackEnd *be) { return be->get_stitch_output_format(); } },
+
+		{ "pispbe-tonemap_input",
+			[](const BeGlobal &g) { return g.bayer_enables & BayerEnable::Tonemap2Input; },
+		  	[](const BackEnd *be) { return be->get_tonemap2_format(); } },
 	};
 	// clang-format on
 
@@ -97,7 +101,7 @@ void BackendDevice::prepare(const pisp_be_tiles_config &config, unsigned int buf
 
 	for (const auto &node_config : node_configs)
 	{
-		if (node_config.enabled(global))
+		if (nodes_.count(node_config.name) && node_config.enabled(global))
 		{
 			nodes_.at(node_config.name).set_format(node_config.get_format(be_.get()), use_opaque_format);
 			// Release old/allocate a single buffer.
