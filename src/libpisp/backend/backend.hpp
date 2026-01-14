@@ -172,7 +172,7 @@ public:
 
 	unsigned int get_max_downscale() const;
 
-	void inject_config(const pisp_be_tiles_config &config);
+	void inject_config(const void *config_storage);
 
 	std::string get_json_config(pisp_be_tiles_config *config);
 	void set_json_config(const std::string &json_config);
@@ -195,6 +195,11 @@ public:
 	static size_t get_storage_size([[maybe_unused]] const PiSPVariant &variant)
 	{
 		return sizeof(PipelineConfig);
+	}
+
+	const void *get_config_storage()
+	{
+		return pipe_;
 	}
 
 	void lock()
@@ -234,6 +239,25 @@ private:
 		unsigned int num_tiles_x = 0;
 		unsigned int num_tiles_y = 0;
 		pthread_mutex_t mutex;
+
+		PipelineConfig& operator=(const PipelineConfig &other)
+		{
+			hw_config = other.hw_config;
+			hw_config_v2 = other.hw_config_v2;
+			non_reg_config = other.non_reg_config;
+			dirty_flags_bayer = other.dirty_flags_bayer;
+			dirty_flags_rgb = other.dirty_flags_rgb;
+			dirty_flags_extra = other.dirty_flags_extra;
+			retile = other.retile;
+			finalise_tiling = other.finalise_tiling;
+			smart_resize = other.smart_resize;
+			smart_resize_dirty = other.smart_resize_dirty;
+			tiles = other.tiles;
+			tiles2 = other.tiles2;
+			num_tiles_x = other.num_tiles_x;
+			num_tiles_y = other.num_tiles_y;
+			return *this;
+		}
 	};
 
 	static_assert(std::is_standard_layout<PipelineConfig>::value, "PipelineConfig must be a standard layout type");

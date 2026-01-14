@@ -46,7 +46,7 @@ BackendDevice::~BackendDevice()
 	nodes_.at("pispbe-config").stream_off();
 }
 
-void BackendDevice::prepare(const pisp_be_tiles_config &config, unsigned int buffer_count, bool use_opaque_format)
+void BackendDevice::prepare(unsigned int buffer_count, bool use_opaque_format)
 {
 	struct NodeConfig
 	{
@@ -92,9 +92,8 @@ void BackendDevice::prepare(const pisp_be_tiles_config &config, unsigned int buf
 	};
 	// clang-format on
 
-	// Copy the provided config into the BE object.
-	// Avoid a prepare() in such cases as the caller is assumed to have done it.
-	be_->inject_config(config);
+	pisp_be_tiles_config config = {};
+	be_->prepare(&config);
 
 	const BeGlobal &global = be_->get_global();
 	nodes_enabled_.clear();
@@ -112,14 +111,6 @@ void BackendDevice::prepare(const pisp_be_tiles_config &config, unsigned int buf
 	}
 
 	std::memcpy(reinterpret_cast<pisp_be_tiles_config *>(config_buffer_.mem[0]), &config, sizeof(config));
-}
-
-void BackendDevice::prepare(unsigned int buffer_count, bool use_opaque_format)
-{
-	pisp_be_tiles_config config = {};
-
-	be_->prepare(&config);
-	prepare(config, buffer_count, use_opaque_format);
 }
 
 std::map<std::string, V4l2Device::Buffer> BackendDevice::acquire_buffers()

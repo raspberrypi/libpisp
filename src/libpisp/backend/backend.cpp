@@ -595,20 +595,7 @@ unsigned int BackEnd::get_max_downscale() const
 	return downscale * max_tile_width / ref_tile_width;
 }
 
-void BackEnd::inject_config(const pisp_be_tiles_config &config)
+void BackEnd::inject_config(const void *config_storage)
 {
-	if (variant_ < BERYL)
-	{
-		memcpy(&pipe_->hw_config, &config.config, sizeof(config));
-		memcpy(pipe_->tiles.data(), config.tiles, sizeof(config.tiles));
-	}
-	else
-	{
-		memcpy(&pipe_->hw_config_v2, &config.v2, sizeof(config.v2));
-		memcpy(pipe_->tiles2.data(), config.v2.tiles, sizeof(config.v2.tiles));
-	}
-
-	// Don't allow retiling or finalising when we inject the config.
-	pipe_->finalise_tiling = false;
-	pipe_->retile = false;
+	*pipe_ = *reinterpret_cast<const PipelineConfig *>(config_storage);
 }

@@ -25,7 +25,6 @@ public:
 	BackendDevice(const std::string &device = "");
 	~BackendDevice();
 
-	void prepare(const pisp_be_tiles_config &config, unsigned int buffer_count, bool use_opaque_format);
 	void prepare(unsigned int buffer_count = 1, bool use_opaque_format = false);
 	int run(const std::map<std::string, V4l2Device::Buffer> &buffers);
 
