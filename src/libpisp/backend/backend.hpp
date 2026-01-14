@@ -168,6 +168,7 @@ public:
 								  ImageFormatConfig const &input_format) const;
 
 	void set_smart_resize(unsigned int i, SmartResize const &smart_resize);
+	SmartResize get_smart_resize(unsigned int i) const;
 
 	unsigned int get_max_downscale() const;
 

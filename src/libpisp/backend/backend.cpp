@@ -550,11 +550,22 @@ void BackEnd::set_smart_resize(unsigned int i, BackEnd::SmartResize const &smart
 	pipe_->smart_resize_dirty |= (1 << i);
 }
 
+BackEnd::SmartResize BackEnd::get_smart_resize(unsigned int i) const
+{
+	PISP_ASSERT(i < variant_.back_end_num_branches(0));
+	return pipe_->smart_resize[i];
+}
+
 void BackEnd::set_dedistort(const BeDedistortionConfig &dedistort)
 {
 	config_->set_dedistort(dedistort);
 	pipe_->dirty_flags_rgb |= RgbEnable::Dedistort;
 	pipe_->retile = true;
+}
+
+BeDedistortionConfig BackEnd::get_dedistort() const
+{
+	return config_->get_dedistort();
 }
 
 void BackEnd::set_output_compress(unsigned int i, const BeCompressConfig &compress)
