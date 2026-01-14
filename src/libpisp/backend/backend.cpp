@@ -596,4 +596,8 @@ void BackEnd::inject_config(const pisp_be_tiles_config &config)
 		memcpy(&pipe_->hw_config_v2, &config.v2, sizeof(config.v2));
 		memcpy(pipe_->tiles2.data(), config.v2.tiles, sizeof(config.v2.tiles));
 	}
+
+	// Don't allow retiling or finalising when we inject the config.
+	pipe_->finalise_tiling = false;
+	pipe_->retile = false;
 }
