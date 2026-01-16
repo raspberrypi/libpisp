@@ -294,12 +294,6 @@ public:
 	}
 	
 	template <typename F>
-	auto visit(F &&f)
-	{
-		return std::visit(std::forward<F>(f), config_);
-	}
-
-	template <typename F>
 	auto visit(F &&f) const
 	{
 		return std::visit(std::forward<F>(f), config_);
