@@ -26,11 +26,11 @@ GST_DEBUG_CATEGORY_STATIC(gst_pisp_convert_debug);
 /* Supported formats - matching those from convert.cpp */
 static GstStaticPadTemplate sink_template =
 	GST_STATIC_PAD_TEMPLATE("sink", GST_PAD_SINK, GST_PAD_ALWAYS,
-							GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE("{ RGB, RGBA, I420, YV12, Y42B, Y444, YUY2, UYVY }")));
+							GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE("{ RGB, I420, YV12, Y42B, Y444, YUY2, UYVY }")));
 
 static GstStaticPadTemplate src_template =
 	GST_STATIC_PAD_TEMPLATE("src", GST_PAD_SRC, GST_PAD_ALWAYS,
-							GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE("{ RGB, RGBA, I420, YV12, Y42B, Y444, YUY2, UYVY }")));
+							GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE("{ RGB, I420, YV12, Y42B, Y444, YUY2, UYVY }")));
 
 #define gst_pisp_convert_parent_class parent_class
 G_DEFINE_TYPE(GstPispConvert, gst_pisp_convert, GST_TYPE_BASE_TRANSFORM);
@@ -43,11 +43,10 @@ static const char *gst_format_to_pisp(GstVideoFormat format)
 	{
 	case GST_VIDEO_FORMAT_RGB:
 		return "RGB888";
-	case GST_VIDEO_FORMAT_RGBA:
-		return "RGBX8888";
 	case GST_VIDEO_FORMAT_I420:
-	case GST_VIDEO_FORMAT_YV12:
 		return "YUV420P";
+	case GST_VIDEO_FORMAT_YV12:
+		return "YVU420P";
 	case GST_VIDEO_FORMAT_Y42B:
 		return "YUV422P";
 	case GST_VIDEO_FORMAT_Y444:
@@ -56,6 +55,8 @@ static const char *gst_format_to_pisp(GstVideoFormat format)
 		return "YUYV";
 	case GST_VIDEO_FORMAT_UYVY:
 		return "UYVY";
+	//case GST_VIDEO_FORMAT_NV12_128C8:
+	//	return "YUV420SP_COL128";
 	default:
 		return nullptr;
 	}
