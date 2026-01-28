@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cstring>
 #include <map>
+#include <optional>
 
 #include <gst/allocators/gstdmabuf.h>
 #include <gst/video/video.h>
@@ -120,6 +121,7 @@ static void gst_pisp_convert_init(GstPispConvert *filter)
 	filter->priv->dmabuf_allocator = gst_dmabuf_allocator_new();
 	filter->priv->use_dmabuf_input = FALSE;
 	filter->priv->use_dmabuf_output = FALSE;
+	filter->priv->dmabuf_imported = FALSE;
 
 	gst_base_transform_set_in_place(GST_BASE_TRANSFORM(filter), FALSE);
 	gst_base_transform_set_passthrough(GST_BASE_TRANSFORM(filter), FALSE);
@@ -236,6 +238,9 @@ static gboolean gst_pisp_convert_set_caps(GstBaseTransform *trans, GstCaps *inca
 
 	GST_INFO_OBJECT(filter, "dmabuf support - input: %s, output: %s", filter->priv->use_dmabuf_input ? "YES" : "NO",
 					filter->priv->use_dmabuf_output ? "YES" : "NO");
+
+	/* Reset dmabuf import flag since we're reconfiguring */
+	filter->priv->dmabuf_imported = FALSE;
 
 	if (!gst_video_info_from_caps(&in_info, incaps))
 	{
@@ -616,82 +621,110 @@ static GstFlowReturn gst_pisp_convert_transform(GstBaseTransform *trans, GstBuff
 	try
 	{
 		std::map<std::string, libpisp::helpers::V4l2Device::Buffer> buffers;
-		gboolean need_acquire = FALSE;
+		gboolean using_dmabuf = (input_is_dmabuf && filter->priv->use_dmabuf_input) ||
+								(output_is_dmabuf && filter->priv->use_dmabuf_output);
 
-		/* Determine if we need to acquire hardware buffers for memcpy path */
-		need_acquire = (!input_is_dmabuf || !filter->priv->use_dmabuf_input) || 
-		               (!output_is_dmabuf || !filter->priv->use_dmabuf_output);
-
-		/* Acquire all hardware buffers once if using memcpy path */
-		if (need_acquire)
+		/* On first dmabuf frame, import external buffers into V4L2 device */
+		if (using_dmabuf && !filter->priv->dmabuf_imported)
 		{
-			buffers = filter->priv->backend_device->AcquireBuffers();
-			GST_DEBUG_OBJECT(filter, "Acquired hardware buffers");
+			GST_INFO_OBJECT(filter, "First dmabuf frame - importing external buffers");
+
+			/* Import input dmabuf */
+			if (input_is_dmabuf && filter->priv->use_dmabuf_input)
+			{
+				GstVideoInfo in_info;
+				GstCaps *incaps = gst_pad_get_current_caps(GST_BASE_TRANSFORM_SINK_PAD(trans));
+				gst_video_info_from_caps(&in_info, incaps);
+				gst_caps_unref(incaps);
+
+				auto dmabuf_buffer = gst_buffer_to_dmabuf_buffer(inbuf, &in_info);
+				if (dmabuf_buffer)
+				{
+					/* Free the MMAP buffers allocated by Setup() */
+					filter->priv->backend_device->Node("pispbe-input").ReleaseBuffers();
+					
+					/* Import the external dmabuf into V4L2 device */
+					std::vector<libpisp::helpers::V4l2Device::Buffer> import_bufs = { *dmabuf_buffer };
+					filter->priv->backend_device->Node("pispbe-input").ImportBuffers(import_bufs);
+					
+					GST_INFO_OBJECT(filter, "Imported input dmabuf (fd=%d)", dmabuf_buffer->fd[0]);
+				}
+				else
+				{
+					GST_WARNING_OBJECT(filter, "Failed to extract dmabuf from input, falling back to memcpy");
+					input_is_dmabuf = FALSE;
+					using_dmabuf = FALSE;
+				}
+			}
+
+			/* Import output dmabuf */
+			if (output_is_dmabuf && filter->priv->use_dmabuf_output)
+			{
+				GstVideoInfo out_info;
+				GstCaps *outcaps = gst_pad_get_current_caps(GST_BASE_TRANSFORM_SRC_PAD(trans));
+				gst_video_info_from_caps(&out_info, outcaps);
+				gst_caps_unref(outcaps);
+
+				auto dmabuf_buffer = gst_buffer_to_dmabuf_buffer(outbuf, &out_info);
+				if (dmabuf_buffer)
+				{
+					/* Free the MMAP buffers allocated by Setup() */
+					filter->priv->backend_device->Node("pispbe-output0").ReleaseBuffers();
+					
+					/* Import the external dmabuf into V4L2 device */
+					std::vector<libpisp::helpers::V4l2Device::Buffer> import_bufs = { *dmabuf_buffer };
+					filter->priv->backend_device->Node("pispbe-output0").ImportBuffers(import_bufs);
+					
+					GST_INFO_OBJECT(filter, "Imported output dmabuf (fd=%d)", dmabuf_buffer->fd[0]);
+				}
+				else
+				{
+					GST_WARNING_OBJECT(filter, "Failed to extract dmabuf from output, falling back to memcpy");
+					output_is_dmabuf = FALSE;
+					using_dmabuf = FALSE;
+				}
+			}
+
+			filter->priv->dmabuf_imported = using_dmabuf;
+		}
+
+		/* Get hardware buffers - either MMAP (for memcpy) or imported dmabuf */
+		if (filter->priv->dmabuf_imported)
+		{
+			/* Use imported dmabuf buffers */
+			buffers["pispbe-input"] = filter->priv->backend_device->Node("pispbe-input").Buffers()[0];
+			buffers["pispbe-output0"] = filter->priv->backend_device->Node("pispbe-output0").Buffers()[0];
+			GST_DEBUG_OBJECT(filter, "Using imported dmabuf buffers");
+		}
+		else
+		{
+			/* Use MMAP buffers for memcpy path */
+			buffers = filter->priv->backend_device->GetBufferSlice();
+			GST_DEBUG_OBJECT(filter, "Using MMAP buffers");
 		}
 
 		/* Handle input buffer - dmabuf or memcpy path */
-		if (input_is_dmabuf && filter->priv->use_dmabuf_input)
-		{
-			/* Zero-copy input: extract dmabuf from GStreamer buffer */
-			GstVideoInfo in_info;
-			GstCaps *incaps = gst_pad_get_current_caps(GST_BASE_TRANSFORM_SINK_PAD(trans));
-			gst_video_info_from_caps(&in_info, incaps);
-			gst_caps_unref(incaps);
-
-			auto dmabuf_buffer = gst_buffer_to_dmabuf_buffer(inbuf, &in_info);
-			if (dmabuf_buffer)
-			{
-				buffers["pispbe-input"] = *dmabuf_buffer;
-				GST_DEBUG_OBJECT(filter, "Using zero-copy input (dmabuf fd=%d)", dmabuf_buffer->fd[0]);
-			}
-			else
-			{
-				GST_WARNING_OBJECT(filter, "Failed to extract dmabuf from input, falling back to memcpy");
-				input_is_dmabuf = FALSE;
-			}
-		}
-
 		if (!input_is_dmabuf || !filter->priv->use_dmabuf_input)
 		{
 			buffers["pispbe-input"].RwSyncStart();
-			/* Memcpy input: copy data to hardware buffer (already acquired) */
+			/* Memcpy input: copy data to hardware buffer */
 			copy_buffer_to_pisp(inbuf, buffers["pispbe-input"].mem, filter->priv->in_width, filter->priv->in_height,
 								filter->priv->in_stride, filter->priv->in_hw_stride, filter->priv->in_format);
 			buffers["pispbe-input"].RwSyncEnd();
 			GST_DEBUG_OBJECT(filter, "Using memcpy input path");
 		}
-
-		/* Handle output buffer - dmabuf or memcpy path */
-		if (output_is_dmabuf && filter->priv->use_dmabuf_output)
+		else
 		{
-			/* Zero-copy output: extract dmabuf from GStreamer buffer */
-			GstVideoInfo out_info;
-			GstCaps *outcaps = gst_pad_get_current_caps(GST_BASE_TRANSFORM_SRC_PAD(trans));
-			gst_video_info_from_caps(&out_info, outcaps);
-			gst_caps_unref(outcaps);
-
-			auto dmabuf_buffer = gst_buffer_to_dmabuf_buffer(outbuf, &out_info);
-			if (dmabuf_buffer)
-			{
-				buffers["pispbe-output0"] = *dmabuf_buffer;
-				GST_DEBUG_OBJECT(filter, "Using zero-copy output (dmabuf fd=%d)", dmabuf_buffer->fd[0]);
-			}
-			else
-			{
-				GST_WARNING_OBJECT(filter, "Failed to extract dmabuf from output, falling back to memcpy");
-				output_is_dmabuf = FALSE;
-			}
+			GST_DEBUG_OBJECT(filter, "Using zero-copy input (dmabuf fd=%d)", buffers["pispbe-input"].fd[0]);
 		}
 
-		/* Output buffer already acquired if using memcpy path */
+		/* Output buffer already in buffers map */
 
 		/* Run the hardware conversion */
 		int ret = filter->priv->backend_device->Run(buffers);
 		if (ret)
 		{
 			GST_ERROR_OBJECT(filter, "Hardware conversion failed");
-			if (need_acquire)
-				filter->priv->backend_device->ReturnBuffer(buffers);
 			return GST_FLOW_ERROR;
 		}
 
@@ -705,10 +738,10 @@ static GstFlowReturn gst_pisp_convert_transform(GstBaseTransform *trans, GstBuff
 			buffers["pispbe-output0"].ReadSyncEnd();								
 			GST_DEBUG_OBJECT(filter, "Using memcpy output path");
 		}
-
-		/* Return buffers if we acquired them */
-		if (need_acquire)
-			filter->priv->backend_device->ReturnBuffer(buffers);
+		else
+		{
+			GST_DEBUG_OBJECT(filter, "Using zero-copy output (dmabuf fd=%d)", buffers["pispbe-output0"].fd[0]);
+		}
 	}
 	catch (const std::exception &e)
 	{
@@ -787,6 +820,7 @@ static gboolean gst_pisp_convert_stop(GstBaseTransform *trans)
 	filter->priv->configured = FALSE;
 	filter->priv->use_dmabuf_input = FALSE;
 	filter->priv->use_dmabuf_output = FALSE;
+	filter->priv->dmabuf_imported = FALSE;
 
 	return TRUE;
 }
