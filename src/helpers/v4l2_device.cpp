@@ -41,6 +41,7 @@ static FormatInfo get_v4l2_format(const std::string &format)
 		{ "YUV444P", { V4L2_PIX_FMT_YUV444M, 3 } },
 		{ "YUYV", { V4L2_PIX_FMT_YUYV, 1 } },
 		{ "UYVY", { V4L2_PIX_FMT_UYVY, 1 } },
+		{ "YUV420SP_COL128", { V4L2_PIX_FMT_NV12MT_COL128, 2 } },
 	};
 
 	auto it = formats.find(format);
@@ -286,7 +287,11 @@ void V4l2Device::SetFormat(const pisp_image_format_config &format, bool use_opaq
 		{
 			const unsigned int stride = p == 0 ? format.stride : format.stride2;
 			// Wallpaper stride is not something the V4L2 kernel knows about!
-			f.fmt.pix_mp.plane_fmt[p].bytesperline = stride;
+			// Do NOT use the column strides that have been computed in compute_stride_align
+			if (PISP_IMAGE_FORMAT_WALLPAPER(format.format))
+				f.fmt.pix_mp.plane_fmt[p].bytesperline = (format.width + 127) & ~127;
+			else
+				f.fmt.pix_mp.plane_fmt[p].bytesperline = stride;
 			f.fmt.pix_mp.plane_fmt[p].sizeimage = libpisp::get_plane_size(format, p);
 		}
 

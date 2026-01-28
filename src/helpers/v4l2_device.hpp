@@ -17,6 +17,13 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
+#ifndef V4L2_PIX_FMT_NV12MT_COL128
+#define V4L2_PIX_FMT_NV12MT_COL128 v4l2_fourcc('N', 'c', '1', '2') /* 12  Y/CbCr 4:2:0 128 pixel wide column */
+#endif
+#ifndef V4L2_PIX_FMT_NV12MT_10_COL128
+#define V4L2_PIX_FMT_NV12MT_10_COL128 v4l2_fourcc('N', 'c', '3', '0')
+#endif
+
 #include "libpisp/backend/pisp_be_config.h"
 
 #include "device_fd.hpp"

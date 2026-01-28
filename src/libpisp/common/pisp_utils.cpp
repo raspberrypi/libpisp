@@ -64,7 +64,7 @@ void compute_stride_align(pisp_image_format_config &config, int align, bool pres
 {
 	if (PISP_IMAGE_FORMAT_WALLPAPER(config.format))
 	{
-		config.stride2 = config.stride = config.height * PISP_WALLPAPER_WIDTH;
+		config.stride2 = config.stride = ((config.height + 7) & ~7) * PISP_WALLPAPER_WIDTH;
 		if (PISP_IMAGE_FORMAT_SAMPLING_420(config.format))
 			config.stride2 /= 2;
 		return;
