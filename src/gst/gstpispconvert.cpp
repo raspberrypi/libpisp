@@ -153,12 +153,22 @@ static GstCaps *gst_pisp_convert_transform_caps(GstBaseTransform *trans, GstPadD
 	GstCaps *ret, *tmp;
 	GstStructure *structure;
 	gchar *caps_str;
-	gint i, n;
+	guint i, n;
 
 	caps_str = gst_caps_to_string(caps);
-	GST_DEBUG_OBJECT(convert, "transform_caps called, direction: %s, caps: %s",
+	GST_INFO_OBJECT(convert, "transform_caps called, direction: %s, caps: %s",
 					 direction == GST_PAD_SINK ? "SINK" : "SRC", caps_str);
 	g_free(caps_str);
+	
+	/* Log caps features */
+	for (i = 0; i < gst_caps_get_size(caps); i++)
+	{
+		GstCapsFeatures *features = gst_caps_get_features(caps, i);
+		if (features && gst_caps_features_contains(features, GST_CAPS_FEATURE_MEMORY_DMABUF))
+		{
+			GST_INFO_OBJECT(convert, "Input caps[%d] contains memory:DMABuf feature", i);
+		}
+	}
 
 	/* Return template caps (we can scale to any size) */
 	if (direction == GST_PAD_SINK)
@@ -177,22 +187,38 @@ static GstCaps *gst_pisp_convert_transform_caps(GstBaseTransform *trans, GstPadD
 	{
 		structure = gst_caps_get_structure(caps, i);
 
-		/* We support arbitrary scaling, so only preserve framerate and PAR */
-		GstStructure *new_structure = gst_structure_copy(gst_caps_get_structure(tmp, 0));
-
-		/* Preserve framerate and pixel-aspect-ratio, but allow any width/height */
-		if (gst_structure_has_field(structure, "framerate"))
+		/* Preserve caps features (e.g., memory:DMABuf) */
+		GstCapsFeatures *features = gst_caps_get_features(caps, i);
+		
+		/* For each structure in template caps, create a new one with preserved features */
+		for (guint j = 0; j < gst_caps_get_size(tmp); j++)
 		{
-			const GValue *framerate = gst_structure_get_value(structure, "framerate");
-			gst_structure_set_value(new_structure, "framerate", framerate);
-		}
-		if (gst_structure_has_field(structure, "pixel-aspect-ratio"))
-		{
-			const GValue *par = gst_structure_get_value(structure, "pixel-aspect-ratio");
-			gst_structure_set_value(new_structure, "pixel-aspect-ratio", par);
-		}
+			GstStructure *new_structure = gst_structure_copy(gst_caps_get_structure(tmp, j));
 
-		gst_caps_append_structure(ret, new_structure);
+			/* Preserve framerate and pixel-aspect-ratio, but allow any width/height */
+			if (gst_structure_has_field(structure, "framerate"))
+			{
+				const GValue *framerate = gst_structure_get_value(structure, "framerate");
+				gst_structure_set_value(new_structure, "framerate", framerate);
+			}
+			if (gst_structure_has_field(structure, "pixel-aspect-ratio"))
+			{
+				const GValue *par = gst_structure_get_value(structure, "pixel-aspect-ratio");
+				gst_structure_set_value(new_structure, "pixel-aspect-ratio", par);
+			}
+
+			/* Preserve the caps features (like memory:DMABuf) */
+			if (features)
+			{
+				GstCapsFeatures *new_features = gst_caps_features_copy(features);
+				gst_caps_append_structure_full(ret, new_structure, new_features);
+				GST_INFO_OBJECT(convert, "Preserving caps features from input");
+			}
+			else
+			{
+				gst_caps_append_structure(ret, new_structure);
+			}
+		}
 	}
 
 	gst_caps_unref(tmp);
@@ -200,7 +226,7 @@ static GstCaps *gst_pisp_convert_transform_caps(GstBaseTransform *trans, GstPadD
 	if (filter)
 	{
 		gchar *filter_str = gst_caps_to_string(filter);
-		GST_DEBUG_OBJECT(convert, "Applying filter: %s", filter_str);
+		GST_INFO_OBJECT(convert, "Applying filter: %s", filter_str);
 		g_free(filter_str);
 
 		GstCaps *intersection = gst_caps_intersect_full(filter, ret, GST_CAPS_INTERSECT_FIRST);
@@ -209,7 +235,27 @@ static GstCaps *gst_pisp_convert_transform_caps(GstBaseTransform *trans, GstPadD
 	}
 
 	caps_str = gst_caps_to_string(ret);
-	GST_DEBUG_OBJECT(convert, "Returning caps: %s", caps_str);
+	GST_INFO_OBJECT(convert, "Returning caps: %s", caps_str);
+	
+	/* Log features in returned caps */
+	for (i = 0; i < gst_caps_get_size(ret); i++)
+	{
+		GstCapsFeatures *features = gst_caps_get_features(ret, i);
+		if (features && gst_caps_features_contains(features, GST_CAPS_FEATURE_MEMORY_DMABUF))
+		{
+			GST_INFO_OBJECT(convert, "Output caps[%d] contains memory:DMABuf feature", i);
+		}
+		else if (features)
+		{
+			gchar *feat_str = gst_caps_features_to_string(features);
+			GST_INFO_OBJECT(convert, "Output caps[%d] features: %s", i, feat_str);
+			g_free(feat_str);
+		}
+		else
+		{
+			GST_INFO_OBJECT(convert, "Output caps[%d] has no features (system memory)", i);
+		}
+	}
 	g_free(caps_str);
 
 	return ret;
@@ -230,6 +276,29 @@ static gboolean gst_pisp_convert_set_caps(GstBaseTransform *trans, GstCaps *inca
 	/* Check for dmabuf support in caps */
 	GstCapsFeatures *in_features = gst_caps_get_features(incaps, 0);
 	GstCapsFeatures *out_features = gst_caps_get_features(outcaps, 0);
+
+	/* Log features detail */
+	if (in_features)
+	{
+		gchar *feat_str = gst_caps_features_to_string(in_features);
+		GST_INFO_OBJECT(filter, "Input caps features: %s", feat_str);
+		g_free(feat_str);
+	}
+	else
+	{
+		GST_INFO_OBJECT(filter, "Input caps has no features (system memory)");
+	}
+	
+	if (out_features)
+	{
+		gchar *feat_str = gst_caps_features_to_string(out_features);
+		GST_INFO_OBJECT(filter, "Output caps features: %s", feat_str);
+		g_free(feat_str);
+	}
+	else
+	{
+		GST_INFO_OBJECT(filter, "Output caps has no features (system memory)");
+	}
 
 	filter->priv->use_dmabuf_input = in_features &&
 									 gst_caps_features_contains(in_features, GST_CAPS_FEATURE_MEMORY_DMABUF);
@@ -830,7 +899,17 @@ static gboolean gst_pisp_convert_propose_allocation(GstBaseTransform *trans, Gst
 {
 	GstPispConvert *filter = GST_PISP_CONVERT(trans);
 
-	GST_DEBUG_OBJECT(filter, "propose_allocation called");
+	GST_INFO_OBJECT(filter, "propose_allocation called");
+	
+	/* Log what caps are being allocated for */
+	GstCaps *caps;
+	gst_query_parse_allocation(query, &caps, NULL);
+	if (caps)
+	{
+		gchar *caps_str = gst_caps_to_string(caps);
+		GST_INFO_OBJECT(filter, "propose_allocation for caps: %s", caps_str);
+		g_free(caps_str);
+	}
 
 	/* Propose dmabuf allocator for upstream elements */
 	if (filter->priv->dmabuf_allocator)
@@ -840,9 +919,6 @@ static gboolean gst_pisp_convert_propose_allocation(GstBaseTransform *trans, Gst
 	}
 
 	/* Add dmabuf memory feature support */
-	GstCaps *caps;
-	gst_query_parse_allocation(query, &caps, nullptr);
-
 	if (caps)
 	{
 		GstCaps *dmabuf_caps = gst_caps_copy(caps);
