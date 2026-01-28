@@ -11,26 +11,29 @@
 #include <cstring>
 #include <map>
 
+#include <gst/allocators/gstdmabuf.h>
 #include <gst/video/video.h>
 
-#include "helpers/backend_device.hpp"
-#include "helpers/media_device.hpp"
-#include "libpisp/backend/backend.hpp"
-#include "libpisp/common/logging.hpp"
-#include "libpisp/common/utils.hpp"
-#include "libpisp/variants/variant.hpp"
+#include "common/logging.hpp"
+#include "common/utils.hpp"
+#include "helpers/v4l2_device.hpp"
+#include "variants/variant.hpp"
 
 GST_DEBUG_CATEGORY_STATIC(gst_pisp_convert_debug);
 #define GST_CAT_DEFAULT gst_pisp_convert_debug
 
 /* Supported formats - matching those from convert.cpp */
+#define PISP_FORMATS "{ RGB, I420, YV12, Y42B, Y444, YUY2, UYVY }"
+
 static GstStaticPadTemplate sink_template =
 	GST_STATIC_PAD_TEMPLATE("sink", GST_PAD_SINK, GST_PAD_ALWAYS,
-							GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE("{ RGB, I420, YV12, Y42B, Y444, YUY2, UYVY }")));
+							GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE_WITH_FEATURES(
+								GST_CAPS_FEATURE_MEMORY_DMABUF, PISP_FORMATS) ";" GST_VIDEO_CAPS_MAKE(PISP_FORMATS)));
 
 static GstStaticPadTemplate src_template =
 	GST_STATIC_PAD_TEMPLATE("src", GST_PAD_SRC, GST_PAD_ALWAYS,
-							GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE("{ RGB, I420, YV12, Y42B, Y444, YUY2, UYVY }")));
+							GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE_WITH_FEATURES(
+								GST_CAPS_FEATURE_MEMORY_DMABUF, PISP_FORMATS) ";" GST_VIDEO_CAPS_MAKE(PISP_FORMATS)));
 
 #define gst_pisp_convert_parent_class parent_class
 G_DEFINE_TYPE(GstPispConvert, gst_pisp_convert, GST_TYPE_BASE_TRANSFORM);
@@ -73,6 +76,8 @@ static gboolean gst_pisp_convert_get_unit_size(GstBaseTransform *trans, GstCaps 
 static GstFlowReturn gst_pisp_convert_transform(GstBaseTransform *trans, GstBuffer *inbuf, GstBuffer *outbuf);
 static gboolean gst_pisp_convert_start(GstBaseTransform *trans);
 static gboolean gst_pisp_convert_stop(GstBaseTransform *trans);
+static gboolean gst_pisp_convert_decide_allocation(GstBaseTransform *trans, GstQuery *query);
+static gboolean gst_pisp_convert_propose_allocation(GstBaseTransform *trans, GstQuery *decide_query, GstQuery *query);
 
 /* Initialize the class */
 static void gst_pisp_convert_class_init(GstPispConvertClass *klass)
@@ -96,6 +101,8 @@ static void gst_pisp_convert_class_init(GstPispConvertClass *klass)
 	transform_class->transform = GST_DEBUG_FUNCPTR(gst_pisp_convert_transform);
 	transform_class->start = GST_DEBUG_FUNCPTR(gst_pisp_convert_start);
 	transform_class->stop = GST_DEBUG_FUNCPTR(gst_pisp_convert_stop);
+	transform_class->decide_allocation = GST_DEBUG_FUNCPTR(gst_pisp_convert_decide_allocation);
+	transform_class->propose_allocation = GST_DEBUG_FUNCPTR(gst_pisp_convert_propose_allocation);
 
 	GST_DEBUG_CATEGORY_INIT(gst_pisp_convert_debug, "pispconvert", 0, "PiSP hardware converter");
 }
@@ -108,6 +115,9 @@ static void gst_pisp_convert_init(GstPispConvert *filter)
 	filter->priv->backend = nullptr;
 	filter->priv->media_dev_path = nullptr;
 	filter->priv->configured = FALSE;
+	filter->priv->dmabuf_allocator = gst_dmabuf_allocator_new();
+	filter->priv->use_dmabuf_input = FALSE;
+	filter->priv->use_dmabuf_output = FALSE;
 
 	gst_base_transform_set_in_place(GST_BASE_TRANSFORM(filter), FALSE);
 	gst_base_transform_set_passthrough(GST_BASE_TRANSFORM(filter), FALSE);
@@ -119,6 +129,11 @@ static void gst_pisp_convert_finalize(GObject *object)
 
 	if (filter->priv)
 	{
+		if (filter->priv->dmabuf_allocator)
+		{
+			gst_object_unref(filter->priv->dmabuf_allocator);
+			filter->priv->dmabuf_allocator = nullptr;
+		}
 		g_free(filter->priv->media_dev_path);
 		delete filter->priv;
 		filter->priv = nullptr;
@@ -207,6 +222,18 @@ static gboolean gst_pisp_convert_set_caps(GstBaseTransform *trans, GstCaps *inca
 	GST_INFO_OBJECT(filter, "set_caps called with incaps: %s, outcaps: %s", incaps_str, outcaps_str);
 	g_free(incaps_str);
 	g_free(outcaps_str);
+
+	/* Check for dmabuf support in caps */
+	GstCapsFeatures *in_features = gst_caps_get_features(incaps, 0);
+	GstCapsFeatures *out_features = gst_caps_get_features(outcaps, 0);
+
+	filter->priv->use_dmabuf_input = in_features &&
+									 gst_caps_features_contains(in_features, GST_CAPS_FEATURE_MEMORY_DMABUF);
+	filter->priv->use_dmabuf_output = out_features &&
+									  gst_caps_features_contains(out_features, GST_CAPS_FEATURE_MEMORY_DMABUF);
+
+	GST_INFO_OBJECT(filter, "dmabuf support - input: %s, output: %s", filter->priv->use_dmabuf_input ? "YES" : "NO",
+					filter->priv->use_dmabuf_output ? "YES" : "NO");
 
 	if (!gst_video_info_from_caps(&in_info, incaps))
 	{
@@ -353,7 +380,115 @@ static gboolean gst_pisp_convert_get_unit_size(GstBaseTransform *trans, GstCaps 
 	return TRUE;
 }
 
+/* Helper functions for dmabuf support */
+static gboolean gst_buffer_is_dmabuf(GstBuffer *buffer)
+{
+	GstMemory *mem;
+
+	if (gst_buffer_n_memory(buffer) == 0)
+		return FALSE;
+
+	mem = gst_buffer_peek_memory(buffer, 0);
+	return gst_is_dmabuf_memory(mem);
+}
+
+static std::optional<libpisp::helpers::V4l2Device::Buffer> gst_buffer_to_dmabuf_buffer(GstBuffer *buffer,
+																					   GstVideoInfo *info)
+{
+	libpisp::helpers::V4l2Device::Buffer buf = {};
+	guint n_planes = GST_VIDEO_INFO_N_PLANES(info);
+
+	/* For planar formats, GStreamer may use separate memory blocks per plane,
+	 * but we typically get one contiguous dmabuf */
+	guint n_mem = gst_buffer_n_memory(buffer);
+
+	if (n_mem == 1)
+	{
+		/* Single dmabuf for all planes (most common case) */
+		GstMemory *mem = gst_buffer_peek_memory(buffer, 0);
+		if (!gst_is_dmabuf_memory(mem))
+			return std::nullopt;
+
+		gint fd = gst_dmabuf_memory_get_fd(mem);
+		buf.fd[0] = fd;
+		buf.size[0] = mem->size;
+
+		/* For planar formats, calculate offsets */
+		if (n_planes > 1)
+		{
+			buf.fd[1] = fd;
+			buf.fd[2] = fd;
+			/* Sizes are accumulated in the single buffer */
+		}
+	}
+	else
+	{
+		/* Multiple dmabuf memory blocks */
+		for (guint i = 0; i < std::min(n_mem, 3u); i++)
+		{
+			GstMemory *mem = gst_buffer_peek_memory(buffer, i);
+			if (!gst_is_dmabuf_memory(mem))
+				return std::nullopt;
+
+			buf.fd[i] = gst_dmabuf_memory_get_fd(mem);
+			buf.size[i] = mem->size;
+		}
+	}
+
+	return buf;
+}
+
+[[maybe_unused]]
+static GstBuffer *create_dmabuf_buffer(const libpisp::helpers::V4l2Device::Buffer &hw_buffer, GstAllocator *allocator,
+									   GstVideoInfo *info)
+{
+	GstBuffer *buffer = gst_buffer_new();
+	guint n_planes = GST_VIDEO_INFO_N_PLANES(info);
+
+	/* Check if we have a single contiguous buffer or separate plane buffers */
+	gboolean separate_planes = (n_planes > 1 && hw_buffer.fd[0] != hw_buffer.fd[1]);
+
+	if (separate_planes)
+	{
+		/* Separate dmabuf per plane */
+		for (guint i = 0; i < n_planes && i < 3; i++)
+		{
+			if (hw_buffer.fd[i] >= 0)
+			{
+				GstMemory *mem = gst_dmabuf_allocator_alloc(allocator, dup(hw_buffer.fd[i]), hw_buffer.size[i]);
+				gst_buffer_append_memory(buffer, mem);
+			}
+		}
+	}
+	else
+	{
+		/* Single contiguous dmabuf for all planes */
+		if (hw_buffer.fd[0] >= 0)
+		{
+			gsize total_size = hw_buffer.size[0];
+			GstMemory *mem = gst_dmabuf_allocator_alloc(allocator, dup(hw_buffer.fd[0]), total_size);
+			gst_buffer_append_memory(buffer, mem);
+		}
+	}
+
+	/* Add video meta with actual strides and offsets */
+	gsize offsets[GST_VIDEO_MAX_PLANES] = { 0 };
+	gint strides[GST_VIDEO_MAX_PLANES] = { 0 };
+
+	for (guint i = 0; i < n_planes; i++)
+	{
+		strides[i] = GST_VIDEO_INFO_PLANE_STRIDE(info, i);
+		offsets[i] = GST_VIDEO_INFO_PLANE_OFFSET(info, i);
+	}
+
+	gst_buffer_add_video_meta_full(buffer, GST_VIDEO_FRAME_FLAG_NONE, GST_VIDEO_INFO_FORMAT(info),
+								   GST_VIDEO_INFO_WIDTH(info), GST_VIDEO_INFO_HEIGHT(info), n_planes, offsets, strides);
+
+	return buffer;
+}
+
 /* Copy data between GStreamer buffer and libpisp buffer */
+[[maybe_unused]]
 static void copy_buffer_to_pisp(GstBuffer *gstbuf, std::array<uint8_t *, 3> &mem, guint width, guint height,
 								guint gst_stride, guint hw_stride, const char *format)
 {
@@ -409,6 +544,7 @@ static void copy_buffer_to_pisp(GstBuffer *gstbuf, std::array<uint8_t *, 3> &mem
 	gst_buffer_unmap(gstbuf, &map);
 }
 
+[[maybe_unused]]
 static void copy_pisp_to_buffer(std::array<uint8_t *, 3> &mem, GstBuffer *gstbuf, guint width, guint height,
 								guint gst_stride, guint hw_stride, const char *format)
 {
@@ -470,29 +606,109 @@ static GstFlowReturn gst_pisp_convert_transform(GstBaseTransform *trans, GstBuff
 		return GST_FLOW_ERROR;
 	}
 
+	gboolean input_is_dmabuf = gst_buffer_is_dmabuf(inbuf);
+	gboolean output_is_dmabuf = gst_buffer_is_dmabuf(outbuf);
+
+	GST_DEBUG_OBJECT(filter, "Transform: input_dmabuf=%d output_dmabuf=%d", input_is_dmabuf, output_is_dmabuf);
+
 	try
 	{
-		/* Acquire buffers from the backend device */
-		auto buffers = filter->priv->backend_device->AcquireBuffers();
+		std::map<std::string, libpisp::helpers::V4l2Device::Buffer> buffers;
 
-		/* Copy input data to PiSP buffer */
-		copy_buffer_to_pisp(inbuf, buffers["pispbe-input"].mem, filter->priv->in_width, filter->priv->in_height,
-							filter->priv->in_stride, filter->priv->in_hw_stride, filter->priv->in_format);
+		/* Handle input buffer - dmabuf or memcpy path */
+		if (input_is_dmabuf && filter->priv->use_dmabuf_input)
+		{
+			/* Zero-copy input: extract dmabuf from GStreamer buffer */
+			GstVideoInfo in_info;
+			GstCaps *incaps = gst_pad_get_current_caps(GST_BASE_TRANSFORM_SINK_PAD(trans));
+			gst_video_info_from_caps(&in_info, incaps);
+			gst_caps_unref(incaps);
+
+			auto dmabuf_buffer = gst_buffer_to_dmabuf_buffer(inbuf, &in_info);
+			if (dmabuf_buffer)
+			{
+				buffers["pispbe-input"] = *dmabuf_buffer;
+				GST_DEBUG_OBJECT(filter, "Using zero-copy input (dmabuf fd=%d)", dmabuf_buffer->fd[0]);
+			}
+			else
+			{
+				GST_WARNING_OBJECT(filter, "Failed to extract dmabuf from input, falling back to memcpy");
+				input_is_dmabuf = FALSE;
+			}
+		}
+
+		if (!input_is_dmabuf || !filter->priv->use_dmabuf_input)
+		{
+			/* Memcpy input: acquire hardware buffer and copy data */
+			auto hw_buffers = filter->priv->backend_device->AcquireBuffers();
+			buffers["pispbe-input"] = hw_buffers["pispbe-input"];
+			buffers["pispbe-config"] = hw_buffers["pispbe-config"];
+
+			copy_buffer_to_pisp(inbuf, buffers["pispbe-input"].mem, filter->priv->in_width, filter->priv->in_height,
+								filter->priv->in_stride, filter->priv->in_hw_stride, filter->priv->in_format);
+			GST_DEBUG_OBJECT(filter, "Using memcpy input path");
+		}
+		else
+		{
+			/* For dmabuf input, we still need config buffer */
+			auto hw_buffers = filter->priv->backend_device->AcquireBuffers();
+			buffers["pispbe-config"] = hw_buffers["pispbe-config"];
+		}
+
+		/* Handle output buffer - dmabuf or memcpy path */
+		if (output_is_dmabuf && filter->priv->use_dmabuf_output)
+		{
+			/* Zero-copy output: extract dmabuf from GStreamer buffer */
+			GstVideoInfo out_info;
+			GstCaps *outcaps = gst_pad_get_current_caps(GST_BASE_TRANSFORM_SRC_PAD(trans));
+			gst_video_info_from_caps(&out_info, outcaps);
+			gst_caps_unref(outcaps);
+
+			auto dmabuf_buffer = gst_buffer_to_dmabuf_buffer(outbuf, &out_info);
+			if (dmabuf_buffer)
+			{
+				buffers["pispbe-output0"] = *dmabuf_buffer;
+				GST_DEBUG_OBJECT(filter, "Using zero-copy output (dmabuf fd=%d)", dmabuf_buffer->fd[0]);
+			}
+			else
+			{
+				GST_WARNING_OBJECT(filter, "Failed to extract dmabuf from output, falling back to memcpy");
+				output_is_dmabuf = FALSE;
+			}
+		}
+
+		if (!output_is_dmabuf || !filter->priv->use_dmabuf_output)
+		{
+			/* Memcpy output: acquire hardware buffer */
+			if (buffers.find("pispbe-output0") == buffers.end())
+			{
+				auto hw_buffers = filter->priv->backend_device->AcquireBuffers();
+				buffers["pispbe-output0"] = hw_buffers["pispbe-output0"];
+			}
+		}
 
 		/* Run the hardware conversion */
 		int ret = filter->priv->backend_device->Run(buffers);
 		if (ret)
 		{
 			GST_ERROR_OBJECT(filter, "Hardware conversion failed");
-			filter->priv->backend_device->ReturnBuffer(buffers);
+			if (!input_is_dmabuf || !output_is_dmabuf)
+				filter->priv->backend_device->ReturnBuffer(buffers);
 			return GST_FLOW_ERROR;
 		}
 
-		/* Copy output data from PiSP buffer */
-		copy_pisp_to_buffer(buffers["pispbe-output0"].mem, outbuf, filter->priv->out_width, filter->priv->out_height,
-							filter->priv->out_stride, filter->priv->out_hw_stride, filter->priv->out_format);
+		/* Copy output data if using memcpy path */
+		if (!output_is_dmabuf || !filter->priv->use_dmabuf_output)
+		{
+			copy_pisp_to_buffer(buffers["pispbe-output0"].mem, outbuf, filter->priv->out_width,
+								filter->priv->out_height, filter->priv->out_stride, filter->priv->out_hw_stride,
+								filter->priv->out_format);
+			GST_DEBUG_OBJECT(filter, "Using memcpy output path");
+		}
 
-		filter->priv->backend_device->ReturnBuffer(buffers);
+		/* Return buffers if we acquired them */
+		if (!input_is_dmabuf || !output_is_dmabuf)
+			filter->priv->backend_device->ReturnBuffer(buffers);
 	}
 	catch (const std::exception &e)
 	{
@@ -546,8 +762,7 @@ static gboolean gst_pisp_convert_start(GstBaseTransform *trans)
 			return FALSE;
 		}
 
-		filter->priv->backend =
-			std::make_unique<libpisp::BackEnd>(libpisp::BackEnd::Config({}), *variant_it);
+		filter->priv->backend = std::make_unique<libpisp::BackEnd>(libpisp::BackEnd::Config({}), *variant_it);
 
 		GST_INFO_OBJECT(filter, "Acquired device %s", media_dev.c_str());
 	}
@@ -570,6 +785,157 @@ static gboolean gst_pisp_convert_stop(GstBaseTransform *trans)
 	g_free(filter->priv->media_dev_path);
 	filter->priv->media_dev_path = nullptr;
 	filter->priv->configured = FALSE;
+	filter->priv->use_dmabuf_input = FALSE;
+	filter->priv->use_dmabuf_output = FALSE;
+
+	return TRUE;
+}
+
+static gboolean gst_pisp_convert_propose_allocation(GstBaseTransform *trans, GstQuery *decide_query [[maybe_unused]],
+													GstQuery *query)
+{
+	GstPispConvert *filter = GST_PISP_CONVERT(trans);
+
+	GST_DEBUG_OBJECT(filter, "propose_allocation called");
+
+	/* Propose dmabuf allocator for upstream elements */
+	if (filter->priv->dmabuf_allocator)
+	{
+		gst_query_add_allocation_param(query, filter->priv->dmabuf_allocator, nullptr);
+		GST_DEBUG_OBJECT(filter, "Proposed dmabuf allocator to upstream");
+	}
+
+	/* Add dmabuf memory feature support */
+	GstCaps *caps;
+	gst_query_parse_allocation(query, &caps, nullptr);
+
+	if (caps)
+	{
+		GstCaps *dmabuf_caps = gst_caps_copy(caps);
+		GstCapsFeatures *features = gst_caps_features_new(GST_CAPS_FEATURE_MEMORY_DMABUF, nullptr);
+
+		for (guint i = 0; i < gst_caps_get_size(dmabuf_caps); i++)
+		{
+			gst_caps_set_features(dmabuf_caps, i, gst_caps_features_copy(features));
+		}
+
+		gst_caps_features_free(features);
+		gst_query_add_allocation_meta(query, GST_VIDEO_META_API_TYPE, nullptr);
+
+		GST_DEBUG_OBJECT(filter, "Proposed dmabuf caps to upstream");
+		gst_caps_unref(dmabuf_caps);
+	}
+
+	return TRUE;
+}
+
+static gboolean gst_pisp_convert_decide_allocation(GstBaseTransform *trans, GstQuery *query)
+{
+	GstPispConvert *filter = GST_PISP_CONVERT(trans);
+	GstAllocator *allocator = nullptr;
+	GstAllocationParams params;
+	GstBufferPool *pool = nullptr;
+	guint size, min, max;
+	GstStructure *config;
+	GstCaps *caps;
+	gboolean update_pool;
+
+	GST_DEBUG_OBJECT(filter, "decide_allocation called");
+
+	gst_query_parse_allocation(query, &caps, nullptr);
+
+	if (!caps)
+	{
+		GST_ERROR_OBJECT(filter, "No caps in allocation query");
+		return FALSE;
+	}
+
+	/* Check if downstream supports dmabuf */
+	GstCapsFeatures *features = gst_caps_get_features(caps, 0);
+	gboolean use_dmabuf = features && gst_caps_features_contains(features, GST_CAPS_FEATURE_MEMORY_DMABUF);
+
+	GST_INFO_OBJECT(filter, "Downstream %s dmabuf", use_dmabuf ? "supports" : "doesn't support");
+
+	/* Get allocator from query */
+	if (gst_query_get_n_allocation_params(query) > 0)
+	{
+		gst_query_parse_nth_allocation_param(query, 0, &allocator, &params);
+	}
+	else
+	{
+		gst_allocation_params_init(&params);
+	}
+
+	/* If downstream wants dmabuf but didn't provide allocator, use ours */
+	if (use_dmabuf && (!allocator || !GST_IS_DMABUF_ALLOCATOR(allocator)))
+	{
+		if (allocator)
+			gst_object_unref(allocator);
+		allocator = GST_ALLOCATOR(gst_object_ref(filter->priv->dmabuf_allocator));
+		GST_DEBUG_OBJECT(filter, "Using our dmabuf allocator for output");
+	}
+
+	/* Set or update allocator in query */
+	if (gst_query_get_n_allocation_params(query) > 0)
+	{
+		gst_query_set_nth_allocation_param(query, 0, allocator, &params);
+	}
+	else
+	{
+		gst_query_add_allocation_param(query, allocator, &params);
+	}
+
+	/* Handle buffer pool */
+	if (gst_query_get_n_allocation_pools(query) > 0)
+	{
+		gst_query_parse_nth_allocation_pool(query, 0, &pool, &size, &min, &max);
+		update_pool = TRUE;
+	}
+	else
+	{
+		pool = nullptr;
+		size = 0;
+		min = 0;
+		max = 0;
+		update_pool = FALSE;
+	}
+
+	if (!pool)
+	{
+		pool = gst_video_buffer_pool_new();
+	}
+
+	config = gst_buffer_pool_get_config(pool);
+	gst_buffer_pool_config_set_params(config, caps, size, min, max);
+	gst_buffer_pool_config_set_allocator(config, allocator, &params);
+
+	/* Add video meta support */
+	gst_buffer_pool_config_add_option(config, GST_BUFFER_POOL_OPTION_VIDEO_META);
+
+	if (!gst_buffer_pool_set_config(pool, config))
+	{
+		GST_ERROR_OBJECT(filter, "Failed to set buffer pool config");
+		gst_object_unref(pool);
+		if (allocator)
+			gst_object_unref(allocator);
+		return FALSE;
+	}
+
+	if (update_pool)
+	{
+		gst_query_set_nth_allocation_pool(query, 0, pool, size, min, max);
+	}
+	else
+	{
+		gst_query_add_allocation_pool(query, pool, size, min, max);
+	}
+
+	gst_object_unref(pool);
+	if (allocator)
+		gst_object_unref(allocator);
+
+	GST_DEBUG_OBJECT(filter, "Allocation decided: pool=%p, size=%u, min=%u, max=%u, dmabuf=%d", pool, size, min, max,
+					 use_dmabuf);
 
 	return TRUE;
 }

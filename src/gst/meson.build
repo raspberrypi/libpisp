@@ -4,8 +4,9 @@
 gst_dep = dependency('gstreamer-1.0', version : '>= 1.14', required : get_option('gstreamer'))
 gst_base_dep = dependency('gstreamer-base-1.0', version : '>= 1.14', required : get_option('gstreamer'))
 gst_video_dep = dependency('gstreamer-video-1.0', version : '>= 1.14', required : get_option('gstreamer'))
+gst_allocators_dep = dependency('gstreamer-allocators-1.0', version : '>= 1.14', required : get_option('gstreamer'))
 
-if gst_dep.found() and gst_base_dep.found() and gst_video_dep.found()
+if gst_dep.found() and gst_base_dep.found() and gst_video_dep.found() and gst_allocators_dep.found()
     gst_sources = [
         'gstpispconvert.cpp',
     ]
@@ -14,6 +15,7 @@ if gst_dep.found() and gst_base_dep.found() and gst_video_dep.found()
         gst_dep,
         gst_base_dep,
         gst_video_dep,
+        gst_allocators_dep,
         libpisp_dep,
     ]
 

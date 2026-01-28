@@ -10,6 +10,10 @@
 #include <gst/base/gstbasetransform.h>
 #include <gst/gst.h>
 #include <memory>
+#include <vector>
+
+#include "backend/backend.hpp"
+#include "helpers/backend_device.hpp"
 
 G_BEGIN_DECLS
 
@@ -18,22 +22,6 @@ G_BEGIN_DECLS
 #define GST_PISP_CONVERT_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST((klass), GST_TYPE_PISP_CONVERT, GstPispConvertClass))
 #define GST_IS_PISP_CONVERT(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), GST_TYPE_PISP_CONVERT))
 #define GST_IS_PISP_CONVERT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), GST_TYPE_PISP_CONVERT))
-
-namespace libpisp
-{
-
-namespace helpers
-{
-
-class BackendDevice;
-class MediaDevice;
-
-} // namespace helpers
-
-class BackEnd;
-class PiSPVariant;
-
-} // namespace libpisp
 
 typedef struct _GstPispConvert GstPispConvert;
 typedef struct _GstPispConvertClass GstPispConvertClass;
@@ -76,6 +64,11 @@ struct _GstPispConvertPrivate
 	guint out_stride; // GStreamer buffer stride
 	guint out_hw_stride; // Hardware buffer stride
 	const char *out_format;
+
+	/* dmabuf support */
+	GstAllocator *dmabuf_allocator;
+	gboolean use_dmabuf_input;
+	gboolean use_dmabuf_output;
 };
 
 GType gst_pisp_convert_get_type(void);
