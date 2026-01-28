@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
 	be.Prepare(&config);
 
 	backend_device.Setup(config);
-	auto buffers = backend_device.AcquireBuffers();
+	auto buffers = backend_device.GetBufferSlice();
 
 	std::string input_filename = args["input"].as<std::string>();
 	std::ifstream in(input_filename, std::ios::binary);
@@ -405,8 +405,6 @@ int main(int argc, char *argv[])
 					o.image.stride);
 	buffers["pispbe-output0"].ReadSyncEnd();
 	out.close();
-
-	backend_device.ReturnBuffer(buffers);
 
 	std::cerr << "Writing " << output_file << " "
 			  << out_file.width << ":" << out_file.height << ":" << out_file.stride << ":" << out_file.format << std::endl;

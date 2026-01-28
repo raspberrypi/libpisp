@@ -73,7 +73,7 @@ V4l2Device::V4l2Device(const std::string &device)
 
 V4l2Device::~V4l2Device()
 {
-	ReturnBuffers();
+	ReleaseBuffers();
 	Close();
 }
 
@@ -119,7 +119,7 @@ int V4l2Device::ImportBuffers(const std::vector<Buffer> &buffers)
 	if (ret)
 		throw std::runtime_error("VIDIOC_G_FMT failed: " + std::to_string(ret));
 
-	const unsigned int total_buffers = buffers.size() + v4l2_buffers_.size();
+	const unsigned int total_buffers = buffers.size() + buffers_.size();
 	v4l2_requestbuffers req_bufs {};
 
 	req_bufs.count = total_buffers;
@@ -132,11 +132,7 @@ int V4l2Device::ImportBuffers(const std::vector<Buffer> &buffers)
 
 	for (auto const &b : buffers)
 	{
-		v4l2_buffer buf {};
-
-		buf.type = buf_type_;
-		buf.memory = V4L2_MEMORY_DMABUF;
-		v4l2_buffers_.emplace_back(buf);
+		buffers_.push_back(buffers_.size());
 
 		for (unsigned int p = 0; p < num_memory_planes_; p++)
 		{
@@ -149,27 +145,19 @@ int V4l2Device::ImportBuffers(const std::vector<Buffer> &buffers)
 			if (mem == MAP_FAILED)
 				throw std::runtime_error("Unable to mmap buffer");
 
-			v4l2_buffers_.back().fd[p] = b.fd[p];
-			v4l2_buffers_.back().size[p] = b.size[p];
-			v4l2_buffers_.back().mem[p] = (uint8_t *)mem;
+			// For convenience.
+			buffers_.back().fd[p] = b.fd[p];
+			buffers_.back().size[p] = b.size[p];
+			buffers_.back().mem[p] = (uint8_t *)mem;
 		}
 	}
 
-	available_buffers_ = {};
-	unsigned int index = 0;
-
-	for (auto &b : v4l2_buffers_)
-	{
-		b.buffer.index = index;
-		available_buffers_.push(index++);
-	}
-
-	return v4l2_buffers_.size();
+	return buffers_.size();
 }
 
-void V4l2Device::ReturnBuffers()
+void V4l2Device::ReleaseBuffers()
 {
-	if (!v4l2_buffers_.size())
+	if (!buffers_.size())
 		return;
 
 	v4l2_requestbuffers req_bufs {};
@@ -179,7 +167,7 @@ void V4l2Device::ReturnBuffers()
 	req_bufs.memory = V4L2_MEMORY_DMABUF;
 	ioctl(fd_.Get(), VIDIOC_REQBUFS, &req_bufs);
 
-	for (auto const &b : v4l2_buffers_)
+	for (auto const &b : buffers_)
 	{
 		for (unsigned int p = 0; p < num_memory_planes_; p++)
 		{
@@ -188,55 +176,40 @@ void V4l2Device::ReturnBuffers()
 		}
 	}
 
-	v4l2_buffers_ = {};
-	available_buffers_ = {};
+	buffers_ = {};
 }
 
-std::optional<V4l2Device::Buffer> V4l2Device::AcquireBuffer()
+int V4l2Device::QueueBuffer(const Buffer &buffer)
 {
-	if (available_buffers_.empty())
-		return {};
-
-	unsigned int index = available_buffers_.front();
-	available_buffers_.pop();
-
-	return findBuffer(index);
-}
-
-void V4l2Device::ReturnBuffer(const Buffer &buffer)
-{
-	available_buffers_.push(buffer.buffer.index);
-}
-
-int V4l2Device::QueueBuffer(unsigned int index)
-{
-	std::optional<Buffer> buf = findBuffer(index);
-	if (!buf)
-		return -1;
-
 	v4l2_plane planes[VIDEO_MAX_PLANES] = {};
+	v4l2_buffer buf {};
+
+	buf.index = buffer.id;
+	buf.type = buf_type_;
+	buf.memory = V4L2_MEMORY_DMABUF;
+
 	if (!isMeta())
 	{
-		buf->buffer.m.planes = planes;
-		buf->buffer.length = num_memory_planes_;
+		buf.m.planes = planes;
+		buf.length = num_memory_planes_;
 		for (unsigned int p = 0; p < num_memory_planes_; p++)
 		{
-			buf->buffer.m.planes[p].bytesused = buf->size[p];
-			buf->buffer.m.planes[p].length = buf->size[p];
-			buf->buffer.m.planes[p].m.fd = buf->fd[p];
+			buf.m.planes[p].bytesused = buffer.size[p];
+			buf.m.planes[p].length = buffer.size[p];
+			buf.m.planes[p].m.fd = buffer.fd[p];
 		}
 	}
 	else
 	{
-		buf->buffer.bytesused = buf->size[0];
-		buf->buffer.m.fd = buf->fd[0];
+		buf.bytesused = buffer.size[0];
+		buf.m.fd = buffer.fd[0];
 	}
 
-	buf->buffer.timestamp.tv_sec = time(NULL);
-	buf->buffer.field = V4L2_FIELD_NONE;
-	buf->buffer.flags = 0;
+	buf.timestamp.tv_sec = time(NULL);
+	buf.field = V4L2_FIELD_NONE;
+	buf.flags = 0;
 
-	int ret = ioctl(fd_.Get(), VIDIOC_QBUF, &buf->buffer);
+	int ret = ioctl(fd_.Get(), VIDIOC_QBUF, &buf);
 	if (ret < 0)
 		throw std::runtime_error("Unable to queue buffer: " + std::string(strerror(errno)));
 
@@ -270,7 +243,7 @@ int V4l2Device::DequeueBuffer(unsigned int timeout_ms)
 	if (ret)
 		return -1;
 
-	return buf.index;
+	return 0;
 }
 
 void V4l2Device::SetFormat(const pisp_image_format_config &format, bool use_opaque_format)
@@ -338,17 +311,4 @@ void V4l2Device::StreamOff()
 	int ret = ioctl(fd_.Get(), VIDIOC_STREAMOFF, &buf_type_);
 	if (ret < 0)
 		throw std::runtime_error("Stream off failed: " + std::string(strerror(errno)));
-}
-
-std::optional<V4l2Device::Buffer> V4l2Device::findBuffer(unsigned int index) const
-{
-	auto it = std::find_if(v4l2_buffers_.begin(), v4l2_buffers_.end(),
-						   [index](auto const &b) { return b.buffer.index == index; });
-	if (it == v4l2_buffers_.end())
-	{
-		throw std::runtime_error("find buffers failed");
-		return {};
-	}
-
-	return *it;
 }

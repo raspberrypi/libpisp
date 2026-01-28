@@ -8,7 +8,6 @@
 #pragma once
 
 #include <array>
-#include <optional>
 #include <queue>
 #include <stdint.h>
 #include <vector>
@@ -56,13 +55,14 @@ public:
 
 	struct Buffer
 	{
+	public:
 		Buffer()
-			: buffer(), size(), mem(), fd({-1, -1, -1})
+			: size(), mem(), fd({-1, -1, -1}), id(-1)
 		{
 		}
 
-		Buffer(const v4l2_buffer& buf)
-			: buffer(buf), size(), mem(), fd({-1, -1, -1})
+		Buffer(unsigned int id)
+			: size(), mem(), fd({-1, -1, -1}), id(id)
 		{
 		}
 
@@ -110,24 +110,22 @@ public:
 			}
 		}
 
-		v4l2_buffer buffer;
 		std::array<size_t, 3> size;
 		std::array<uint8_t *, 3> mem;
 		std::array<int, 3> fd;
+		unsigned int id;
 	};
 
 	int AllocateBuffers(unsigned int count = 1);
 	int ImportBuffers(const std::vector<Buffer> &buffers);
-	void ReturnBuffers();
+	void ReleaseBuffers();
 
-	std::optional<Buffer> AcquireBuffer();
-	void ReturnBuffer(const Buffer &buffer);
 	const std::vector<Buffer> &Buffers() const
 	{
-		return v4l2_buffers_;
+		return buffers_;
 	};
 
-	int QueueBuffer(unsigned int index);
+	int QueueBuffer(const Buffer &buffer);
 	int DequeueBuffer(unsigned int timeout_ms = 500);
 
 	void SetFormat(const pisp_image_format_config &format, bool use_opaque_format = false);
@@ -151,10 +149,7 @@ private:
 		return !isCapture();
 	}
 
-	std::optional<Buffer> findBuffer(unsigned int index) const;
-
-	std::queue<unsigned int> available_buffers_;
-	std::vector<Buffer> v4l2_buffers_;
+	std::vector<Buffer> buffers_;
 	DeviceFd fd_;
 	enum v4l2_buf_type buf_type_;
 	unsigned int num_memory_planes_;

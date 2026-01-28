@@ -22,7 +22,7 @@ BackendDevice::BackendDevice(const std::string &device)
 	// Allocate a config buffer to persist.
 	nodes_.at("pispbe-config").AllocateBuffers(1);
 	nodes_.at("pispbe-config").StreamOn();
-	config_buffer_ = nodes_.at("pispbe-config").AcquireBuffer().value();
+	config_buffer_ = nodes_.at("pispbe-config").Buffers()[0];
 }
 
 BackendDevice::~BackendDevice()
@@ -38,7 +38,7 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 		(config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_INPUT))
 	{
 		// Release old buffers before setting the new format.
-		nodes_.at("pispbe-input").ReturnBuffers();
+		nodes_.at("pispbe-input").ReleaseBuffers();
 		nodes_.at("pispbe-input").SetFormat(config.config.input_format, use_opaque_format);
 		nodes_.at("pispbe-input").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-input");
@@ -47,7 +47,7 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 	if (config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT0)
 	{
 		// Release old buffers before setting the new format.
-		nodes_.at("pispbe-output0").ReturnBuffers();
+		nodes_.at("pispbe-output0").ReleaseBuffers();
 		nodes_.at("pispbe-output0").SetFormat(config.config.output_format[0].image, use_opaque_format);
 		nodes_.at("pispbe-output0").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-output0");
@@ -56,7 +56,7 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 	if (config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT1)
 	{
 		// Release old buffers before setting the new format.
-		nodes_.at("pispbe-output1").ReturnBuffers();
+		nodes_.at("pispbe-output1").ReleaseBuffers();
 		nodes_.at("pispbe-output1").SetFormat(config.config.output_format[1].image, use_opaque_format);
 		nodes_.at("pispbe-output1").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-output1");
@@ -65,7 +65,7 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_INPUT)
 	{
 		// Release old buffers before setting the new format.
-		nodes_.at("pispbe-tdn_input").ReturnBuffers();
+		nodes_.at("pispbe-tdn_input").ReleaseBuffers();
 		nodes_.at("pispbe-tdn_input").SetFormat(config.config.tdn_input_format, use_opaque_format);
 		nodes_.at("pispbe-tdn_input").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-tdn_input");
@@ -74,7 +74,7 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_OUTPUT)
 	{
 		// Release old buffers before setting the new format.
-		nodes_.at("pispbe-tdn_output").ReturnBuffers();
+		nodes_.at("pispbe-tdn_output").ReleaseBuffers();
 		nodes_.at("pispbe-tdn_output").SetFormat(config.config.tdn_output_format, use_opaque_format);
 		nodes_.at("pispbe-tdn_output").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-tdn_output");
@@ -83,7 +83,7 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_STITCH_INPUT)
 	{
 		// Release old buffers before setting the new format.
-		nodes_.at("pispbe-stitch_input").ReturnBuffers();
+		nodes_.at("pispbe-stitch_input").ReleaseBuffers();
 		nodes_.at("pispbe-stitch_input").SetFormat(config.config.stitch_input_format, use_opaque_format);
 		nodes_.at("pispbe-stitch_input").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-stitch_input");
@@ -92,7 +92,7 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_STITCH_OUTPUT)
 	{
 		// Release old buffers before setting the new format.
-		nodes_.at("pispbe-stitch_output").ReturnBuffers();
+		nodes_.at("pispbe-stitch_output").ReleaseBuffers();
 		nodes_.at("pispbe-stitch_output").SetFormat(config.config.stitch_output_format, use_opaque_format);
 		nodes_.at("pispbe-stitch_output").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-stitch_output");
@@ -103,20 +103,24 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 	config_buffer_.RwSyncEnd();
 }
 
-std::map<std::string, V4l2Device::Buffer> BackendDevice::AcquireBuffers()
+std::map<std::string, std::vector<V4l2Device::Buffer>> BackendDevice::GetBuffers()
 {
-	std::map<std::string, V4l2Device::Buffer> buffers;
+	std::map<std::string, std::vector<V4l2Device::Buffer>> buffers;
 
 	for (auto const &n : nodes_enabled_)
-		buffers[n] = nodes_.at(n).AcquireBuffer().value();
+		buffers[n] = nodes_.at(n).Buffers();
 
 	return buffers;
 }
 
-void BackendDevice::ReturnBuffer(const std::map<std::string, V4l2Device::Buffer> &buffers)
+std::map<std::string, V4l2Device::Buffer> BackendDevice::GetBufferSlice()
 {
-	for (auto const &[n, b] : buffers)
-		nodes_.at(n).ReturnBuffer(b);
+	std::map<std::string, V4l2Device::Buffer> buffers;
+
+	for (auto const &n : nodes_enabled_)
+		buffers[n] = nodes_.at(n).Buffers()[0];
+
+	return buffers;
 }
 
 int BackendDevice::Run(const std::map<std::string, V4l2Device::Buffer> &buffers)
@@ -126,12 +130,12 @@ int BackendDevice::Run(const std::map<std::string, V4l2Device::Buffer> &buffers)
 	for (auto const &n : nodes_enabled_)
 	{
 		nodes_.at(n).StreamOn();
-		if (nodes_.at(n).QueueBuffer(buffers.at(n).buffer.index))
+		if (nodes_.at(n).QueueBuffer(buffers.at(n)))
 			ret = -1;
 	}
 
 	// Triggers the HW job.
-	if (nodes_.at("pispbe-config").QueueBuffer(config_buffer_.buffer.index))
+	if (nodes_.at("pispbe-config").QueueBuffer(config_buffer_))
 		ret = -1;
 
 	for (auto const &n : nodes_enabled_)

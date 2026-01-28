@@ -35,8 +35,8 @@ public:
 		return nodes_.at(node);
 	}
 
-	std::map<std::string, V4l2Device::Buffer> AcquireBuffers();
-	void ReturnBuffer(const std::map<std::string, V4l2Device::Buffer> &buffers);
+	std::map<std::string, std::vector<V4l2Device::Buffer>> GetBuffers();
+	std::map<std::string, V4l2Device::Buffer> GetBufferSlice();
 	V4l2Device::Buffer &ConfigBuffer()
 	{
 		return config_buffer_;
