@@ -88,7 +88,9 @@ static void gst_pisp_convert_class_init(GstPispConvertClass *klass)
 
 	gobject_class->finalize = gst_pisp_convert_finalize;
 
-	gst_element_class_set_static_metadata(element_class, "PiSP Hardware Converter", "Filter/Converter/Video/Scaler",
+	gst_element_class_set_static_metadata(element_class,
+										  "PiSP Hardware Image Converter",
+										  "Filter/Converter/Video/Scaler",
 										  "Hardware accelerated format conversion and scaling using libpisp",
 										  "Raspberry Pi");
 
@@ -614,6 +616,18 @@ static GstFlowReturn gst_pisp_convert_transform(GstBaseTransform *trans, GstBuff
 	try
 	{
 		std::map<std::string, libpisp::helpers::V4l2Device::Buffer> buffers;
+		gboolean need_acquire = FALSE;
+
+		/* Determine if we need to acquire hardware buffers for memcpy path */
+		need_acquire = (!input_is_dmabuf || !filter->priv->use_dmabuf_input) || 
+		               (!output_is_dmabuf || !filter->priv->use_dmabuf_output);
+
+		/* Acquire all hardware buffers once if using memcpy path */
+		if (need_acquire)
+		{
+			buffers = filter->priv->backend_device->AcquireBuffers();
+			GST_DEBUG_OBJECT(filter, "Acquired hardware buffers");
+		}
 
 		/* Handle input buffer - dmabuf or memcpy path */
 		if (input_is_dmabuf && filter->priv->use_dmabuf_input)
@@ -639,20 +653,12 @@ static GstFlowReturn gst_pisp_convert_transform(GstBaseTransform *trans, GstBuff
 
 		if (!input_is_dmabuf || !filter->priv->use_dmabuf_input)
 		{
-			/* Memcpy input: acquire hardware buffer and copy data */
-			auto hw_buffers = filter->priv->backend_device->AcquireBuffers();
-			buffers["pispbe-input"] = hw_buffers["pispbe-input"];
-			buffers["pispbe-config"] = hw_buffers["pispbe-config"];
-
+			buffers["pispbe-input"].RwSyncStart();
+			/* Memcpy input: copy data to hardware buffer (already acquired) */
 			copy_buffer_to_pisp(inbuf, buffers["pispbe-input"].mem, filter->priv->in_width, filter->priv->in_height,
 								filter->priv->in_stride, filter->priv->in_hw_stride, filter->priv->in_format);
+			buffers["pispbe-input"].RwSyncEnd();
 			GST_DEBUG_OBJECT(filter, "Using memcpy input path");
-		}
-		else
-		{
-			/* For dmabuf input, we still need config buffer */
-			auto hw_buffers = filter->priv->backend_device->AcquireBuffers();
-			buffers["pispbe-config"] = hw_buffers["pispbe-config"];
 		}
 
 		/* Handle output buffer - dmabuf or memcpy path */
@@ -677,22 +683,14 @@ static GstFlowReturn gst_pisp_convert_transform(GstBaseTransform *trans, GstBuff
 			}
 		}
 
-		if (!output_is_dmabuf || !filter->priv->use_dmabuf_output)
-		{
-			/* Memcpy output: acquire hardware buffer */
-			if (buffers.find("pispbe-output0") == buffers.end())
-			{
-				auto hw_buffers = filter->priv->backend_device->AcquireBuffers();
-				buffers["pispbe-output0"] = hw_buffers["pispbe-output0"];
-			}
-		}
+		/* Output buffer already acquired if using memcpy path */
 
 		/* Run the hardware conversion */
 		int ret = filter->priv->backend_device->Run(buffers);
 		if (ret)
 		{
 			GST_ERROR_OBJECT(filter, "Hardware conversion failed");
-			if (!input_is_dmabuf || !output_is_dmabuf)
+			if (need_acquire)
 				filter->priv->backend_device->ReturnBuffer(buffers);
 			return GST_FLOW_ERROR;
 		}
@@ -700,14 +698,16 @@ static GstFlowReturn gst_pisp_convert_transform(GstBaseTransform *trans, GstBuff
 		/* Copy output data if using memcpy path */
 		if (!output_is_dmabuf || !filter->priv->use_dmabuf_output)
 		{
+			buffers["pispbe-output0"].ReadSyncStart();
 			copy_pisp_to_buffer(buffers["pispbe-output0"].mem, outbuf, filter->priv->out_width,
 								filter->priv->out_height, filter->priv->out_stride, filter->priv->out_hw_stride,
 								filter->priv->out_format);
+			buffers["pispbe-output0"].ReadSyncEnd();								
 			GST_DEBUG_OBJECT(filter, "Using memcpy output path");
 		}
 
 		/* Return buffers if we acquired them */
-		if (!input_is_dmabuf || !output_is_dmabuf)
+		if (need_acquire)
 			filter->priv->backend_device->ReturnBuffer(buffers);
 	}
 	catch (const std::exception &e)
@@ -904,6 +904,30 @@ static gboolean gst_pisp_convert_decide_allocation(GstBaseTransform *trans, GstQ
 	{
 		pool = gst_video_buffer_pool_new();
 	}
+
+	/* Calculate buffer size if not provided */
+	if (size == 0)
+	{
+		GstVideoInfo vinfo;
+		if (gst_video_info_from_caps(&vinfo, caps))
+		{
+			size = GST_VIDEO_INFO_SIZE(&vinfo);
+		}
+		else
+		{
+			GST_ERROR_OBJECT(filter, "Failed to get video info from caps for buffer size");
+			gst_object_unref(pool);
+			if (allocator)
+				gst_object_unref(allocator);
+			return FALSE;
+		}
+	}
+
+	/* Ensure minimum buffers */
+	if (min == 0)
+		min = 2;
+	if (max == 0)
+		max = 0; /* 0 means unlimited */
 
 	config = gst_buffer_pool_get_config(pool);
 	gst_buffer_pool_config_set_params(config, caps, size, min, max);
