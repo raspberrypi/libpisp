@@ -25,16 +25,29 @@ GST_DEBUG_CATEGORY_STATIC(gst_pisp_convert_debug);
 
 /* Supported formats - matching those from convert.cpp */
 #define PISP_FORMATS "{ RGB, I420, YV12, Y42B, Y444, YUY2, UYVY, NV12_128C8 }"
+#define PISP_DRM_FORMATS "{ RGB888, YUV420, YVU420, YUV422, YUV444, YUYV, UYVY, NV12 }"
 
 static GstStaticPadTemplate sink_template =
 	GST_STATIC_PAD_TEMPLATE("sink", GST_PAD_SINK, GST_PAD_ALWAYS,
-							GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE_WITH_FEATURES(
-								GST_CAPS_FEATURE_MEMORY_DMABUF, PISP_FORMATS) ";" GST_VIDEO_CAPS_MAKE(PISP_FORMATS)));
+							GST_STATIC_CAPS(
+								/* DMA-DRM format (GStreamer 1.24+) */
+								"video/x-raw(memory:DMABuf), format=(string)DMA_DRM, drm-format=(string)" PISP_DRM_FORMATS
+								", width=(int)[1,32768], height=(int)[1,32768], framerate=(fraction)[0/1,2147483647/1]"
+								";" /* Regular dmabuf with standard formats */
+								GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_MEMORY_DMABUF, PISP_FORMATS)
+								";" /* System memory */
+								GST_VIDEO_CAPS_MAKE(PISP_FORMATS)));
 
 static GstStaticPadTemplate src_template =
 	GST_STATIC_PAD_TEMPLATE("src", GST_PAD_SRC, GST_PAD_ALWAYS,
-							GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE_WITH_FEATURES(
-								GST_CAPS_FEATURE_MEMORY_DMABUF, PISP_FORMATS) ";" GST_VIDEO_CAPS_MAKE(PISP_FORMATS)));
+							GST_STATIC_CAPS(
+								/* DMA-DRM format (GStreamer 1.24+) */
+								"video/x-raw(memory:DMABuf), format=(string)DMA_DRM, drm-format=(string)" PISP_DRM_FORMATS
+								", width=(int)[1,32768], height=(int)[1,32768], framerate=(fraction)[0/1,2147483647/1]"
+								";" /* Regular dmabuf with standard formats */
+								GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_MEMORY_DMABUF, PISP_FORMATS)
+								";" /* System memory */
+								GST_VIDEO_CAPS_MAKE(PISP_FORMATS)));
 
 #define gst_pisp_convert_parent_class parent_class
 G_DEFINE_TYPE(GstPispConvert, gst_pisp_convert, GST_TYPE_BASE_TRANSFORM);
@@ -59,11 +72,38 @@ static const char *gst_format_to_pisp(GstVideoFormat format)
 		return "YUYV";
 	case GST_VIDEO_FORMAT_UYVY:
 		return "UYVY";
-	case GST_VIDEO_FORMAT_NV12_128C8:
-		return "YUV420SP_COL128";
+	//case GST_VIDEO_FORMAT_NV12_128C8:
+	//	return "YUV420SP_COL128";
 	default:
 		return nullptr;
 	}
+}
+
+/* Helper function to map DRM format string to PiSP format string */
+static const char *drm_format_to_pisp(const gchar *drm_format)
+{
+	if (!drm_format)
+		return nullptr;
+
+	/* Map common DRM fourcc names to PiSP formats */
+	if (g_str_equal(drm_format, "RGB888") || g_str_equal(drm_format, "BGR888"))
+		return "RGB888";
+	else if (g_str_equal(drm_format, "YUV420") || g_str_equal(drm_format, "YU12"))
+		return "YUV420P";
+	else if (g_str_equal(drm_format, "YVU420") || g_str_equal(drm_format, "YV12"))
+		return "YVU420P";
+	else if (g_str_equal(drm_format, "YUV422"))
+		return "YUV422P";
+	else if (g_str_equal(drm_format, "YUV444"))
+		return "YUV444P";
+	else if (g_str_equal(drm_format, "YUYV"))
+		return "YUYV";
+	else if (g_str_equal(drm_format, "UYVY"))
+		return "UYVY";
+	else if (g_str_equal(drm_format, "NV12"))
+		return "YUV420SP";
+
+	return nullptr;
 }
 
 /* GObject vmethod implementations */
@@ -189,11 +229,13 @@ static GstCaps *gst_pisp_convert_transform_caps(GstBaseTransform *trans, GstPadD
 
 		/* Preserve caps features (e.g., memory:DMABuf) */
 		GstCapsFeatures *features = gst_caps_get_features(caps, i);
+		gboolean has_dmabuf = features && gst_caps_features_contains(features, GST_CAPS_FEATURE_MEMORY_DMABUF);
 		
 		/* For each structure in template caps, create a new one with preserved features */
 		for (guint j = 0; j < gst_caps_get_size(tmp); j++)
 		{
-			GstStructure *new_structure = gst_structure_copy(gst_caps_get_structure(tmp, j));
+			GstStructure *tmpl_structure = gst_caps_get_structure(tmp, j);
+			GstStructure *new_structure = gst_structure_copy(tmpl_structure);
 
 			/* Preserve framerate and pixel-aspect-ratio, but allow any width/height */
 			if (gst_structure_has_field(structure, "framerate"))
@@ -207,16 +249,56 @@ static GstCaps *gst_pisp_convert_transform_caps(GstBaseTransform *trans, GstPadD
 				gst_structure_set_value(new_structure, "pixel-aspect-ratio", par);
 			}
 
+			/* Check if template structure is DMA_DRM (requires dmabuf feature) */
+			const gchar *tmpl_format = gst_structure_get_string(tmpl_structure, "format");
+			gboolean is_drm_template = tmpl_format && g_str_equal(tmpl_format, "DMA_DRM");
+			
 			/* Preserve the caps features (like memory:DMABuf) */
 			if (features)
 			{
 				GstCapsFeatures *new_features = gst_caps_features_copy(features);
-				gst_caps_append_structure_full(ret, new_structure, new_features);
+				gst_caps_append_structure_full(ret, gst_structure_copy(new_structure), new_features);
 				GST_INFO_OBJECT(convert, "Preserving caps features from input");
+			}
+			
+			/* For DMA_DRM templates, always add them with dmabuf feature (even if input doesn't have it)
+			 * This allows accepting dmabuf input and copying to system memory output */
+			if (is_drm_template && !has_dmabuf)
+			{
+				GstCapsFeatures *dmabuf_features = gst_caps_features_new(GST_CAPS_FEATURE_MEMORY_DMABUF, NULL);
+				gst_caps_append_structure_full(ret, gst_structure_copy(new_structure), dmabuf_features);
+				GST_INFO_OBJECT(convert, "Adding DMA_DRM with dmabuf feature for input");
+			}
+			
+			/* Also offer system memory output (we can always copy from dmabuf to system memory) */
+			if (has_dmabuf)
+			{
+				/* If template structure is DMA_DRM, skip it for system memory (DMA_DRM requires dmabuf) */
+				if (!is_drm_template)
+				{
+					gst_caps_append_structure(ret, new_structure);
+					GST_INFO_OBJECT(convert, "Also offering system memory output");
+				}
+				else
+				{
+					gst_structure_free(new_structure);
+				}
+			}
+			else if (!features)
+			{
+				/* For system memory input, add non-DRM templates */
+				if (!is_drm_template)
+				{
+					gst_caps_append_structure(ret, new_structure);
+				}
+				else
+				{
+					gst_structure_free(new_structure);
+				}
 			}
 			else
 			{
-				gst_caps_append_structure(ret, new_structure);
+				gst_structure_free(new_structure);
 			}
 		}
 	}
@@ -311,28 +393,63 @@ static gboolean gst_pisp_convert_set_caps(GstBaseTransform *trans, GstCaps *inca
 	/* Reset dmabuf import flag since we're reconfiguring */
 	filter->priv->dmabuf_imported = FALSE;
 
-	if (!gst_video_info_from_caps(&in_info, incaps))
+	/* Check if input uses DMA-DRM format */
+	GstStructure *in_structure = gst_caps_get_structure(incaps, 0);
+	const gchar *in_format_str = gst_structure_get_string(in_structure, "format");
+	gboolean in_is_drm = in_format_str && g_str_equal(in_format_str, "DMA_DRM");
+
+	if (in_is_drm)
 	{
-		GST_ERROR_OBJECT(filter, "Failed to parse input caps");
-		return FALSE;
+		/* Parse DMA-DRM caps */
+		const gchar *drm_format = gst_structure_get_string(in_structure, "drm-format");
+		gst_structure_get_int(in_structure, "width", (gint *)&filter->priv->in_width);
+		gst_structure_get_int(in_structure, "height", (gint *)&filter->priv->in_height);
+		filter->priv->in_format = drm_format_to_pisp(drm_format);
+		filter->priv->in_stride = 0; // Will be determined by dmabuf
+		GST_INFO_OBJECT(filter, "Input DMA-DRM format: drm-format=%s, pisp=%s", drm_format, filter->priv->in_format);
+	}
+	else
+	{
+		/* Parse regular video caps */
+		if (!gst_video_info_from_caps(&in_info, incaps))
+		{
+			GST_ERROR_OBJECT(filter, "Failed to parse input caps");
+			return FALSE;
+		}
+		filter->priv->in_width = GST_VIDEO_INFO_WIDTH(&in_info);
+		filter->priv->in_height = GST_VIDEO_INFO_HEIGHT(&in_info);
+		filter->priv->in_stride = GST_VIDEO_INFO_PLANE_STRIDE(&in_info, 0);
+		filter->priv->in_format = gst_format_to_pisp(GST_VIDEO_INFO_FORMAT(&in_info));
 	}
 
-	if (!gst_video_info_from_caps(&out_info, outcaps))
+	/* Check if output uses DMA-DRM format */
+	GstStructure *out_structure = gst_caps_get_structure(outcaps, 0);
+	const gchar *out_format_str = gst_structure_get_string(out_structure, "format");
+	gboolean out_is_drm = out_format_str && g_str_equal(out_format_str, "DMA_DRM");
+
+	if (out_is_drm)
 	{
-		GST_ERROR_OBJECT(filter, "Failed to parse output caps");
-		return FALSE;
+		/* Parse DMA-DRM caps */
+		const gchar *drm_format = gst_structure_get_string(out_structure, "drm-format");
+		gst_structure_get_int(out_structure, "width", (gint *)&filter->priv->out_width);
+		gst_structure_get_int(out_structure, "height", (gint *)&filter->priv->out_height);
+		filter->priv->out_format = drm_format_to_pisp(drm_format);
+		filter->priv->out_stride = 0; // Will be determined by dmabuf
+		GST_INFO_OBJECT(filter, "Output DMA-DRM format: drm-format=%s, pisp=%s", drm_format, filter->priv->out_format);
 	}
-
-	/* Store format information from negotiated caps */
-	filter->priv->in_width = GST_VIDEO_INFO_WIDTH(&in_info);
-	filter->priv->in_height = GST_VIDEO_INFO_HEIGHT(&in_info);
-	filter->priv->in_stride = GST_VIDEO_INFO_PLANE_STRIDE(&in_info, 0);
-	filter->priv->in_format = gst_format_to_pisp(GST_VIDEO_INFO_FORMAT(&in_info));
-
-	filter->priv->out_width = GST_VIDEO_INFO_WIDTH(&out_info);
-	filter->priv->out_height = GST_VIDEO_INFO_HEIGHT(&out_info);
-	filter->priv->out_stride = GST_VIDEO_INFO_PLANE_STRIDE(&out_info, 0);
-	filter->priv->out_format = gst_format_to_pisp(GST_VIDEO_INFO_FORMAT(&out_info));
+	else
+	{
+		/* Parse regular video caps */
+		if (!gst_video_info_from_caps(&out_info, outcaps))
+		{
+			GST_ERROR_OBJECT(filter, "Failed to parse output caps");
+			return FALSE;
+		}
+		filter->priv->out_width = GST_VIDEO_INFO_WIDTH(&out_info);
+		filter->priv->out_height = GST_VIDEO_INFO_HEIGHT(&out_info);
+		filter->priv->out_stride = GST_VIDEO_INFO_PLANE_STRIDE(&out_info, 0);
+		filter->priv->out_format = gst_format_to_pisp(GST_VIDEO_INFO_FORMAT(&out_info));
+	}
 
 	if (!filter->priv->in_format || !filter->priv->out_format)
 	{
