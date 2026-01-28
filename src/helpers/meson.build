@@ -10,6 +10,7 @@ pisp_sources += files([
 helper_headers = files([
     'backend_device.hpp',
     'device_fd.hpp',
+    'dma_heap.hpp',
     'media_device.hpp',
     'v4l2_device.hpp',
 ])

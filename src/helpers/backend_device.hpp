@@ -36,7 +36,7 @@ public:
 	}
 
 	std::map<std::string, V4l2Device::Buffer> AcquireBuffers();
-	void ReleaseBuffer(const std::map<std::string, V4l2Device::Buffer> &buffers);
+	void ReturnBuffer(const std::map<std::string, V4l2Device::Buffer> &buffers);
 	V4l2Device::Buffer &ConfigBuffer()
 	{
 		return config_buffer_;

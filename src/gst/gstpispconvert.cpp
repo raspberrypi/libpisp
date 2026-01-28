@@ -484,7 +484,7 @@ static GstFlowReturn gst_pisp_convert_transform(GstBaseTransform *trans, GstBuff
 		if (ret)
 		{
 			GST_ERROR_OBJECT(filter, "Hardware conversion failed");
-			filter->priv->backend_device->ReleaseBuffer(buffers);
+			filter->priv->backend_device->ReturnBuffer(buffers);
 			return GST_FLOW_ERROR;
 		}
 
@@ -492,7 +492,7 @@ static GstFlowReturn gst_pisp_convert_transform(GstBaseTransform *trans, GstBuff
 		copy_pisp_to_buffer(buffers["pispbe-output0"].mem, outbuf, filter->priv->out_width, filter->priv->out_height,
 							filter->priv->out_stride, filter->priv->out_hw_stride, filter->priv->out_format);
 
-		filter->priv->backend_device->ReleaseBuffer(buffers);
+		filter->priv->backend_device->ReturnBuffer(buffers);
 	}
 	catch (const std::exception &e)
 	{

@@ -13,11 +13,15 @@
 #include <stdint.h>
 #include <vector>
 
+#include <linux/dma-buf.h>
 #include <linux/videodev2.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
 
 #include "libpisp/backend/pisp_be_config.h"
 
 #include "device_fd.hpp"
+#include "dma_heap.hpp"
 
 namespace libpisp::helpers
 {
@@ -53,24 +57,71 @@ public:
 	struct Buffer
 	{
 		Buffer()
+			: buffer(), size(), mem(), fd({-1, -1, -1})
 		{
 		}
 
 		Buffer(const v4l2_buffer& buf)
-			: buffer(buf), size({}), mem({})
+			: buffer(buf), size(), mem(), fd({-1, -1, -1})
 		{
+		}
+
+		void RwSyncStart()
+		{
+			struct dma_buf_sync dma_sync {};
+			dma_sync.flags = DMA_BUF_SYNC_START | DMA_BUF_SYNC_RW;
+			for (unsigned int p = 0; p < 3; p++)
+			{
+				if (fd[p] > 0)
+					ioctl(fd[p], DMA_BUF_IOCTL_SYNC, &dma_sync);
+			}
+		}
+
+		void RwSyncEnd()
+		{
+			struct dma_buf_sync dma_sync {};
+			dma_sync.flags = DMA_BUF_SYNC_END | DMA_BUF_SYNC_RW;
+			for (unsigned int p = 0; p < 3; p++)
+			{
+				if (fd[p] > 0)
+					ioctl(fd[p], DMA_BUF_IOCTL_SYNC, &dma_sync);
+			}
+		}
+
+		void ReadSyncStart()
+		{
+			struct dma_buf_sync dma_sync {};
+			dma_sync.flags = DMA_BUF_SYNC_START | DMA_BUF_SYNC_READ;
+			for (unsigned int p = 0; p < 3; p++)
+			{
+				if (fd[p] > 0)
+					ioctl(fd[p], DMA_BUF_IOCTL_SYNC, &dma_sync);
+			}
+		}
+
+		void ReadSyncEnd()
+		{
+			struct dma_buf_sync dma_sync {};
+			dma_sync.flags = DMA_BUF_SYNC_END | DMA_BUF_SYNC_READ;
+			for (unsigned int p = 0; p < 3; p++)
+			{
+				if (fd[p] > 0)
+					ioctl(fd[p], DMA_BUF_IOCTL_SYNC, &dma_sync);
+			}
 		}
 
 		v4l2_buffer buffer;
 		std::array<size_t, 3> size;
 		std::array<uint8_t *, 3> mem;
+		std::array<int, 3> fd;
 	};
 
-	int RequestBuffers(unsigned int count = 1);
+	int AllocateBuffers(unsigned int count = 1);
+	int ImportBuffers(const std::vector<Buffer> &buffers);
 	void ReturnBuffers();
 
 	std::optional<Buffer> AcquireBuffer();
-	void ReleaseBuffer(const Buffer &buffer);
+	void ReturnBuffer(const Buffer &buffer);
 	const std::vector<Buffer> &Buffers() const
 	{
 		return v4l2_buffers_;
@@ -107,6 +158,7 @@ private:
 	DeviceFd fd_;
 	enum v4l2_buf_type buf_type_;
 	unsigned int num_memory_planes_;
+	DmaHeap dma_heap_;
 };
 
 } // namespace libpisp

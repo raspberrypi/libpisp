@@ -377,9 +377,11 @@ int main(int argc, char *argv[])
 	std::cerr << "Reading " << input_filename << " "
 			  << in_file.width << ":" << in_file.height << ":" << in_file.stride << ":" << in_file.format << std::endl;
 
+	buffers["pispbe-input"].RwSyncStart();
 	Formats.at(in_file.format)
 		.read_file(buffers["pispbe-input"].mem, in, in_file.width, in_file.height, in_file.stride,
 				   i.stride);
+	buffers["pispbe-input"].RwSyncEnd();
 	in.close();
 
 	int ret = backend_device.Run(buffers);
@@ -397,12 +399,14 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
+	buffers["pispbe-output0"].ReadSyncStart();
 	Formats.at(out_file.format)
 		.write_file(out, buffers["pispbe-output0"].mem, out_file.width, out_file.height, out_file.stride,
 					o.image.stride);
+	buffers["pispbe-output0"].ReadSyncEnd();
 	out.close();
 
-	backend_device.ReleaseBuffer(buffers);
+	backend_device.ReturnBuffer(buffers);
 
 	std::cerr << "Writing " << output_file << " "
 			  << out_file.width << ":" << out_file.height << ":" << out_file.stride << ":" << out_file.format << std::endl;

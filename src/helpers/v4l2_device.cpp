@@ -77,57 +77,91 @@ V4l2Device::~V4l2Device()
 	Close();
 }
 
-int V4l2Device::RequestBuffers(unsigned int count)
+int V4l2Device::AllocateBuffers(unsigned int count)
 {
+	struct v4l2_format f = {};
 	int ret;
 
-	ReturnBuffers();
+	f.type = buf_type_;
+	ret = ioctl(fd_.Get(), VIDIOC_G_FMT, &f);
+	if (ret)
+		throw std::runtime_error("VIDIOC_G_FMT failed: " + std::to_string(ret));
 
-	v4l2_requestbuffers req_bufs {};
+	std::vector<Buffer> buffers;
 
-	req_bufs.count = count;
-	req_bufs.type = buf_type_;
-	req_bufs.memory = V4L2_MEMORY_MMAP;
-
-	ret = ioctl(fd_.Get(), VIDIOC_REQBUFS, &req_bufs);
-	if (ret < 0)
-		throw std::runtime_error("VIDIOC_REQBUFS failed: " + std::to_string(ret));
-
-	for (unsigned int i = 0; i < req_bufs.count; i++)
+	for (unsigned int i = 0; i < count; i++)
 	{
-		v4l2_plane planes[VIDEO_MAX_PLANES] = {};
-		v4l2_buffer buffer {};
-
-		buffer.index = i;
-		buffer.type = buf_type_;
-		buffer.memory = V4L2_MEMORY_MMAP;
-		if (!isMeta())
-		{
-			buffer.m.planes = planes;
-			buffer.length = num_memory_planes_;
-		}
-
-		ret = ioctl(fd_.Get(), VIDIOC_QUERYBUF, &buffer);
-		if (ret < 0)
-			throw std::runtime_error("VIDIOC_QUERYBUF failed: " + std::to_string(ret));
-
-		// Don't keep this pointer dangling when putting into v4l2_buffers_.
-		buffer.m.planes = NULL;
-		v4l2_buffers_.emplace_back(buffer);
-		available_buffers_.push(i);
+		buffers.push_back({});
 
 		for (unsigned int p = 0; p < num_memory_planes_; p++)
 		{
-			size_t size = !isMeta() ? planes[p].length : buffer.length;
-			unsigned int offset = !isMeta() ? planes[p].m.mem_offset : buffer.m.offset;
+			const size_t size = isMeta() ? f.fmt.meta.buffersize : f.fmt.pix_mp.plane_fmt[p].sizeimage;
+			int fd = dma_heap_.alloc("v4l2_device_buf", size);
 
-			void *mem = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_.Get(), offset);
+			if (fd < 0)
+				throw std::runtime_error("DMABUF allocation failed");
+
+			buffers.back().fd[p] = fd;
+			buffers.back().size[p] = size;
+		}
+	}
+
+	return ImportBuffers(buffers);
+}
+
+int V4l2Device::ImportBuffers(const std::vector<Buffer> &buffers)
+{
+	struct v4l2_format f = {};
+	int ret;
+
+	f.type = buf_type_;
+	ret = ioctl(fd_.Get(), VIDIOC_G_FMT, &f);
+	if (ret)
+		throw std::runtime_error("VIDIOC_G_FMT failed: " + std::to_string(ret));
+
+	const unsigned int total_buffers = buffers.size() + v4l2_buffers_.size();
+	v4l2_requestbuffers req_bufs {};
+
+	req_bufs.count = total_buffers;
+	req_bufs.type = buf_type_;
+	req_bufs.memory = V4L2_MEMORY_DMABUF;
+
+	ret = ioctl(fd_.Get(), VIDIOC_REQBUFS, &req_bufs);
+	if (ret < 0 || req_bufs.count < total_buffers)
+		throw std::runtime_error("VIDIOC_REQBUFS failed: " + std::to_string(ret));
+
+	for (auto const &b : buffers)
+	{
+		v4l2_buffer buf {};
+
+		buf.type = buf_type_;
+		buf.memory = V4L2_MEMORY_DMABUF;
+		v4l2_buffers_.emplace_back(buf);
+
+		for (unsigned int p = 0; p < num_memory_planes_; p++)
+		{
+			const size_t size = isMeta() ? f.fmt.meta.buffersize : f.fmt.pix_mp.plane_fmt[p].sizeimage;
+
+			if (b.fd[p] < 0 || b.size[p] < size)
+				throw std::runtime_error("Plane " + std::to_string(p) + " buffer is invalid.");
+
+			void *mem = mmap(0, b.size[p], PROT_READ | PROT_WRITE, MAP_SHARED, b.fd[p], 0);
 			if (mem == MAP_FAILED)
 				throw std::runtime_error("Unable to mmap buffer");
 
-			v4l2_buffers_.back().size[p] = size;
+			v4l2_buffers_.back().fd[p] = b.fd[p];
+			v4l2_buffers_.back().size[p] = b.size[p];
 			v4l2_buffers_.back().mem[p] = (uint8_t *)mem;
 		}
+	}
+
+	available_buffers_ = {};
+	unsigned int index = 0;
+
+	for (auto &b : v4l2_buffers_)
+	{
+		b.buffer.index = index;
+		available_buffers_.push(index++);
 	}
 
 	return v4l2_buffers_.size();
@@ -135,23 +169,27 @@ int V4l2Device::RequestBuffers(unsigned int count)
 
 void V4l2Device::ReturnBuffers()
 {
-	v4l2_requestbuffers req_bufs {};
-
 	if (!v4l2_buffers_.size())
 		return;
+
+	v4l2_requestbuffers req_bufs {};
+
+	req_bufs.type = buf_type_;
+	req_bufs.count = 0;
+	req_bufs.memory = V4L2_MEMORY_DMABUF;
+	ioctl(fd_.Get(), VIDIOC_REQBUFS, &req_bufs);
 
 	for (auto const &b : v4l2_buffers_)
 	{
 		for (unsigned int p = 0; p < num_memory_planes_; p++)
-			munmap(b.mem[p], b.size[p]);
+		{
+			if (b.mem[p])
+				munmap(b.mem[p], b.size[p]);
+		}
 	}
 
-	req_bufs.type = buf_type_;
-	req_bufs.count = 0;
-	req_bufs.memory = V4L2_MEMORY_MMAP;
-	ioctl(fd_.Get(), VIDIOC_REQBUFS, &req_bufs);
-
-	v4l2_buffers_.clear();
+	v4l2_buffers_ = {};
+	available_buffers_ = {};
 }
 
 std::optional<V4l2Device::Buffer> V4l2Device::AcquireBuffer()
@@ -161,10 +199,11 @@ std::optional<V4l2Device::Buffer> V4l2Device::AcquireBuffer()
 
 	unsigned int index = available_buffers_.front();
 	available_buffers_.pop();
+
 	return findBuffer(index);
 }
 
-void V4l2Device::ReleaseBuffer(const Buffer &buffer)
+void V4l2Device::ReturnBuffer(const Buffer &buffer)
 {
 	available_buffers_.push(buffer.buffer.index);
 }
@@ -184,10 +223,14 @@ int V4l2Device::QueueBuffer(unsigned int index)
 		{
 			buf->buffer.m.planes[p].bytesused = buf->size[p];
 			buf->buffer.m.planes[p].length = buf->size[p];
+			buf->buffer.m.planes[p].m.fd = buf->fd[p];
 		}
 	}
 	else
+	{
 		buf->buffer.bytesused = buf->size[0];
+		buf->buffer.m.fd = buf->fd[0];
+	}
 
 	buf->buffer.timestamp.tv_sec = time(NULL);
 	buf->buffer.field = V4L2_FIELD_NONE;
@@ -216,7 +259,7 @@ int V4l2Device::DequeueBuffer(unsigned int timeout_ms)
 	v4l2_plane planes[VIDEO_MAX_PLANES] = {};
 
 	buf.type = buf_type_;
-	buf.memory = V4L2_MEMORY_MMAP;
+	buf.memory = V4L2_MEMORY_DMABUF;
 	if (!isMeta())
 	{
 		buf.m.planes = planes;
