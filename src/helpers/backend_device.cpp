@@ -37,63 +37,63 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 	if ((config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_INPUT) ||
 		(config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_INPUT))
 	{
-		nodes_.at("pispbe-input").SetFormat(config.config.input_format, use_opaque_format);
-		// Release old/allocate a single buffer.
+		// Release old buffers before setting the new format.
 		nodes_.at("pispbe-input").ReturnBuffers();
+		nodes_.at("pispbe-input").SetFormat(config.config.input_format, use_opaque_format);
 		nodes_.at("pispbe-input").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-input");
 	}
 
 	if (config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT0)
 	{
-		nodes_.at("pispbe-output0").SetFormat(config.config.output_format[0].image, use_opaque_format);
-		// Release old/allocate a single buffer.
+		// Release old buffers before setting the new format.
 		nodes_.at("pispbe-output0").ReturnBuffers();
+		nodes_.at("pispbe-output0").SetFormat(config.config.output_format[0].image, use_opaque_format);
 		nodes_.at("pispbe-output0").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-output0");
 	}
 
 	if (config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT1)
 	{
-		nodes_.at("pispbe-output1").SetFormat(config.config.output_format[1].image, use_opaque_format);
-		// Release old/allocate a single buffer.
+		// Release old buffers before setting the new format.
 		nodes_.at("pispbe-output1").ReturnBuffers();
+		nodes_.at("pispbe-output1").SetFormat(config.config.output_format[1].image, use_opaque_format);
 		nodes_.at("pispbe-output1").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-output1");
 	}
 
 	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_INPUT)
 	{
-		nodes_.at("pispbe-tdn_input").SetFormat(config.config.tdn_input_format, use_opaque_format);
-		// Release old/allocate a single buffer.
+		// Release old buffers before setting the new format.
 		nodes_.at("pispbe-tdn_input").ReturnBuffers();
+		nodes_.at("pispbe-tdn_input").SetFormat(config.config.tdn_input_format, use_opaque_format);
 		nodes_.at("pispbe-tdn_input").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-tdn_input");
 	}
 
 	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_OUTPUT)
 	{
-		nodes_.at("pispbe-tdn_output").SetFormat(config.config.tdn_output_format, use_opaque_format);
-		// Release old/allocate a single buffer.
+		// Release old buffers before setting the new format.
 		nodes_.at("pispbe-tdn_output").ReturnBuffers();
+		nodes_.at("pispbe-tdn_output").SetFormat(config.config.tdn_output_format, use_opaque_format);
 		nodes_.at("pispbe-tdn_output").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-tdn_output");
 	}
 
 	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_STITCH_INPUT)
 	{
-		nodes_.at("pispbe-stitch_input").SetFormat(config.config.stitch_input_format, use_opaque_format);
-		// Release old/allocate a single buffer.
+		// Release old buffers before setting the new format.
 		nodes_.at("pispbe-stitch_input").ReturnBuffers();
+		nodes_.at("pispbe-stitch_input").SetFormat(config.config.stitch_input_format, use_opaque_format);
 		nodes_.at("pispbe-stitch_input").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-stitch_input");
 	}
 
 	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_STITCH_OUTPUT)
 	{
-		nodes_.at("pispbe-stitch_output").SetFormat(config.config.stitch_output_format, use_opaque_format);
-		// Release old/allocate a single buffer.
+		// Release old buffers before setting the new format.
 		nodes_.at("pispbe-stitch_output").ReturnBuffers();
+		nodes_.at("pispbe-stitch_output").SetFormat(config.config.stitch_output_format, use_opaque_format);
 		nodes_.at("pispbe-stitch_output").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-stitch_output");
 	}
