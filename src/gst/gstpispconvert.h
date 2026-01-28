@@ -9,6 +9,11 @@
 
 #include <gst/base/gstbasetransform.h>
 #include <gst/gst.h>
+#include <memory>
+#include <vector>
+
+#include "backend/backend.hpp"
+#include "helpers/backend_device.hpp"
 
 G_BEGIN_DECLS
 
@@ -35,7 +40,40 @@ struct _GstPispConvertClass
 	GstBaseTransformClass parent_class;
 };
 
+struct _GstPispConvertPrivate
+{
+	/* C++ objects */
+	std::unique_ptr<libpisp::helpers::BackendDevice> backend_device;
+	std::unique_ptr<libpisp::BackEnd> backend;
+
+	/* Device info */
+	char *media_dev_path;
+
+	/* Configuration */
+	gboolean configured;
+
+	/* Input/Output format info */
+	guint in_width;
+	guint in_height;
+	guint in_stride; // GStreamer buffer stride
+	guint in_hw_stride; // Hardware buffer stride
+	const char *in_format;
+
+	guint out_width;
+	guint out_height;
+	guint out_stride; // GStreamer buffer stride
+	guint out_hw_stride; // Hardware buffer stride
+	const char *out_format;
+
+	/* dmabuf support */
+	GstAllocator *dmabuf_allocator;
+	gboolean use_dmabuf_input;
+	gboolean use_dmabuf_output;
+	gboolean dmabuf_imported;
+};
+
 GType gst_pisp_convert_get_type(void);
 GST_ELEMENT_REGISTER_DECLARE(pispconvert);
 
 G_END_DECLS
+

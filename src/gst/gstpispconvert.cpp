@@ -10,73 +10,31 @@
 #include <cstdint>
 #include <cstring>
 #include <map>
-#include <memory>
 #include <optional>
 
 #include <gst/allocators/gstdmabuf.h>
 #include <gst/video/video.h>
 
-#include "backend/backend.hpp"
 #include "common/logging.hpp"
 #include "common/utils.hpp"
-#include "helpers/backend_device.hpp"
 #include "helpers/v4l2_device.hpp"
 #include "variants/variant.hpp"
 
 GST_DEBUG_CATEGORY_STATIC(gst_pisp_convert_debug);
 #define GST_CAT_DEFAULT gst_pisp_convert_debug
 
-/* Private structure definition */
-struct _GstPispConvertPrivate
-{
-	/* C++ objects */
-	std::unique_ptr<libpisp::helpers::BackendDevice> backend_device;
-	std::unique_ptr<libpisp::BackEnd> backend;
-
-	/* Device info */
-	char *media_dev_path;
-
-	/* Configuration */
-	gboolean configured;
-
-	/* Input/Output format info */
-	guint in_width;
-	guint in_height;
-	guint in_stride; // GStreamer buffer stride
-	guint in_hw_stride; // Hardware buffer stride
-	const char *in_format;
-
-	guint out_width;
-	guint out_height;
-	guint out_stride; // GStreamer buffer stride
-	guint out_hw_stride; // Hardware buffer stride
-	const char *out_format;
-
-	/* dmabuf support */
-	GstAllocator *dmabuf_allocator;
-	gboolean use_dmabuf_input;
-	gboolean use_dmabuf_output;
-	gboolean dmabuf_imported;
-};
-
 /* Supported formats - matching those from convert.cpp */
 #define PISP_FORMATS "{ RGB, I420, YV12, Y42B, Y444, YUY2, UYVY, NV12_128C8 }"
 
 static GstStaticPadTemplate sink_template =
 	GST_STATIC_PAD_TEMPLATE("sink", GST_PAD_SINK, GST_PAD_ALWAYS,
-							GST_STATIC_CAPS(
-								/* DMABuf (zero-copy buffers) */
-								GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_MEMORY_DMABUF, PISP_FORMATS) ";"
-								/* System memory (fallback with memcpy) */
-								GST_VIDEO_CAPS_MAKE(PISP_FORMATS)));
+							GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE_WITH_FEATURES(
+								GST_CAPS_FEATURE_MEMORY_DMABUF, PISP_FORMATS) ";" GST_VIDEO_CAPS_MAKE(PISP_FORMATS)));
 
 static GstStaticPadTemplate src_template =
 	GST_STATIC_PAD_TEMPLATE("src", GST_PAD_SRC, GST_PAD_ALWAYS,
-							GST_STATIC_CAPS(
-								/* DMABuf (zero-copy buffers) */
-								GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_MEMORY_DMABUF, PISP_FORMATS) ";"
-								/* System memory (fallback with memcpy) */
-								GST_VIDEO_CAPS_MAKE(PISP_FORMATS)));
+							GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE_WITH_FEATURES(
+								GST_CAPS_FEATURE_MEMORY_DMABUF, PISP_FORMATS) ";" GST_VIDEO_CAPS_MAKE(PISP_FORMATS)));
 
 #define gst_pisp_convert_parent_class parent_class
 G_DEFINE_TYPE(GstPispConvert, gst_pisp_convert, GST_TYPE_BASE_TRANSFORM);
@@ -101,8 +59,8 @@ static const char *gst_format_to_pisp(GstVideoFormat format)
 		return "YUYV";
 	case GST_VIDEO_FORMAT_UYVY:
 		return "UYVY";
-	//case GST_VIDEO_FORMAT_NV12_128C8:
-	//	return "YUV420SP_COL128";
+	case GST_VIDEO_FORMAT_NV12_128C8:
+		return "YUV420SP_COL128";
 	default:
 		return nullptr;
 	}
@@ -342,7 +300,6 @@ static gboolean gst_pisp_convert_set_caps(GstBaseTransform *trans, GstCaps *inca
 		GST_INFO_OBJECT(filter, "Output caps has no features (system memory)");
 	}
 
-	/* Check for dmabuf support in caps */
 	filter->priv->use_dmabuf_input = in_features &&
 									 gst_caps_features_contains(in_features, GST_CAPS_FEATURE_MEMORY_DMABUF);
 	filter->priv->use_dmabuf_output = out_features &&
@@ -500,7 +457,6 @@ static gboolean gst_pisp_convert_get_unit_size(GstBaseTransform *trans, GstCaps 
 }
 
 /* Helper functions for dmabuf support */
-/* Check if buffer contains dmabuf memory */
 static gboolean gst_buffer_is_dmabuf(GstBuffer *buffer)
 {
 	GstMemory *mem;
@@ -512,7 +468,6 @@ static gboolean gst_buffer_is_dmabuf(GstBuffer *buffer)
 	return gst_is_dmabuf_memory(mem);
 }
 
-/* Extract dmabuf file descriptor from GstBuffer */
 static std::optional<libpisp::helpers::V4l2Device::Buffer> gst_buffer_to_dmabuf_buffer(GstBuffer *buffer,
 																					   GstVideoInfo *info)
 {
