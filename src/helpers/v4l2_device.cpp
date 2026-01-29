@@ -53,8 +53,78 @@ static FormatInfo get_v4l2_format(const std::string &format)
 
 } // namespace
 
+V4l2Device::Buffer::Buffer()
+	: size(), mem(), fd({ -1, -1, -1 }), id(-1), queued(false)
+{
+}
+
+V4l2Device::Buffer::Buffer(const std::array<int, 3> &fd, const std::array<size_t, 3> &size)
+	: size(size), mem(), fd(fd), id(-1), queued(false)
+{
+}
+
+V4l2Device::Buffer::Buffer(unsigned int id)
+	: size(), mem(), fd({ -1, -1, -1 }), id(id), queued(false)
+{
+}
+
+void V4l2Device::Buffer::RwSyncStart()
+{
+	struct dma_buf_sync dma_sync {};
+	dma_sync.flags = DMA_BUF_SYNC_START | DMA_BUF_SYNC_RW;
+	for (unsigned int p = 0; p < 3; p++)
+	{
+		if (fd[p] > 0)
+			ioctl(fd[p], DMA_BUF_IOCTL_SYNC, &dma_sync);
+	}
+}
+
+void V4l2Device::Buffer::RwSyncEnd()
+{
+	struct dma_buf_sync dma_sync {};
+	dma_sync.flags = DMA_BUF_SYNC_END | DMA_BUF_SYNC_RW;
+	for (unsigned int p = 0; p < 3; p++)
+	{
+		if (fd[p] > 0)
+			ioctl(fd[p], DMA_BUF_IOCTL_SYNC, &dma_sync);
+	}
+}
+
+void V4l2Device::Buffer::ReadSyncStart()
+{
+	struct dma_buf_sync dma_sync {};
+	dma_sync.flags = DMA_BUF_SYNC_START | DMA_BUF_SYNC_READ;
+	for (unsigned int p = 0; p < 3; p++)
+	{
+		if (fd[p] > 0)
+			ioctl(fd[p], DMA_BUF_IOCTL_SYNC, &dma_sync);
+	}
+}
+
+void V4l2Device::Buffer::ReadSyncEnd()
+{
+	struct dma_buf_sync dma_sync {};
+	dma_sync.flags = DMA_BUF_SYNC_END | DMA_BUF_SYNC_READ;
+
+	for (unsigned int p = 0; p < 3; p++)
+	{
+		if (fd[p] > 0)
+			ioctl(fd[p], DMA_BUF_IOCTL_SYNC, &dma_sync);
+	}
+}
+
+bool V4l2Device::Buffer::operator==(const Buffer &other) const
+{
+	for (unsigned int p = 0; p < 3; p++)
+	{
+		if (fd[p] != other.fd[p] || size[p] != other.size[p])
+			return false;
+	}
+	return true;
+}
+
 V4l2Device::V4l2Device(const std::string &device)
-	: fd_(device, O_RDWR | O_NONBLOCK | O_CLOEXEC), num_memory_planes_(1)
+	: fd_(device, O_RDWR | O_NONBLOCK | O_CLOEXEC), num_memory_planes_(1), max_slots_(0)
 {
 	struct v4l2_capability caps;
 
@@ -120,20 +190,52 @@ int V4l2Device::ImportBuffers(const std::vector<Buffer> &buffers)
 	if (ret)
 		throw std::runtime_error("VIDIOC_G_FMT failed: " + std::to_string(ret));
 
-	const unsigned int total_buffers = buffers.size() + buffers_.size();
-	v4l2_requestbuffers req_bufs {};
+	if (!max_slots_)
+	{
+		v4l2_requestbuffers req_bufs {};
+		req_bufs.count = 64;
+		req_bufs.type = buf_type_;
+		req_bufs.memory = V4L2_MEMORY_DMABUF;
 
-	req_bufs.count = total_buffers;
-	req_bufs.type = buf_type_;
-	req_bufs.memory = V4L2_MEMORY_DMABUF;
+		ret = ioctl(fd_.Get(), VIDIOC_REQBUFS, &req_bufs);
+		if (ret < 0)
+			throw std::runtime_error("VIDIOC_REQBUFS failed: " + std::to_string(ret));
 
-	ret = ioctl(fd_.Get(), VIDIOC_REQBUFS, &req_bufs);
-	if (ret < 0 || req_bufs.count < total_buffers)
-		throw std::runtime_error("VIDIOC_REQBUFS failed: " + std::to_string(ret));
+		max_slots_ = req_bufs.count;
+	}
 
 	for (auto const &b : buffers)
 	{
-		buffers_.push_back(buffers_.size());
+		// Just set the v4l2 buffer slot id to the index in the vector.
+		unsigned int id = buffers_.size();
+
+		// Check if buffer with matching fd and size already exists
+		if (std::find(buffers_.begin(), buffers_.end(), b) != buffers_.end())
+			continue;
+
+		if (buffers_.size() == max_slots_)
+		{
+			// Find and remove the first buffer that is not queued.
+			auto it = std::find_if(buffers_.begin(), buffers_.end(), [](const Buffer &buf) { return !buf.Queued(); });
+
+			if (it != buffers_.end())
+			{
+				// Clean up memory mappings.
+				for (unsigned int p = 0; p < num_memory_planes_; p++)
+				{
+					if (it->mem[p])
+						munmap(it->mem[p], it->size[p]);
+				}
+
+				// Keep this id for reuse.
+				id = it->id;
+				buffers_.erase(it);
+			}
+			else
+				throw std::runtime_error("Unable to import buffer, run out of slots.");
+		}
+
+		buffers_.push_back(id);
 
 		for (unsigned int p = 0; p < num_memory_planes_; p++)
 		{
@@ -146,7 +248,6 @@ int V4l2Device::ImportBuffers(const std::vector<Buffer> &buffers)
 			if (mem == MAP_FAILED)
 				throw std::runtime_error("Unable to mmap buffer");
 
-			// For convenience.
 			buffers_.back().fd[p] = b.fd[p];
 			buffers_.back().size[p] = b.size[p];
 			buffers_.back().mem[p] = (uint8_t *)mem;
@@ -178,6 +279,7 @@ void V4l2Device::ReleaseBuffers()
 	}
 
 	buffers_ = {};
+	max_slots_ = 0;
 }
 
 int V4l2Device::QueueBuffer(const Buffer &buffer)
@@ -185,7 +287,14 @@ int V4l2Device::QueueBuffer(const Buffer &buffer)
 	v4l2_plane planes[VIDEO_MAX_PLANES] = {};
 	v4l2_buffer buf {};
 
-	buf.index = buffer.id;
+	// Check if buffer with matching fd and size already exists - if not, import it now.
+	if (std::find(buffers_.begin(), buffers_.end(), buffer) == buffers_.end())
+		ImportBuffers({ buffer });
+
+	// Now find the buffer id that might be cached.
+	auto const buf_it = std::find(buffers_.begin(), buffers_.end(), buffer);
+
+	buf.index = buf_it->id;
 	buf.type = buf_type_;
 	buf.memory = V4L2_MEMORY_DMABUF;
 
@@ -249,6 +358,9 @@ int V4l2Device::DequeueBuffer(unsigned int timeout_ms)
 
 void V4l2Device::SetFormat(const pisp_image_format_config &format, bool use_opaque_format)
 {
+	// Release old buffers before setting the new format.
+	ReleaseBuffers();
+
 	struct v4l2_format f = {};
 	FormatInfo info = get_v4l2_format(libpisp::get_pisp_image_format(format.format));
 

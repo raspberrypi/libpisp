@@ -37,8 +37,6 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 	if ((config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_INPUT) ||
 		(config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_INPUT))
 	{
-		// Release old buffers before setting the new format.
-		nodes_.at("pispbe-input").ReleaseBuffers();
 		nodes_.at("pispbe-input").SetFormat(config.config.input_format, use_opaque_format);
 		nodes_.at("pispbe-input").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-input");
@@ -46,8 +44,6 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 
 	if (config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT0)
 	{
-		// Release old buffers before setting the new format.
-		nodes_.at("pispbe-output0").ReleaseBuffers();
 		nodes_.at("pispbe-output0").SetFormat(config.config.output_format[0].image, use_opaque_format);
 		nodes_.at("pispbe-output0").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-output0");
@@ -55,8 +51,6 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 
 	if (config.config.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT1)
 	{
-		// Release old buffers before setting the new format.
-		nodes_.at("pispbe-output1").ReleaseBuffers();
 		nodes_.at("pispbe-output1").SetFormat(config.config.output_format[1].image, use_opaque_format);
 		nodes_.at("pispbe-output1").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-output1");
@@ -64,8 +58,6 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 
 	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_INPUT)
 	{
-		// Release old buffers before setting the new format.
-		nodes_.at("pispbe-tdn_input").ReleaseBuffers();
 		nodes_.at("pispbe-tdn_input").SetFormat(config.config.tdn_input_format, use_opaque_format);
 		nodes_.at("pispbe-tdn_input").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-tdn_input");
@@ -73,8 +65,6 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 
 	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_OUTPUT)
 	{
-		// Release old buffers before setting the new format.
-		nodes_.at("pispbe-tdn_output").ReleaseBuffers();
 		nodes_.at("pispbe-tdn_output").SetFormat(config.config.tdn_output_format, use_opaque_format);
 		nodes_.at("pispbe-tdn_output").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-tdn_output");
@@ -82,8 +72,6 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 
 	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_STITCH_INPUT)
 	{
-		// Release old buffers before setting the new format.
-		nodes_.at("pispbe-stitch_input").ReleaseBuffers();
 		nodes_.at("pispbe-stitch_input").SetFormat(config.config.stitch_input_format, use_opaque_format);
 		nodes_.at("pispbe-stitch_input").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-stitch_input");
@@ -91,15 +79,13 @@ void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffe
 
 	if (config.config.global.bayer_enables & PISP_BE_BAYER_ENABLE_STITCH_OUTPUT)
 	{
-		// Release old buffers before setting the new format.
-		nodes_.at("pispbe-stitch_output").ReleaseBuffers();
 		nodes_.at("pispbe-stitch_output").SetFormat(config.config.stitch_output_format, use_opaque_format);
 		nodes_.at("pispbe-stitch_output").AllocateBuffers(buffer_count);
 		nodes_enabled_.emplace("pispbe-stitch_output");
 	}
 
 	config_buffer_.RwSyncStart();
-	std::memcpy(reinterpret_cast<pisp_be_tiles_config *>(config_buffer_.mem[0]), &config, sizeof(config));
+	std::memcpy(reinterpret_cast<pisp_be_tiles_config *>(config_buffer_.Mem()[0]), &config, sizeof(config));
 	config_buffer_.RwSyncEnd();
 }
 
@@ -113,12 +99,21 @@ std::map<std::string, std::vector<V4l2Device::Buffer>> BackendDevice::GetBuffers
 	return buffers;
 }
 
-std::map<std::string, V4l2Device::Buffer> BackendDevice::GetBufferSlice()
+std::map<std::string, V4l2Device::Buffer> BackendDevice::GetBufferSlice(bool allow_queued)
 {
 	std::map<std::string, V4l2Device::Buffer> buffers;
 
 	for (auto const &n : nodes_enabled_)
-		buffers[n] = nodes_.at(n).Buffers()[0];
+	{
+		for (auto &b : nodes_.at(n).Buffers())
+		{
+			if (allow_queued || !b.Queued())
+			{
+				buffers[n] = b;
+				break;
+			}
+		}
+	}
 
 	return buffers;
 }

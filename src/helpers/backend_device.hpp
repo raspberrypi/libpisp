@@ -36,7 +36,7 @@ public:
 	}
 
 	std::map<std::string, std::vector<V4l2Device::Buffer>> GetBuffers();
-	std::map<std::string, V4l2Device::Buffer> GetBufferSlice();
+	std::map<std::string, V4l2Device::Buffer> GetBufferSlice(bool allow_queued = false);
 	V4l2Device::Buffer &ConfigBuffer()
 	{
 		return config_buffer_;

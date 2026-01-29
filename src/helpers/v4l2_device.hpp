@@ -63,64 +63,45 @@ public:
 	struct Buffer
 	{
 	public:
-		Buffer()
-			: size(), mem(), fd({-1, -1, -1}), id(-1)
+		Buffer();
+		Buffer(const std::array<int, 3> &fd, const std::array<size_t, 3> &size);
+
+		void RwSyncStart();
+		void RwSyncEnd();
+		void ReadSyncStart();
+		void ReadSyncEnd();
+		bool operator==(const Buffer &other) const;
+
+		std::array<uint8_t *, 3> &Mem()
 		{
+			return mem;
 		}
 
-		Buffer(unsigned int id)
-			: size(), mem(), fd({-1, -1, -1}), id(id)
+		const std::array<size_t, 3> &Size() const
 		{
+			return size;
 		}
 
-		void RwSyncStart()
+		const std::array<int, 3> &Fds() const
 		{
-			struct dma_buf_sync dma_sync {};
-			dma_sync.flags = DMA_BUF_SYNC_START | DMA_BUF_SYNC_RW;
-			for (unsigned int p = 0; p < 3; p++)
-			{
-				if (fd[p] > 0)
-					ioctl(fd[p], DMA_BUF_IOCTL_SYNC, &dma_sync);
-			}
+			return fd;
 		}
 
-		void RwSyncEnd()
+		bool Queued() const
 		{
-			struct dma_buf_sync dma_sync {};
-			dma_sync.flags = DMA_BUF_SYNC_END | DMA_BUF_SYNC_RW;
-			for (unsigned int p = 0; p < 3; p++)
-			{
-				if (fd[p] > 0)
-					ioctl(fd[p], DMA_BUF_IOCTL_SYNC, &dma_sync);
-			}
+			return queued;
 		}
 
-		void ReadSyncStart()
-		{
-			struct dma_buf_sync dma_sync {};
-			dma_sync.flags = DMA_BUF_SYNC_START | DMA_BUF_SYNC_READ;
-			for (unsigned int p = 0; p < 3; p++)
-			{
-				if (fd[p] > 0)
-					ioctl(fd[p], DMA_BUF_IOCTL_SYNC, &dma_sync);
-			}
-		}
+		friend class V4l2Device;
 
-		void ReadSyncEnd()
-		{
-			struct dma_buf_sync dma_sync {};
-			dma_sync.flags = DMA_BUF_SYNC_END | DMA_BUF_SYNC_READ;
-			for (unsigned int p = 0; p < 3; p++)
-			{
-				if (fd[p] > 0)
-					ioctl(fd[p], DMA_BUF_IOCTL_SYNC, &dma_sync);
-			}
-		}
+	private:
+		Buffer(unsigned int id);
 
 		std::array<size_t, 3> size;
 		std::array<uint8_t *, 3> mem;
 		std::array<int, 3> fd;
 		unsigned int id;
+		bool queued;
 	};
 
 	int AllocateBuffers(unsigned int count = 1);
@@ -161,6 +142,7 @@ private:
 	enum v4l2_buf_type buf_type_;
 	unsigned int num_memory_planes_;
 	DmaHeap dma_heap_;
+	unsigned int max_slots_;
 };
 
 } // namespace libpisp
