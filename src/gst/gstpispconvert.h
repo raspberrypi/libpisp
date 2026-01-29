@@ -69,7 +69,6 @@ struct _GstPispConvertPrivate
 	GstAllocator *dmabuf_allocator;
 	gboolean use_dmabuf_input;
 	gboolean use_dmabuf_output;
-	gboolean dmabuf_imported;
 };
 
 GType gst_pisp_convert_get_type(void);
