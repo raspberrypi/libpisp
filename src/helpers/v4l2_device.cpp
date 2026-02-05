@@ -42,6 +42,7 @@ static FormatInfo get_v4l2_format(const std::string &format)
 		{ "UYVY", { V4L2_PIX_FMT_UYVY, 1 } },
 		{ "NV12", { V4L2_PIX_FMT_NV12M, 2 } },
 		{ "YUV420SP_COL128", { V4L2_PIX_FMT_NV12MT_COL128, 2 } },
+		{ "YUV420SP10_COL128", { V4L2_PIX_FMT_NV12MT_10_COL128, 2 } },
 	};
 
 	auto it = formats.find(format);
