@@ -8,16 +8,22 @@
 #pragma once
 
 #include <array>
-#include <optional>
-#include <queue>
-#include <stdint.h>
 #include <vector>
 
 #include <linux/videodev2.h>
 
-#include "libpisp/backend/pisp_be_config.h"
+#ifndef V4L2_PIX_FMT_NV12MT_COL128
+#define V4L2_PIX_FMT_NV12MT_COL128 v4l2_fourcc('N', 'c', '1', '2') /* 12  Y/CbCr 4:2:0 128 pixel wide column */
+#endif
+#ifndef V4L2_PIX_FMT_NV12MT_10_COL128
+#define V4L2_PIX_FMT_NV12MT_10_COL128 v4l2_fourcc('N', 'c', '3', '0')
+#endif
 
+#include "backend/pisp_be_config.h"
+
+#include "buffer.hpp"
 #include "device_fd.hpp"
+#include "dma_heap.hpp"
 
 namespace libpisp::helpers
 {
@@ -50,33 +56,11 @@ public:
 			fd_.Close();
 	}
 
-	struct Buffer
-	{
-		Buffer()
-		{
-		}
-
-		Buffer(const v4l2_buffer& buf)
-			: buffer(buf), size({}), mem({})
-		{
-		}
-
-		v4l2_buffer buffer;
-		std::array<size_t, 3> size;
-		std::array<uint8_t *, 3> mem;
-	};
-
-	int RequestBuffers(unsigned int count = 1);
-	void ReturnBuffers();
-
-	std::optional<Buffer> AcquireBuffer();
-	void ReleaseBuffer(const Buffer &buffer);
-	const std::vector<Buffer> &Buffers() const
-	{
-		return v4l2_buffers_;
-	};
-
-	int QueueBuffer(unsigned int index);
+	int AllocateBuffers(unsigned int count = 1);
+	int ImportBuffer(BufferRef buffer);
+	void ReleaseBuffers();
+	std::vector<BufferRef> Buffers() const;
+	int QueueBuffer(const Buffer &buffer);
 	int DequeueBuffer(unsigned int timeout_ms = 500);
 
 	void SetFormat(const pisp_image_format_config &format, bool use_opaque_format = false);
@@ -100,13 +84,32 @@ private:
 		return !isCapture();
 	}
 
-	std::optional<Buffer> findBuffer(unsigned int index) const;
+	struct BufferCache
+	{
+		BufferCache(const std::array<int, 3> &fd, const std::array<size_t, 3> &size, unsigned int id)
+			: fd(fd), size(size), id(id), queued(false)
+		{
+		}
 
-	std::queue<unsigned int> available_buffers_;
-	std::vector<Buffer> v4l2_buffers_;
+		std::array<int, 3> fd;
+		std::array<size_t, 3> size;
+		unsigned int id;
+		bool queued;
+
+		bool operator==(const Buffer &other) const
+		{
+			return fd == other.Fd() && size == other.Size();
+		}
+	};
+
+	std::vector<BufferCache> buffer_cache_;
+	std::vector<Buffer> buffer_allocs_;
 	DeviceFd fd_;
 	enum v4l2_buf_type buf_type_;
 	unsigned int num_memory_planes_;
+	DmaHeap dma_heap_;
+	unsigned int max_slots_;
+	v4l2_format v4l2_format_;
 };
 
 } // namespace libpisp
