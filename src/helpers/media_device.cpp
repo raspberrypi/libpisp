@@ -43,13 +43,15 @@ class MediaEnumerator
 public:
 	using MediaDevList = std::vector<MediaDevMap>;
 
-	MediaEnumerator(MediaEnumerator &other) = delete;
-	void operator=(const MediaEnumerator &other) = delete;
+	MediaEnumerator(const MediaEnumerator &) = delete;
+	MediaEnumerator(MediaEnumerator &&) = delete;
+	MediaEnumerator &operator=(const MediaEnumerator &) = delete;
+	MediaEnumerator &operator=(MediaEnumerator &&) = delete;
 
 	static const MediaEnumerator *Get()
 	{
-		static std::unique_ptr<MediaEnumerator> mdev(new MediaEnumerator);
-		return mdev.get();
+		static MediaEnumerator mdev;
+		return &mdev;
 	}
 
 	const MediaDevList &MediaDeviceList() const
