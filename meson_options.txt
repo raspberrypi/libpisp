@@ -3,3 +3,4 @@
 
 option('logging', type : 'feature', value : 'auto')
 option('examples', type : 'boolean', value : false)
+option('gstreamer', type : 'feature', value : 'auto', description : 'Build GStreamer plugin')
