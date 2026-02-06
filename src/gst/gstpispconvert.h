@@ -51,6 +51,7 @@ struct _GstPispConvertPrivate
 	/* C++ objects */
 	std::unique_ptr<libpisp::helpers::BackendDevice> backend_device;
 	std::unique_ptr<libpisp::BackEnd> backend;
+	const libpisp::PiSPVariant *variant;
 
 	/* Device info */
 	char *media_dev_path;
@@ -71,6 +72,7 @@ struct _GstPispConvertPrivate
 	guint in_stride; // GStreamer buffer stride
 	guint in_hw_stride; // Hardware buffer stride
 	const char *in_format;
+	const char *in_colorspace;
 
 	/* Output format info - arrays for dual outputs */
 	guint out_width[PISP_NUM_OUTPUTS];
@@ -78,6 +80,7 @@ struct _GstPispConvertPrivate
 	guint out_stride[PISP_NUM_OUTPUTS]; // GStreamer buffer stride
 	guint out_hw_stride[PISP_NUM_OUTPUTS]; // Hardware buffer stride
 	const char *out_format[PISP_NUM_OUTPUTS];
+	const char *out_colorspace[PISP_NUM_OUTPUTS];
 	gboolean output_enabled[PISP_NUM_OUTPUTS]; // Track which outputs are active
 
 	/* dmabuf support */

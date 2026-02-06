@@ -66,7 +66,7 @@ G_DEFINE_TYPE(GstPispConvert, gst_pisp_convert, GST_TYPE_ELEMENT);
 GST_ELEMENT_REGISTER_DEFINE(pispconvert, "pispconvert", GST_RANK_PRIMARY, GST_TYPE_PISP_CONVERT);
 
 /* Bidirectional mapping between GstVideoFormat and PiSP format strings */
-static const std::map<GstVideoFormat, const char *> gst_pisp_format_map = {
+static const std::map<GstVideoFormat, std::string> gst_pisp_format_map = {
 	{ GST_VIDEO_FORMAT_RGB, "RGB888" },
 	{ GST_VIDEO_FORMAT_RGBx, "RGBX8888" },
 	{ GST_VIDEO_FORMAT_BGRx, "XRGB8888" },
@@ -81,10 +81,27 @@ static const std::map<GstVideoFormat, const char *> gst_pisp_format_map = {
 	{ GST_VIDEO_FORMAT_NV12_10LE32_128C8, "YUV420SP10_COL128" },
 };
 
+/* Bidirectional mapping between DRM fourcc and PiSP format strings */
+static const std::map<std::string, std::string> drm_pisp_format_map = {
+	{ "RG24", "RGB888" },
+	{ "BG24", "RGB888" },
+	{ "XB24", "RGBX8888" },
+	{ "XR24", "XRGB8888" },
+	{ "YU12", "YUV420P" },
+	{ "YV12", "YVU420P" },
+	{ "YU16", "YUV422P" },
+	{ "YU24", "YUV444P" },
+	{ "YUYV", "YUYV" },
+	{ "UYVY", "UYVY" },
+	{ "NV12", "YUV420SP" },
+	{ "NV12:0x0700000000000004", "YUV420SP_COL128" },
+	{ "P030:0x0700000000000004", "YUV420SP10_COL128" },
+};
+
 static const char *gst_format_to_pisp(GstVideoFormat format)
 {
 	auto it = gst_pisp_format_map.find(format);
-	return it != gst_pisp_format_map.end() ? it->second : nullptr;
+	return it != gst_pisp_format_map.end() ? it->second.c_str() : nullptr;
 }
 
 static GstVideoFormat pisp_to_gst_video_format(const char *pisp_format)
@@ -94,10 +111,19 @@ static GstVideoFormat pisp_to_gst_video_format(const char *pisp_format)
 
 	for (const auto &[gst_fmt, pisp_fmt] : gst_pisp_format_map)
 	{
-		if (g_str_equal(pisp_format, pisp_fmt))
+		if (g_str_equal(pisp_format, pisp_fmt.c_str()))
 			return gst_fmt;
 	}
 	return GST_VIDEO_FORMAT_UNKNOWN;
+}
+
+static const char *drm_format_to_pisp(const gchar *drm_format)
+{
+	if (!drm_format)
+		return nullptr;
+
+	auto it = drm_pisp_format_map.find(drm_format);
+	return it != drm_pisp_format_map.end() ? it->second.c_str() : nullptr;
 }
 
 /* Helper function to check if a PiSP format string is YUV */
@@ -108,39 +134,61 @@ static bool is_yuv_format(const char *format)
 	return format[0] == 'Y' || format[0] == 'U';
 }
 
-/* Helper function to map DRM format string to PiSP format string */
-static const char *drm_format_to_pisp(const gchar *drm_format)
+/* Map GStreamer colorimetry to PiSP colour space string.
+ * Returns nullptr if the colorimetry is unknown/unspecified. */
+static const char *colorimetry_to_pisp(const GstVideoColorimetry *colorimetry)
 {
-	if (!drm_format)
+	if (!colorimetry || colorimetry->matrix == GST_VIDEO_COLOR_MATRIX_UNKNOWN)
 		return nullptr;
 
-	/* Map common DRM fourcc names to PiSP formats */
-	if (g_str_equal(drm_format, "RG24") || g_str_equal(drm_format, "BG24"))
-		return "RGB888";
-	else if (g_str_equal(drm_format, "XB24"))
-		return "RGBX8888";
-	else if (g_str_equal(drm_format, "XR24"))
-		return "XRGB8888";
-	else if (g_str_equal(drm_format, "YUV420") || g_str_equal(drm_format, "YU12"))
-		return "YUV420P";
-	else if (g_str_equal(drm_format, "YVU420") || g_str_equal(drm_format, "YV12"))
-		return "YVU420P";
-	else if (g_str_equal(drm_format, "YU16"))
-		return "YUV422P";
-	else if (g_str_equal(drm_format, "YU24"))
-		return "YUV444P";
-	else if (g_str_equal(drm_format, "YUYV"))
-		return "YUYV";
-	else if (g_str_equal(drm_format, "UYVY"))
-		return "UYVY";
-	else if (g_str_equal(drm_format, "NV12:0x0700000000000004"))
-		return "YUV420SP_COL128";
-	else if (g_str_equal(drm_format, "P030:0x0700000000000004"))
-		return "YUV420SP10_COL128";
-	else if (g_str_equal(drm_format, "NV12"))
-		return "YUV420SP";
+	bool full_range = colorimetry->range == GST_VIDEO_COLOR_RANGE_0_255;
+
+	if (colorimetry->matrix == GST_VIDEO_COLOR_MATRIX_BT2020)
+		return full_range ? "bt2020_full" : "bt2020";
+	if (colorimetry->matrix == GST_VIDEO_COLOR_MATRIX_BT709)
+		return full_range ? "rec709_full" : "rec709";
+	if (colorimetry->matrix == GST_VIDEO_COLOR_MATRIX_BT601)
+		return full_range ? "jpeg" : "smpte170m";
 
 	return nullptr;
+}
+
+/* Configure colour space conversion blocks for the backend */
+static uint32_t configure_colour_conversion(libpisp::BackEnd *backend, const char *in_format,
+											const char *in_colorspace, const char *out_format,
+											const char *out_colorspace, unsigned int output_index)
+{
+	uint32_t rgb_enables = 0;
+
+	/* YUV->RGB conversion on input */
+	if (is_yuv_format(in_format))
+	{
+		pisp_be_ccm_config csc;
+		backend->InitialiseYcbcrInverse(csc, in_colorspace);
+		backend->SetCcm(csc);
+		rgb_enables |= PISP_BE_RGB_ENABLE_CCM;
+	}
+
+	/* RGB->YUV conversion on output */
+	if (is_yuv_format(out_format))
+	{
+		pisp_be_ccm_config csc;
+		backend->InitialiseYcbcr(csc, out_colorspace);
+		backend->SetCsc(output_index, csc);
+		rgb_enables |= PISP_BE_RGB_ENABLE_CSC(output_index);
+	}
+	else if (g_str_equal(out_format, "RGB888") ||
+			 g_str_equal(out_format, "RGBX8888") ||
+			 g_str_equal(out_format, "XRGB8888"))
+	{
+		/* R/B channel swap to match GStreamer/DRM byte ordering */
+		pisp_be_ccm_config csc = {};
+		csc.coeffs[2] = csc.coeffs[4] = csc.coeffs[6] = 1 << 10;
+		backend->SetCsc(output_index, csc);
+		rgb_enables |= PISP_BE_RGB_ENABLE_CSC(output_index);
+	}
+
+	return rgb_enables;
 }
 
 /* GObject vmethod implementations */
@@ -406,8 +454,16 @@ static gboolean parse_output_caps(GstPispConvert *self, guint index, GstCaps *ca
 		gst_structure_get_int(out_structure, "height", (gint *)&self->priv->out_height[index]);
 		self->priv->out_format[index] = drm_format_to_pisp(drm_format);
 		self->priv->out_stride[index] = 0;
-		GST_INFO_OBJECT(self, "Output%u DMA-DRM format: drm-format=%s, pisp=%s", index, drm_format,
-						self->priv->out_format[index]);
+
+		GstVideoColorimetry colorimetry = {};
+		const gchar *colorimetry_str = gst_structure_get_string(out_structure, "colorimetry");
+		if (colorimetry_str)
+			gst_video_colorimetry_from_string(&colorimetry, colorimetry_str);
+		self->priv->out_colorspace[index] = colorimetry_to_pisp(&colorimetry);
+
+		GST_INFO_OBJECT(self, "Output%u DMA-DRM format: drm-format=%s, pisp=%s, colorspace=%s (matrix=%d, range=%d)",
+						index, drm_format, self->priv->out_format[index], self->priv->out_colorspace[index],
+						colorimetry.matrix, colorimetry.range);
 	}
 	else
 	{
@@ -420,7 +476,17 @@ static gboolean parse_output_caps(GstPispConvert *self, guint index, GstCaps *ca
 		self->priv->out_height[index] = GST_VIDEO_INFO_HEIGHT(&out_info);
 		self->priv->out_stride[index] = GST_VIDEO_INFO_PLANE_STRIDE(&out_info, 0);
 		self->priv->out_format[index] = gst_format_to_pisp(GST_VIDEO_INFO_FORMAT(&out_info));
+		self->priv->out_colorspace[index] = colorimetry_to_pisp(&GST_VIDEO_INFO_COLORIMETRY(&out_info));
+		GST_INFO_OBJECT(self, "Output%u format: pisp=%s, colorspace=%s (matrix=%d, range=%d)", index,
+						self->priv->out_format[index], self->priv->out_colorspace[index],
+						GST_VIDEO_INFO_COLORIMETRY(&out_info).matrix, GST_VIDEO_INFO_COLORIMETRY(&out_info).range);
 	}
+
+	/* Default output colorspace to match input when unspecified */
+	if (!self->priv->out_colorspace[index])
+		self->priv->out_colorspace[index] = self->priv->in_colorspace;
+	if (!self->priv->out_colorspace[index])
+		self->priv->out_colorspace[index] = "jpeg";
 
 	if (!self->priv->out_format[index])
 	{
@@ -457,7 +523,16 @@ static gboolean parse_input_caps(GstPispConvert *self, GstCaps *caps)
 		gst_structure_get_int(in_structure, "height", (gint *)&self->priv->in_height);
 		self->priv->in_format = drm_format_to_pisp(drm_format);
 		self->priv->in_stride = 0;
-		GST_INFO_OBJECT(self, "Input DMA-DRM format: drm-format=%s, pisp=%s", drm_format, self->priv->in_format);
+
+		GstVideoColorimetry colorimetry = {};
+		const gchar *colorimetry_str = gst_structure_get_string(in_structure, "colorimetry");
+		if (colorimetry_str)
+			gst_video_colorimetry_from_string(&colorimetry, colorimetry_str);
+		self->priv->in_colorspace = colorimetry_to_pisp(&colorimetry);
+
+		GST_INFO_OBJECT(self, "Input DMA-DRM format: drm-format=%s, pisp=%s, colorspace=%s (matrix=%d, range=%d)",
+						drm_format, self->priv->in_format, self->priv->in_colorspace,
+						colorimetry.matrix, colorimetry.range);
 	}
 	else
 	{
@@ -470,7 +545,14 @@ static gboolean parse_input_caps(GstPispConvert *self, GstCaps *caps)
 		self->priv->in_height = GST_VIDEO_INFO_HEIGHT(&in_info);
 		self->priv->in_stride = GST_VIDEO_INFO_PLANE_STRIDE(&in_info, 0);
 		self->priv->in_format = gst_format_to_pisp(GST_VIDEO_INFO_FORMAT(&in_info));
+		self->priv->in_colorspace = colorimetry_to_pisp(&GST_VIDEO_INFO_COLORIMETRY(&in_info));
+		GST_INFO_OBJECT(self, "Input format: pisp=%s, colorspace=%s (matrix=%d, range=%d)",
+						self->priv->in_format, self->priv->in_colorspace,
+						GST_VIDEO_INFO_COLORIMETRY(&in_info).matrix, GST_VIDEO_INFO_COLORIMETRY(&in_info).range);
 	}
+
+	if (!self->priv->in_colorspace)
+		self->priv->in_colorspace = "jpeg";
 
 	if (!self->priv->in_format)
 	{
@@ -773,15 +855,6 @@ static gboolean gst_pisp_convert_configure(GstPispConvert *self)
 		GST_INFO_OBJECT(self, "Input: %ux%u %s (stride: gst=%u hw=%u)", self->priv->in_width, self->priv->in_height,
 						self->priv->in_format, self->priv->in_stride, self->priv->in_hw_stride);
 
-		/* Configure YUV->RGB conversion for input if needed */
-		if (is_yuv_format(self->priv->in_format))
-		{
-			pisp_be_ccm_config csc;
-			self->priv->backend->InitialiseYcbcrInverse(csc, "jpeg");
-			self->priv->backend->SetCcm(csc);
-			global.rgb_enables |= PISP_BE_RGB_ENABLE_CCM;
-		}
-
 		/* Configure each enabled output - first pass: formats and enables */
 		pisp_be_output_format_config output_cfg[PISP_NUM_OUTPUTS] = {};
 		for (unsigned int i = 0; i < PISP_NUM_OUTPUTS; i++)
@@ -803,14 +876,13 @@ static gboolean gst_pisp_convert_configure(GstPispConvert *self)
 			self->priv->out_hw_stride[i] = output_cfg[i].image.stride;
 			self->priv->backend->SetOutputFormat(i, output_cfg[i]);
 
-			/* Configure RGB->YUV conversion for output if needed */
-			if (is_yuv_format(self->priv->out_format[i]))
-			{
-				pisp_be_ccm_config csc;
-				self->priv->backend->InitialiseYcbcr(csc, "jpeg");
-				self->priv->backend->SetCsc(i, csc);
-				global.rgb_enables |= PISP_BE_RGB_ENABLE_CSC(i);
-			}
+			if ((g_str_equal(self->priv->out_format[i], "RGBX8888") ||
+				 g_str_equal(self->priv->out_format[i], "XRGB8888")) && !self->priv->variant->BackendRGB32Supported(0))
+				GST_WARNING_OBJECT(self, "pisp_be HW does not support 32-bit RGB output, the image will be corrupt.");
+
+			global.rgb_enables |= configure_colour_conversion(self->priv->backend.get(),
+								self->priv->in_format, self->priv->in_colorspace,
+								self->priv->out_format[i], self->priv->out_colorspace[i], i);
 
 			GST_INFO_OBJECT(self, "Output%d: %ux%u %s (stride: gst=%u hw=%u)", i, self->priv->out_width[i],
 							self->priv->out_height[i], self->priv->out_format[i], self->priv->out_stride[i],
@@ -1147,6 +1219,7 @@ static gboolean gst_pisp_convert_start(GstPispConvert *self)
 			return FALSE;
 		}
 
+		self->priv->variant = &(*variant_it);
 		self->priv->backend = std::make_unique<libpisp::BackEnd>(libpisp::BackEnd::Config({}), *variant_it);
 
 		GST_INFO_OBJECT(self, "Acquired device %s", media_dev.c_str());

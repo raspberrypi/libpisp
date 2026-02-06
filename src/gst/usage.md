@@ -23,10 +23,40 @@ Crop values of `0,0,0,0` (default) means no cropping - the full input is used. I
 ## Supported Formats
 
 ### GStreamer Formats
-`RGB`, `I420`, `YV12`, `Y42B`, `Y444`, `YUY2`, `UYVY`, `NV12_128C8`
+`RGB`, `RGBx`, `BGRx`, `I420`, `YV12`, `Y42B`, `Y444`, `YUY2`, `UYVY`, `NV12_128C8`, `NV12_10LE32_128C8`
 
 ### DRM Formats
-`BG24`, `YU12`, `YV12`, `YU16`, `YU24`, `YUYV`, `UYVY`, `NV12`, `NV12:0x0700000000000004`
+`RG24`, `XB24`, `XR24`, `YU12`, `YV12`, `YU16`, `YU24`, `YUYV`, `UYVY`, `NV12`, `NV12:0x0700000000000004`, `P030:0x0700000000000004`
+
+## Colorimetry
+
+`pispconvert` uses the colorimetry reported in the input caps to select the correct
+YCbCr conversion matrix. The supported colour spaces are: `jpeg` (full-range BT.601),
+`smpte170m` (limited-range BT.601), `rec709`, `rec709_full`, `bt2020`, and `bt2020_full`.
+
+When no output colorimetry is specified, it defaults to matching the input.
+
+Some webcams and V4L2 sources report incorrect colorimetry (e.g. limited-range when the
+sensor actually produces full-range data), which can result in incorrect colours. You can
+override the input colorimetry by specifying it explicitly in the caps filter. The
+colorimetry string format is `range:matrix:transfer:primaries`.
+
+For example, to force full-range BT.601 (jpeg) on a webcam:
+
+```bash
+gst-launch-1.0 \
+    v4l2src device=/dev/video0 io-mode=dmabuf ! \
+    "video/x-raw(memory:DMABuf),format=DMA_DRM,drm-format=YUYV,width=640,height=480,colorimetry=1:4:0:1" ! \
+    pispconvert ! \
+    "video/x-raw(memory:DMABuf),format=DMA_DRM,drm-format=YUYV,width=800,height=600" ! \
+    waylandsink
+```
+
+You can check the actual colorimetry of your camera with:
+
+```bash
+v4l2-ctl -d /dev/video0 --get-fmt-video
+```
 
 ## Examples
 
