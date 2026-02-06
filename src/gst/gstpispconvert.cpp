@@ -32,9 +32,9 @@ GST_DEBUG_CATEGORY_STATIC(gst_pisp_convert_debug);
 #define GST_CAT_DEFAULT gst_pisp_convert_debug
 
 /* Supported GStreamer formats */
-#define PISP_FORMATS "{ RGB, I420, YV12, Y42B, Y444, YUY2, UYVY, NV12_128C8, NV12_10LE32_128C8 }"
+#define PISP_FORMATS "{ RGB, RGBx, BGRx, I420, YV12, Y42B, Y444, YUY2, UYVY, NV12_128C8, NV12_10LE32_128C8 }"
 /* Supported DRM fourccs */
-#define PISP_DRM_FORMATS "{ RG24, YU12, YV12, YU16, YU24, YUYV, UYVY, NV12, NV12:0x0700000000000004, P030:0x0700000000000004 }"
+#define PISP_DRM_FORMATS "{ RG24, XB24, XR24, YU12, YV12, YU16, YU24, YUYV, UYVY, NV12, NV12:0x0700000000000004, P030:0x0700000000000004 }"
 
 #define PISP_SRC_CAPS \
 	"video/x-raw(memory:DMABuf), format=(string)DMA_DRM, drm-format=(string)" PISP_DRM_FORMATS \
@@ -68,6 +68,8 @@ GST_ELEMENT_REGISTER_DEFINE(pispconvert, "pispconvert", GST_RANK_PRIMARY, GST_TY
 /* Bidirectional mapping between GstVideoFormat and PiSP format strings */
 static const std::map<GstVideoFormat, const char *> gst_pisp_format_map = {
 	{ GST_VIDEO_FORMAT_RGB, "RGB888" },
+	{ GST_VIDEO_FORMAT_RGBx, "RGBX8888" },
+	{ GST_VIDEO_FORMAT_BGRx, "XRGB8888" },
 	{ GST_VIDEO_FORMAT_I420, "YUV420P" },
 	{ GST_VIDEO_FORMAT_YV12, "YVU420P" },
 	{ GST_VIDEO_FORMAT_Y42B, "YUV422P" },
@@ -115,6 +117,10 @@ static const char *drm_format_to_pisp(const gchar *drm_format)
 	/* Map common DRM fourcc names to PiSP formats */
 	if (g_str_equal(drm_format, "RG24") || g_str_equal(drm_format, "BG24"))
 		return "RGB888";
+	else if (g_str_equal(drm_format, "XB24"))
+		return "RGBX8888";
+	else if (g_str_equal(drm_format, "XR24"))
+		return "XRGB8888";
 	else if (g_str_equal(drm_format, "YUV420") || g_str_equal(drm_format, "YU12"))
 		return "YUV420P";
 	else if (g_str_equal(drm_format, "YVU420") || g_str_equal(drm_format, "YV12"))
