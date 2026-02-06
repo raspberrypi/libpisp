@@ -848,7 +848,7 @@ static gboolean gst_pisp_convert_configure(GstPispConvert *self)
 			GST_ERROR_OBJECT(self, "Failed to get input format");
 			return FALSE;
 		}
-		libpisp::compute_optimal_stride(input_cfg);
+		libpisp::compute_stride(input_cfg);
 		self->priv->in_hw_stride = input_cfg.stride;
 		self->priv->backend->SetInputFormat(input_cfg);
 
