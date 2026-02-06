@@ -65,37 +65,37 @@ static GstStaticPadTemplate src1_template = GST_STATIC_PAD_TEMPLATE(
 G_DEFINE_TYPE(GstPispConvert, gst_pisp_convert, GST_TYPE_ELEMENT);
 GST_ELEMENT_REGISTER_DEFINE(pispconvert, "pispconvert", GST_RANK_PRIMARY, GST_TYPE_PISP_CONVERT);
 
-/* Helper function to map GStreamer format to PiSP format string */
+/* Bidirectional mapping between GstVideoFormat and PiSP format strings */
+static const std::map<GstVideoFormat, const char *> gst_pisp_format_map = {
+	{ GST_VIDEO_FORMAT_RGB, "RGB888" },
+	{ GST_VIDEO_FORMAT_I420, "YUV420P" },
+	{ GST_VIDEO_FORMAT_YV12, "YVU420P" },
+	{ GST_VIDEO_FORMAT_Y42B, "YUV422P" },
+	{ GST_VIDEO_FORMAT_Y444, "YUV444P" },
+	{ GST_VIDEO_FORMAT_YUY2, "YUYV" },
+	{ GST_VIDEO_FORMAT_UYVY, "UYVY" },
+	{ GST_VIDEO_FORMAT_NV12, "YUV420SP" },
+	{ GST_VIDEO_FORMAT_NV12_128C8, "YUV420SP_COL128" },
+	{ GST_VIDEO_FORMAT_NV12_10LE32_128C8, "YUV420SP10_COL128" },
+};
+
 static const char *gst_format_to_pisp(GstVideoFormat format)
 {
-	switch (format)
+	auto it = gst_pisp_format_map.find(format);
+	return it != gst_pisp_format_map.end() ? it->second : nullptr;
+}
+
+static GstVideoFormat pisp_to_gst_video_format(const char *pisp_format)
+{
+	if (!pisp_format)
+		return GST_VIDEO_FORMAT_UNKNOWN;
+
+	for (const auto &[gst_fmt, pisp_fmt] : gst_pisp_format_map)
 	{
-	case GST_VIDEO_FORMAT_RGB:
-		return "RGB888";
-	case GST_VIDEO_FORMAT_I420:
-		return "YUV420P";
-	case GST_VIDEO_FORMAT_YV12:
-		return "YVU420P";
-	case GST_VIDEO_FORMAT_Y42B:
-		return "YUV422P";
-	case GST_VIDEO_FORMAT_Y444:
-		return "YUV444P";
-	case GST_VIDEO_FORMAT_YUY2:
-		return "YUYV";
-	case GST_VIDEO_FORMAT_UYVY:
-		return "UYVY";
-
-#ifndef GST_VIDEO_FORMAT_NV12_128C8
-#define GST_VIDEO_FORMAT_NV12_128C8 GST_VIDEO_FORMAT_UNKNOWN
-#endif
-
-	case GST_VIDEO_FORMAT_NV12_128C8:
-		return "YUV420SP_COL128";
-	case GST_VIDEO_FORMAT_NV12_10LE32_128C8:
-		return "YUV420SP10_COL128";
-	default:
-		return nullptr;
+		if (g_str_equal(pisp_format, pisp_fmt))
+			return gst_fmt;
 	}
+	return GST_VIDEO_FORMAT_UNKNOWN;
 }
 
 /* Helper function to check if a PiSP format string is YUV */
@@ -550,6 +550,31 @@ static GstBuffer *libpisp_to_gst_dmabuf(const Buffer &buffer, GstAllocator *dmab
 	}
 
 	return gstbuf;
+}
+
+/* Attach GstVideoMeta with the correct hardware stride to a dmabuf output buffer */
+static void add_video_meta(GstBuffer *buffer, const char *pisp_format, guint width, guint height, guint hw_stride)
+{
+	GstVideoFormat gst_fmt = pisp_to_gst_video_format(pisp_format);
+	if (gst_fmt == GST_VIDEO_FORMAT_UNKNOWN)
+		return;
+
+	GstVideoInfo vinfo;
+	gst_video_info_set_format(&vinfo, gst_fmt, width, height);
+
+	gsize offsets[GST_VIDEO_MAX_PLANES] = {};
+	gint strides[GST_VIDEO_MAX_PLANES] = {};
+	guint n_planes = GST_VIDEO_INFO_N_PLANES(&vinfo);
+
+	for (guint p = 0; p < n_planes; p++)
+	{
+		offsets[p] = 0;
+		strides[p] = hw_stride * GST_VIDEO_INFO_PLANE_STRIDE(&vinfo, p) /
+					 GST_VIDEO_INFO_PLANE_STRIDE(&vinfo, 0);
+	}
+
+	gst_buffer_add_video_meta_full(buffer, GST_VIDEO_FRAME_FLAG_NONE, gst_fmt,
+								   width, height, n_planes, offsets, strides);
 }
 
 static void copy_planes(std::array<uint8_t *, 3> src, guint src_stride, std::array<uint8_t *, 3> dst, guint dst_stride,
@@ -1023,6 +1048,10 @@ static GstFlowReturn gst_pisp_convert_chain(GstPad *pad [[maybe_unused]], GstObj
 				ret = GST_FLOW_ERROR;
 				goto cleanup;
 			}
+
+			add_video_meta(outbuf[i], self->priv->out_format[i], self->priv->out_width[i],
+						   self->priv->out_height[i], self->priv->out_hw_stride[i]);
+
 			GST_DEBUG_OBJECT(self, "Using zero-copy output%d path", i);
 		}
 		else
