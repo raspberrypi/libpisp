@@ -485,8 +485,6 @@ static gboolean parse_output_caps(GstPispConvert *self, guint index, GstCaps *ca
 	/* Default output colorspace to match input when unspecified */
 	if (!self->priv->out_colorspace[index])
 		self->priv->out_colorspace[index] = self->priv->in_colorspace;
-	if (!self->priv->out_colorspace[index])
-		self->priv->out_colorspace[index] = "jpeg";
 
 	if (!self->priv->out_format[index])
 	{
