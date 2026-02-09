@@ -650,13 +650,17 @@ static void add_video_meta(GstBuffer *buffer, const char *pisp_format, guint wid
 
 	gsize offsets[GST_VIDEO_MAX_PLANES] = {};
 	gint strides[GST_VIDEO_MAX_PLANES] = {};
+	gsize offset = 0;
 	guint n_planes = GST_VIDEO_INFO_N_PLANES(&vinfo);
+	GstMemory *mem;
 
 	for (guint p = 0; p < n_planes; p++)
 	{
-		offsets[p] = 0;
+		offsets[p] = offset;
 		strides[p] = hw_stride * GST_VIDEO_INFO_PLANE_STRIDE(&vinfo, p) /
 					 GST_VIDEO_INFO_PLANE_STRIDE(&vinfo, 0);
+		mem = gst_buffer_peek_memory (buffer, p);
+		offset += mem->size;
 	}
 
 	gst_buffer_add_video_meta_full(buffer, GST_VIDEO_FRAME_FLAG_NONE, gst_fmt,
