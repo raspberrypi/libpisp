@@ -61,7 +61,7 @@ const PiSPVariant BERYL(
 	{ 6144, 6144 },						// fe_stats_max_width (max stats width per front-end)
 	{ { { true, true }, { true, true } } },  // fe_downscaler (downscaler available per FE/branch)
 	{ { { 6144, 4096 }, { 6144, 4096 } } }, // fe_downscaler_max_width (max width per FE/branch)
-	9126,								// be_max_tile_width (max tile width for back-end)
+	1024,								// be_max_tile_width (max tile width for back-end)
 	{ 2 },								// num_be_branches (branches per back-end)
 	{ { { false, false } } },			// be_integral_images (integral images available per BE/branch)
 	{ { { true, true } } },				// be_downscaler (downscaler available per BE/branch)
