@@ -57,7 +57,6 @@ public:
 	}
 
 	int AllocateBuffers(unsigned int count = 1);
-	int ImportBuffer(BufferRef buffer);
 	void ReleaseBuffers();
 	std::vector<BufferRef> Buffers() const;
 	int QueueBuffer(const Buffer &buffer);
@@ -101,6 +100,8 @@ private:
 			return fd == other.Fd() && size == other.Size();
 		}
 	};
+
+	std::vector<BufferCache>::iterator importBuffer(BufferRef buffer);
 
 	std::vector<BufferCache> buffer_cache_;
 	std::vector<Buffer> buffer_allocs_;

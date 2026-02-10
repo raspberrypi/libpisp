@@ -110,13 +110,13 @@ int V4l2Device::AllocateBuffers(unsigned int count)
 		const Buffer &b = buffer_allocs_.emplace_back(fds, sizes);
 
 		// May as well, and this also calls REQBUFS.
-		ImportBuffer(b);
+		importBuffer(b);
 	}
 
 	return buffer_allocs_.size();
 }
 
-int V4l2Device::ImportBuffer(BufferRef buffer)
+std::vector<V4l2Device::BufferCache>::iterator V4l2Device::importBuffer(BufferRef buffer)
 {
 	std::vector<BufferCache>::iterator cache_it;
 
@@ -140,7 +140,7 @@ int V4l2Device::ImportBuffer(BufferRef buffer)
 							[&buffer](const auto &b) { return b == buffer && !b.queued; });
 
 	if (cache_it != buffer_cache_.end())
-		return cache_it - buffer_cache_.begin();
+		return cache_it;
 
 	for (unsigned int p = 0; p < num_memory_planes_; p++)
 	{
@@ -167,7 +167,7 @@ int V4l2Device::ImportBuffer(BufferRef buffer)
 										 buffer.get().Fd(), buffer.get().Size(), buffer_cache_.size());
 	}
 
-	return cache_it - buffer_cache_.begin();
+	return cache_it;
 }
 
 void V4l2Device::ReleaseBuffers()
@@ -202,10 +202,10 @@ int V4l2Device::QueueBuffer(const Buffer &buffer)
 	v4l2_plane planes[VIDEO_MAX_PLANES] = {};
 	v4l2_buffer buf {};
 
-	int idx = ImportBuffer(buffer);
-	buffer_cache_[idx].queued = true;
+	auto cache_it = importBuffer(buffer);
+	cache_it->queued = true;
 
-	buf.index = buffer_cache_[idx].id;
+	buf.index = cache_it->id;
 	buf.type = buf_type_;
 	buf.memory = V4L2_MEMORY_DMABUF;
 
