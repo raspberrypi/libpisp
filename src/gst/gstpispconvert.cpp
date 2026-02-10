@@ -28,6 +28,14 @@
 using BufferRef = libpisp::helpers::BufferRef;
 using Buffer = libpisp::helpers::Buffer;
 
+#ifndef GST_VIDEO_FORMAT_NV12_128C8
+#define GST_VIDEO_FORMAT_NV12_128C8 GST_VIDEO_FORMAT_UNKNOWN
+#endif
+
+#ifndef GST_VIDEO_FORMAT_NV12_10LE32_128C8
+#define GST_VIDEO_FORMAT_NV12_10LE32_128C8 GST_VIDEO_FORMAT_UNKNOWN
+#endif
+
 GST_DEBUG_CATEGORY_STATIC(gst_pisp_convert_debug);
 #define GST_CAT_DEFAULT gst_pisp_convert_debug
 
