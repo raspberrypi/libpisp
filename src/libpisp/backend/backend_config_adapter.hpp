@@ -256,6 +256,8 @@ struct BeTile
 	std::array<uint16_t, PISP_BACK_END_NUM_OUTPUTS> crop_x_end {};
 	std::array<uint16_t, PISP_BACK_END_NUM_OUTPUTS> crop_y_start {};
 	std::array<uint16_t, PISP_BACK_END_NUM_OUTPUTS> crop_y_end {};
+	std::array<uint16_t,  PISP_BACK_END_NUM_OUTPUTS>crop_width {};
+	std::array<uint16_t,  PISP_BACK_END_NUM_OUTPUTS>crop_height {};
 	// Downscale phase is per-component on 2712, and per-output on Beryl:
 	std::array<uint16_t, 3 * PISP_BACK_END_NUM_OUTPUTS> downscale_phase_x {};
 	std::array<uint16_t, 3 * PISP_BACK_END_NUM_OUTPUTS> downscale_phase_y {};
@@ -278,6 +280,8 @@ struct BeTile
 	uint32_t tonemap_lores_offset_y = 0;
 	uint32_t dedistort_grid_offset_x = 0;
 	uint32_t dedistort_grid_offset_y = 0;
+	uint32_t dedistorted_offset_x = 0;
+	uint32_t dedistorted_width = 0;
 	std::array<uint8_t, PISP_BACK_END_NUM_OUTPUTS> resample_start_context_x {};
 	std::array<uint8_t, PISP_BACK_END_NUM_OUTPUTS> resample_start_context_y {};
 };

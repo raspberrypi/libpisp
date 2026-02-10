@@ -479,18 +479,24 @@ void BackEnd::check_tiles(const TilingConfig &tiling_config)
 	{
 		const BeTile &tile = config_->get_tile(tile_num);
 
-		PISP_ASSERT(tile.input_width && tile.input_height); // zero inputs shouldn't be possible
+		// zero inputs shouldn't be possible
+		PISP_ASSERT(tile.input_width && tile.input_height);
+		if (variant_ >= BERYL)
+			PISP_ASSERT(tile.dedistorted_width);
 
 		if (tile.input_width < PISP_BACK_END_MIN_TILE_WIDTH || tile.input_height < PISP_BACK_END_MIN_TILE_HEIGHT)
 			throw std::runtime_error("Tile too small at input");
+
+		if (variant_ >= BERYL && tile.dedistorted_width < PISP_BACK_END_MIN_TILE_WIDTH)
+			throw std::runtime_error("Tile too small after dedistort");
 
 		for (unsigned int i = 0; i < variant_.back_end_num_branches(0); i++)
 		{
 			if ((config_->get_global().rgb_enables & get_flag_for_branch(RgbEnable::Output0, i)) == 0)
 				continue;
 
-			unsigned int width_after_crop = tile.input_width - tile.crop_x_start[i] - tile.crop_x_end[i];
-			unsigned int height_after_crop = tile.input_height - tile.crop_y_start[i] - tile.crop_y_end[i];
+			unsigned int width_after_crop = (variant_ >= BERYL) ? tile.crop_width[i] : (tile.input_width - tile.crop_x_start[i] - tile.crop_x_end[i]);
+			unsigned int height_after_crop = (variant_ >= BERYL) ? tile.crop_height[i] : (tile.input_height - tile.crop_y_start[i] - tile.crop_y_end[i]);
 
 			// A tile that gets cropped away completely can't produce output, and vice versa.
 			PISP_ASSERT((width_after_crop * height_after_crop == 0) ==
@@ -504,8 +510,10 @@ void BackEnd::check_tiles(const TilingConfig &tiling_config)
 				if (width_after_crop < PISP_BACK_END_MIN_TILE_WIDTH)
 				{
 					PISP_LOG(warning, "Tile narrow after crop: tile " << tile_num << " output " << i
-						 << " input_width " << tile.input_width << " after_crop " << width_after_crop
-						 << " crop start " << tile.crop_x_start[i] << " end " << tile.crop_x_end[i]);
+						 << " input_width " << (variant_ >= BERYL ? tile.dedistorted_width : tile.input_width)
+						 << " after_crop " << width_after_crop
+						 << " crop start " << tile.crop_x_start[i]
+						 << " width " << (variant_ >= BERYL ? tile.crop_width[i] : tile.crop_x_end[i]));
 					if (!rh_edge)
 						throw std::runtime_error("Tile width too small after crop");
 				}
@@ -515,7 +523,7 @@ void BackEnd::check_tiles(const TilingConfig &tiling_config)
 				if (tile.resample_in_width[i] < PISP_BACK_END_MIN_TILE_WIDTH)
 				{
 					PISP_LOG(warning, "Tile narrow after downscale: tile " << tile_num << " output " << i
-						 << " input_width " << tile.input_width << " after_crop " << width_after_crop
+						 << " input_width " << tile.dedistorted_width << " after_crop " << width_after_crop
 						 << " after downscale " << tile.resample_in_width[i]);
 					if (!rh_edge)
 						throw std::runtime_error("Tile width too small after downscale");
@@ -673,6 +681,7 @@ void BackEnd::update_smart_resize()
 	for (unsigned int i = 0; i < variant_.back_end_num_branches(0); i++)
 	{
 		// First get the size of the input to the rescalers. The crops are zero when not in use.
+		// Although dedistort can change tile width, assume it does not change full-image dimensions.
 		uint16_t input_width = config_->get_crop(i).width;
 		if (!input_width)
 			input_width = post_transpose_width();
@@ -944,6 +953,8 @@ void BackEnd::retile_pipeline(TilingConfig const &tiling_config)
 		t.input_offset_y = tiles[i].input.input.y.offset;
 		t.input_width = tiles[i].input.input.x.length;
 		t.input_height = tiles[i].input.input.y.length;
+		t.dedistorted_offset_x = tiles[i].input.input.x.offset; // Placeholder: We don't currently implement "sliding tiles"
+		t.dedistorted_width = tiles[i].input.input.x.length; // Placeholder: We don't currently implement "sliding tiles"
 
 		if (tiles[i].input.output != tiles[i].input.input)
 			throw std::runtime_error("BackEnd::retile_pipeline: tiling error in Bayer pipe");
@@ -955,10 +966,21 @@ void BackEnd::retile_pipeline(TilingConfig const &tiling_config)
 			{
 				// If a tile produces no output there's no point sending anything down this branch, so ensure the crop
 				// "eats" everything and set everything else to zero.
-				t.crop_x_start[j] = t.input_width;
-				t.crop_x_end[j] = 0;
-				t.crop_y_start[j] = t.input_height;
-				t.crop_y_end[j] = 0;
+				if (variant_ < BERYL)
+				{
+					t.crop_x_start[j] = t.input_width;
+					t.crop_x_end[j] = 0;
+					t.crop_y_start[j] = t.input_height;
+					t.crop_y_end[j] = 0;
+				}
+				else
+				{
+					t.crop_x_start[j] = 0;
+					t.crop_y_start[j] = 0;
+					t.crop_width[j] = 0;
+					t.crop_height[j] = 0;
+				}
+
 				t.resample_in_width[j] = 0;
 				t.resample_in_height[j] = 0;
 				t.output_offset_x[j] = 0;
@@ -991,9 +1013,17 @@ void BackEnd::retile_pipeline(TilingConfig const &tiling_config)
 			}
 
 			t.crop_x_start[j] = downscale_crop.x.start;
-			t.crop_x_end[j] = downscale_crop.x.end;
 			t.crop_y_start[j] = downscale_crop.y.start;
-			t.crop_y_end[j] = downscale_crop.y.end;
+			if (variant_ < BERYL)
+			{
+				t.crop_x_end[j] = downscale_crop.x.end;
+				t.crop_y_end[j] = downscale_crop.y.end;
+			}
+			else
+			{
+				t.crop_width[j] = t.dedistorted_width - downscale_crop.x.start - downscale_crop.x.end;
+				t.crop_height[j] = t.input_height - downscale_crop.y.start - downscale_crop.y.end;
+			}
 			t.resample_in_width[j] = resample_size.x.length;
 			t.resample_in_height[j] = resample_size.y.length;
 			t.output_offset_x[j] = tiles[i].output[j].output.x.offset;

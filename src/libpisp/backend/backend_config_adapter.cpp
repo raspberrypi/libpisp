@@ -238,9 +238,9 @@ void BackendConfigAdapter::set_tile(unsigned int i, const BeTile &tile)
 			tiles[i].cac_grid_offset_x = tile.cac_grid_offset_x;
 			tiles[i].cac_grid_offset_y = tile.cac_grid_offset_y;
 			std::memcpy(tiles[i].crop_x_start, tile.crop_x_start.data(), sizeof(tile.crop_x_start));
-			std::memcpy(tiles[i].crop_x_end, tile.crop_x_end.data(), sizeof(tile.crop_x_end));
+			std::memcpy(tiles[i].crop_width, tile.crop_width.data(), sizeof(tile.crop_width));
 			std::memcpy(tiles[i].crop_y_start, tile.crop_y_start.data(), sizeof(tile.crop_y_start));
-			std::memcpy(tiles[i].crop_y_end, tile.crop_y_end.data(), sizeof(tile.crop_y_end));
+			std::memcpy(tiles[i].crop_height, tile.crop_height.data(), sizeof(tile.crop_height));
 			std::memcpy(tiles[i].resample_in_width, tile.resample_in_width.data(), sizeof(tile.resample_in_width));
 			std::memcpy(tiles[i].resample_in_height, tile.resample_in_height.data(), sizeof(tile.resample_in_height));
 			std::memcpy(tiles[i].output_offset_x, tile.output_offset_x.data(), sizeof(tile.output_offset_x));
@@ -257,6 +257,8 @@ void BackendConfigAdapter::set_tile(unsigned int i, const BeTile &tile)
 			tiles[i].tonemap_lores_offset_y = tile.tonemap_lores_offset_y;
 			tiles[i].dedistort_grid_offset_x = tile.dedistort_grid_offset_x;
 			tiles[i].dedistort_grid_offset_y = tile.dedistort_grid_offset_y;
+			tiles[i].dedistorted_offset_x = tile.dedistorted_offset_x;
+			tiles[i].dedistorted_width = tile.dedistorted_width;
 			std::memcpy(tiles[i].resample_start_context_x, tile.resample_start_context_x.data(), sizeof(tile.resample_start_context_x));
 			std::memcpy(tiles[i].resample_start_context_y, tile.resample_start_context_y.data(), sizeof(tile.resample_start_context_y));			
 
@@ -332,9 +334,9 @@ BeTile BackendConfigAdapter::get_tile(unsigned int i) const
 			tile.cac_grid_offset_x = tiles[i].cac_grid_offset_x;
 			tile.cac_grid_offset_y = tiles[i].cac_grid_offset_y;
 			std::memcpy(tile.crop_x_start.data(), tiles[i].crop_x_start, sizeof(tile.crop_x_start));
-			std::memcpy(tile.crop_x_end.data(), tiles[i].crop_x_end, sizeof(tile.crop_x_end));
+			std::memcpy(tile.crop_width.data(), tiles[i].crop_width, sizeof(tile.crop_width));
 			std::memcpy(tile.crop_y_start.data(), tiles[i].crop_y_start, sizeof(tile.crop_y_start));
-			std::memcpy(tile.crop_y_end.data(), tiles[i].crop_y_end, sizeof(tile.crop_y_end));
+			std::memcpy(tile.crop_height.data(), tiles[i].crop_height, sizeof(tile.crop_height));
 			std::memcpy(tile.resample_in_width.data(), tiles[i].resample_in_width, sizeof(tile.resample_in_width));
 			std::memcpy(tile.resample_in_height.data(), tiles[i].resample_in_height, sizeof(tile.resample_in_height));
 			std::memcpy(tile.output_offset_x.data(), tiles[i].output_offset_x, sizeof(tile.output_offset_x));
@@ -351,6 +353,8 @@ BeTile BackendConfigAdapter::get_tile(unsigned int i) const
 			tile.tonemap_lores_offset_y = tiles[i].tonemap_lores_offset_y;
 			tile.dedistort_grid_offset_x = tiles[i].dedistort_grid_offset_x;
 			tile.dedistort_grid_offset_y = tiles[i].dedistort_grid_offset_y;
+			tile.dedistorted_offset_x = tiles[i].dedistorted_offset_x;
+			tile.dedistorted_width = tiles[i].dedistorted_width;
 
 			std::memcpy(tile.resample_start_context_x.data(), tiles[i].resample_start_context_x, sizeof(tile.resample_start_context_x));
 			std::memcpy(tile.resample_start_context_y.data(), tiles[i].resample_start_context_y, sizeof(tile.resample_start_context_y));			

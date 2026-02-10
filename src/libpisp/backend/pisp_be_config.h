@@ -1113,37 +1113,40 @@ struct pisp_tile2 {
 	__u32 tonemap_lores_offset_x;
 	__u32 tonemap_lores_offset_y;
 	// 64 bytes
-	__u32 dedistort_grid_offset_x;
-	__u32 dedistort_grid_offset_y;
-	// 72 bytes
-	__u16 crop_x_start[PISP_BACK_END_NUM_OUTPUTS];
-	__u16 crop_x_end[PISP_BACK_END_NUM_OUTPUTS];
-	__u16 crop_y_start[PISP_BACK_END_NUM_OUTPUTS];
-	__u16 crop_y_end[PISP_BACK_END_NUM_OUTPUTS];
-	// 88 bytes
+	uint32_t dedistort_grid_offset_x;
+	uint32_t dedistort_grid_offset_y;
+	// The following 2 NEW fields should always be filled (even when dedistort disabled)
+	uint16_t dedistorted_offset_x;
+	uint16_t dedistorted_width;
+	// 76 bytes
+	uint16_t crop_x_start[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t crop_y_start[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t crop_width[PISP_BACK_END_NUM_OUTPUTS]; // Changed from start,end to X,Y,W,H style
+	uint16_t crop_height[PISP_BACK_END_NUM_OUTPUTS];
+	// 92 bytes
 	// downscale phase is no longer per-component; only per-output
-	__u16 downscale_phase_x[PISP_BACK_END_NUM_OUTPUTS];
-	__u16 downscale_phase_y[PISP_BACK_END_NUM_OUTPUTS];
-	// 96 bytes
-	__u16 resample_in_width[PISP_BACK_END_NUM_OUTPUTS];
-	__u16 resample_in_height[PISP_BACK_END_NUM_OUTPUTS];
-	// 104 bytes
+	uint16_t downscale_phase_x[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t downscale_phase_y[PISP_BACK_END_NUM_OUTPUTS];
+	// 100 bytes
+	uint16_t resample_in_width[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t resample_in_height[PISP_BACK_END_NUM_OUTPUTS];
+	// 108 bytes
 	// resample phase is no longer per-component; only per-output
-	__u16 resample_phase_x[PISP_BACK_END_NUM_OUTPUTS];
-	__u16 resample_phase_y[PISP_BACK_END_NUM_OUTPUTS];
-	// 112 bytes
-	__u8 resample_start_context_x[PISP_BACK_END_NUM_OUTPUTS];
-	__u8 resample_start_context_y[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t resample_phase_x[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t resample_phase_y[PISP_BACK_END_NUM_OUTPUTS];
 	// 116 bytes
-	__u16 output_offset_x[PISP_BACK_END_NUM_OUTPUTS];
-	__u16 output_offset_y[PISP_BACK_END_NUM_OUTPUTS];
-	__u16 output_width[PISP_BACK_END_NUM_OUTPUTS];
-	__u16 output_height[PISP_BACK_END_NUM_OUTPUTS];
-	// 132 bytes
-	__u32 output_addr_offset[PISP_BACK_END_NUM_OUTPUTS];
-	__u32 output_addr_offset2[PISP_BACK_END_NUM_OUTPUTS];
-	// 148 bytes
-	__u8 pad1[12];
+	uint8_t resample_start_context_x[PISP_BACK_END_NUM_OUTPUTS];
+	uint8_t resample_start_context_y[PISP_BACK_END_NUM_OUTPUTS];
+	// 120 bytes
+	uint16_t output_offset_x[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t output_offset_y[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t output_width[PISP_BACK_END_NUM_OUTPUTS];
+	uint16_t output_height[PISP_BACK_END_NUM_OUTPUTS];
+	// 136 bytes
+	uint32_t output_addr_offset[PISP_BACK_END_NUM_OUTPUTS];
+	uint32_t output_addr_offset2[PISP_BACK_END_NUM_OUTPUTS];
+	// 152 bytes
+	uint8_t pad1[8];
 	// 160 bytes
 } __attribute__((packed));
 
