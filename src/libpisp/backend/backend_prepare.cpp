@@ -884,13 +884,14 @@ void BackEnd::update_tiles()
 		{
 			for (unsigned i = 0; i <= PISP_BE_DDX_GRID_SIZE; ++i)
 			{
-				int xpos = (i << PISP_BE_DDX_STEP_PRECISION) / dd.grid_step_x - dd.offset_x;
-				int left = xpos, right = xpos;
+				int xpos = (i << PISP_BE_DDX_STEP_PRECISION) / (double)dd.grid_step_x - dd.offset_x;
+				double left = xpos + 1024.0;
+				double right = xpos - 1024.0;
 				for (unsigned j = 0; j <= PISP_BE_DDX_GRID_SIZE; ++j)
 				{
 					// Since we're ignoring context, assume sub-pixel accuracy is not needed either!
-					int ipos = xpos + ((dd.lut[j][i] + 8) >> 4);
-					ipos = std::clamp(ipos, 0, 0 + post_transpose_width());
+					double ipos = xpos + 0.0625 * dd.lut[j][i];
+					ipos = std::clamp(ipos, 0.0, 0.0 + post_transpose_width());
 					if (ipos < left)
 						left = ipos;
 					if (ipos > right)
@@ -901,6 +902,15 @@ void BackEnd::update_tiles()
 				tiling_config.dedistort_pwls[2].append(right, xpos); // input->output min (right)
 			}
 		}
+
+		// We need context both before and after dedistortion, and in any case the previous fixed amount was ungenerous.
+		// Add a fixed allowance for each of the Bayer and RGB pipelines (up to the split), if any stage requires it.
+		BayerEnables bayer_enables = config_->get_global().bayer_enables;
+		tiling_config.has_bayer_context =
+			!!(bayer_enables & (BayerEnable::Dpc | BayerEnable::Geq | BayerEnable::Tdn | BayerEnable::Sdn |
+								BayerEnable::Stitch | BayerEnable::Cdn | BayerEnable::Lsc | BayerEnable::Tonemap2 |
+								BayerEnable::Cac | BayerEnable::Debin | BayerEnable::Demosaic));
+		tiling_config.has_rgb_context = !!(rgb_enables & (RgbEnable::FalseColour | RgbEnable::Sharpen));
 
 		// Set compressed_input to false as otherwise the tiling would pad tiles up to multiples of 8 pixels even when these lie
 		// outside the actual image width (and we've chosen not to handle compression like that).
@@ -953,8 +963,8 @@ void BackEnd::retile_pipeline(TilingConfig const &tiling_config)
 		t.input_offset_y = tiles[i].input.input.y.offset;
 		t.input_width = tiles[i].input.input.x.length;
 		t.input_height = tiles[i].input.input.y.length;
-		t.dedistorted_offset_x = tiles[i].input.input.x.offset; // Placeholder: We don't currently implement "sliding tiles"
-		t.dedistorted_width = tiles[i].input.input.x.length; // Placeholder: We don't currently implement "sliding tiles"
+		t.dedistorted_offset_x = tiles[i].dedistort.output.x.offset;
+		t.dedistorted_width = tiles[i].dedistort.output.x.length;
 
 		if (tiles[i].input.output != tiles[i].input.input)
 			throw std::runtime_error("BackEnd::retile_pipeline: tiling error in Bayer pipe");
@@ -1153,10 +1163,8 @@ void BackEnd::finalise_tiling()
 		if (config_->get_global().rgb_enables & RgbEnable::Dedistort)
 		{
 			const BeDedistortionConfig &dd = config_->get_dedistort();
-			// XXX Dedistort currently "borrows" CAC grid offsets! Assume either they're never used together,
-			// or they have identical grid boundaries (though different grid sizes), which is typically true.
-			t.dedistort_grid_offset_x = (t.input_offset_x + config_->get_dedistort().offset_x) * dd.grid_step_x;
-			t.dedistort_grid_offset_y = (t.input_offset_y + config_->get_dedistort().offset_y) * dd.grid_step_y;
+			t.dedistort_grid_offset_x = (t.dedistorted_offset_x + dd.offset_x) * dd.grid_step_x;
+			t.dedistort_grid_offset_y = (t.input_offset_y + dd.offset_y) * dd.grid_step_y;
 		}
 
 		if (bayer_enables & BayerEnable::Tonemap2)

@@ -21,8 +21,9 @@ constexpr int NumOutputBranches = 2;
 struct Tile
 {
 	tiling::Region input;
+	tiling::Region bayer_context;
 	tiling::Region dedistort;
-	tiling::Region context;
+	tiling::Region rgb_context;
 	tiling::Region crop[NumOutputBranches];
 	tiling::Region downscale[NumOutputBranches];
 	tiling::Region resample[NumOutputBranches];
@@ -47,6 +48,8 @@ struct TilingConfig
 	tiling::Length2 output_max_alignment[NumOutputBranches]; // "preferred" alignment
 	tiling::Length2 output_min_alignment[NumOutputBranches]; // "required" minimum alignment
 	Pwl dedistort_pwls[3];
+	bool has_bayer_context;
+	bool has_rgb_context;
 };
 
 inline std::ostream &operator<<(std::ostream &os, TilingConfig const &tc)

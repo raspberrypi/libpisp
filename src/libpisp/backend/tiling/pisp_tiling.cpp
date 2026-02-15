@@ -53,14 +53,20 @@ void tile_pipeline(TilingConfig const &config, Tile *tiles, int num_tiles, Lengt
 									config.compressed_input ? CompressionAlign : 0);
 	InputStage input_stage("input", &pipeline, input_config, offsetof(Tile, input));
 
-	DedistortStage::Config dedistort_config(config.dedistort_pwls);
-	DedistortStage dedistort_stage("dedistort", &input_stage, dedistort_config, offsetof(Tile, dedistort));
-	
-	ContextStage::Config context_config(Crop2(Crop(PipelineContextX), Crop(PipelineContextY)),
+	ContextStage::Config context_config(Crop2(Crop(config.has_bayer_context ? PipelineContextX : 0),
+											  Crop(config.has_bayer_context ? PipelineContextY : 0)),
 										Length2(PipelineAlignX, PipelineAlignY));
-	ContextStage context_stage("context", &dedistort_stage, context_config, offsetof(Tile, context));
+	ContextStage bayer_context_stage("bayer_context", &input_stage, context_config, offsetof(Tile, bayer_context));
 
-	SplitStage split_stage("split", &context_stage);
+	DedistortStage::Config dedistort_config(config.dedistort_pwls);
+	DedistortStage dedistort_stage("dedistort", &bayer_context_stage, dedistort_config, offsetof(Tile, dedistort));
+
+	ContextStage::Config context_config2(Crop2(Crop(config.has_rgb_context ? PipelineContextX : 0),
+											   Crop(config.has_rgb_context ? PipelineContextY : 0)),
+										 Length2(PipelineAlignX, PipelineAlignY));
+	ContextStage rgb_context_stage("rgb_context", &dedistort_stage, context_config2, offsetof(Tile, rgb_context));
+
+	SplitStage split_stage("split", &rgb_context_stage);
 
 	std::unique_ptr<Stage> crop_stages[NumOutputBranches];
 	std::unique_ptr<Stage> downscale_stages[NumOutputBranches];

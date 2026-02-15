@@ -12,6 +12,13 @@
 
 using namespace tiling;
 
+// Actual context requirement is +/- 1 after floor or ceil (for cubic spline)
+// but we'll assume +/- 2 to allow for rounding errors during grid calculations.
+// Dedistort requires 2-pixel horizontal alignment each side (which "context"
+// stages normally provide, but we enforce it here as well).
+static constexpr int DedistortContext = 2;
+static constexpr int DedistortAlign = 2;
+
 DedistortStage::DedistortStage(char const *name, Stage *upstream, Config const &config, int struct_offset)
 	: BasicStage(name, upstream->get_pipeline(), upstream, struct_offset), config_(config)
 {
@@ -24,7 +31,9 @@ void DedistortStage::push_start_up(int output_start, Dir dir)
 	int input_start = output_start;
 	if (dir == Dir::X && output_start > 0 && !config_.pwls[0].empty())
 	{
-		input_start = config_.pwls[0].eval(output_start);
+		// pwls[0] gives the leftmost input needed in any row, to yield the output_start column
+		input_start = config_.pwls[0].eval(output_start) - DedistortContext;
+		input_start &= -DedistortAlign;
 		if (input_start < 0)
 			input_start = 0;
 	}
@@ -38,15 +47,21 @@ void DedistortStage::push_start_up(int output_start, Dir dir)
 
 int DedistortStage::push_end_down(int input_end, Dir dir)
 {
-	// incomprehensible comment removed
 	PISP_LOG(debug, "(" << name_ << ") Enter with input_end " << input_end);
 
 	int output_end = input_end;
 	if (dir == Dir::X && input_end < get_input_image_size()[dir] && !config_.pwls[2].empty())
 	{
-		output_end = config_.pwls[2].eval(input_end);
-		if (output_end > input_end)
-			output_end = input_end;
+		int maxw = get_pipeline()->get_config().max_tile_size[dir];
+
+		// pwls[2] gives the rightmost output column that can be generated for all rows
+		output_end =
+			config_.pwls[2].eval((input_end < get_input_image_size()[dir]) ? input_end - DedistortContext : input_end);
+		if (output_end + 1 >= get_output_image_size()[dir])
+			output_end = get_output_image_size()[dir];
+		if (output_end > output_interval_.offset + maxw)
+			output_end = output_interval_.offset + maxw;
+		output_end &= -DedistortAlign;
 	}
 	input_interval_.set_end(input_end);
 	output_interval_.set_end(output_end);
@@ -65,7 +80,9 @@ void DedistortStage::push_end_up(int output_end, Dir dir)
 	int input_end = output_end;
 	if (dir == Dir::X && output_end < get_output_image_size()[dir] && !config_.pwls[1].empty())
 	{
-		input_end = config_.pwls[1].eval(output_end);
+		// pwls[1] gives the rightmost input needed in any row, to yield the output_end column
+		input_end = (int)ceil(config_.pwls[1].eval(output_end) + DedistortContext);
+		input_end = (input_end + (DedistortAlign - 1)) & -DedistortAlign;
 		if (input_end > get_input_image_size()[dir])
 			input_end = get_input_image_size()[dir];
 	}
@@ -80,10 +97,12 @@ void DedistortStage::push_crop_down(Interval interval, Dir dir)
 	PISP_LOG(debug, "(" << name_ << ") Enter with interval " << interval);
 	PISP_ASSERT(input_interval_ < interval);
 
-	// I have no idea what this method is supposed to do
-	output_interval_ = interval;
+	// When dedistort is disabled, it acts as a pass-through
+	if (dir != Dir::X || config_.pwls[0].empty())
+		output_interval_ = interval;
+
+	crop_ = interval - input_interval_;
 	input_interval_ = interval;
-	crop_ = input_interval_ - output_interval_;
 
 	PISP_LOG(debug, "(" << name_ << ") Exit with interval " << output_interval_);
 	downstream_->push_crop_down(output_interval_, dir);
