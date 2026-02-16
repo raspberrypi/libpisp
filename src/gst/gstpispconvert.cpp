@@ -482,10 +482,6 @@ static gboolean parse_output_caps(GstPispConvert *self, guint index, GstCaps *ca
 						GST_VIDEO_INFO_COLORIMETRY(&out_info).matrix, GST_VIDEO_INFO_COLORIMETRY(&out_info).range);
 	}
 
-	/* Default output colorspace to match input when unspecified */
-	if (!self->priv->out_colorspace[index])
-		self->priv->out_colorspace[index] = self->priv->in_colorspace;
-
 	if (!self->priv->out_format[index])
 	{
 		GST_ERROR_OBJECT(self, "Unsupported output%u format", index);
@@ -548,9 +544,6 @@ static gboolean parse_input_caps(GstPispConvert *self, GstCaps *caps)
 						self->priv->in_format, self->priv->in_colorspace,
 						GST_VIDEO_INFO_COLORIMETRY(&in_info).matrix, GST_VIDEO_INFO_COLORIMETRY(&in_info).range);
 	}
-
-	if (!self->priv->in_colorspace)
-		self->priv->in_colorspace = "jpeg";
 
 	if (!self->priv->in_format)
 	{
@@ -854,8 +847,11 @@ static gboolean gst_pisp_convert_configure(GstPispConvert *self)
 		self->priv->in_hw_stride = input_cfg.stride;
 		self->priv->backend->SetInputFormat(input_cfg);
 
-		GST_INFO_OBJECT(self, "Input: %ux%u %s (stride: gst=%u hw=%u)", self->priv->in_width, self->priv->in_height,
-						self->priv->in_format, self->priv->in_stride, self->priv->in_hw_stride);
+		GST_INFO_OBJECT(self, "Input: %ux%u %s (stride: gst=%u hw=%u) colorspace %s", self->priv->in_width, self->priv->in_height,
+						self->priv->in_format, self->priv->in_stride, self->priv->in_hw_stride, self->priv->in_colorspace);
+
+		if (!self->priv->in_colorspace)
+			self->priv->in_colorspace = "jpeg";
 
 		/* Configure each enabled output - first pass: formats and enables */
 		pisp_be_output_format_config output_cfg[PISP_NUM_OUTPUTS] = {};
@@ -882,13 +878,16 @@ static gboolean gst_pisp_convert_configure(GstPispConvert *self)
 				 g_str_equal(self->priv->out_format[i], "XRGB8888")) && !self->priv->variant->BackendRGB32Supported(0))
 				GST_WARNING_OBJECT(self, "pisp_be HW does not support 32-bit RGB output, the image will be corrupt.");
 
+			if (!self->priv->out_colorspace[i])
+				self->priv->out_colorspace[i] = self->priv->in_colorspace;
+
 			global.rgb_enables |= configure_colour_conversion(self->priv->backend.get(),
 								self->priv->in_format, self->priv->in_colorspace,
 								self->priv->out_format[i], self->priv->out_colorspace[i], i);
 
-			GST_INFO_OBJECT(self, "Output%d: %ux%u %s (stride: gst=%u hw=%u)", i, self->priv->out_width[i],
+			GST_INFO_OBJECT(self, "Output%d: %ux%u %s (stride: gst=%u hw=%u) colorspace %s", i, self->priv->out_width[i],
 							self->priv->out_height[i], self->priv->out_format[i], self->priv->out_stride[i],
-							self->priv->out_hw_stride[i]);
+							self->priv->out_hw_stride[i], self->priv->out_colorspace[i]);
 		}
 
 		self->priv->backend->SetGlobal(global);
