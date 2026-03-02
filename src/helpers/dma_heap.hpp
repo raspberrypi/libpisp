@@ -51,6 +51,7 @@ public:
 	}
 
 	DmaHeap(DmaHeap &&other) = default;
+	DmaHeap &operator=(DmaHeap &&other) = default;
 
 	bool Valid() const
 	{
