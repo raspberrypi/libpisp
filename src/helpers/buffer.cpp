@@ -62,6 +62,11 @@ const std::array<uint8_t *, 3> &Buffer::Sync::Get() const
 	return buffer_.get().mem;
 }
 
+const std::array<size_t, 3> &Buffer::Sync::Size() const
+{
+	return buffer_.get().Size();
+}
+
 Buffer::Buffer()
 	: size(), mem(), fd({ -1, -1, -1 })
 {
