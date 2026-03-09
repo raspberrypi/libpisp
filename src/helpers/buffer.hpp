@@ -63,6 +63,7 @@ struct Buffer::Sync
 	~Sync();
 
 	const std::array<uint8_t *, 3> &Get() const;
+	const std::array<size_t, 3> &Size() const;
 
 private:
 	BufferRef buffer_;
