@@ -1,8 +1,11 @@
-name: libpisp tests
+name: Camera Tests
 
 on:
   pull_request_target:
     branches: [main]
+
+permissions:
+  statuses: write
 
 jobs:
   trigger-camera-tests:
@@ -14,7 +17,7 @@ jobs:
       - name: Checkout camera_tester
         env:
           CAMERA_TESTER_URL: ${{ secrets.CAMERA_TESTER_URL }}
-          CAMERA_TESTER_PROJECT_ID: ${{ secrets.CAMERA_TESTER_PROJECT_ID }}
+          CAMERA_TESTER_PROJECT_ID: ${{ vars.CAMERA_TESTER_PROJECT_ID }}
           CAMERA_TESTER_API_TOKEN: ${{ secrets.CAMERA_TESTER_API_TOKEN }}
         run: |
           CLONE_URL=$(curl -sf -H "PRIVATE-TOKEN: ${CAMERA_TESTER_API_TOKEN}" \
@@ -39,7 +42,7 @@ jobs:
           GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
           GITHUB_BASE_REF: ${{ github.base_ref }}
           CAMERA_TESTER_URL: ${{ secrets.CAMERA_TESTER_URL }}
-          CAMERA_TESTER_PROJECT_ID: ${{ secrets.CAMERA_TESTER_PROJECT_ID }}
+          CAMERA_TESTER_PROJECT_ID: ${{ vars.CAMERA_TESTER_PROJECT_ID }}
           CAMERA_TESTER_TRIGGER_TOKEN: ${{ secrets.CAMERA_TESTER_TRIGGER_TOKEN }}
           CAMERA_TESTER_API_TOKEN: ${{ secrets.CAMERA_TESTER_API_TOKEN }}
         run: |
