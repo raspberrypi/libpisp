@@ -6,6 +6,8 @@ Rules-Requires-Root: no
 Build-Depends: debhelper-compat (= 13),
                libboost-log-dev,
                libboost-thread-dev,
+               libgstreamer-plugins-base1.0-dev,
+               libgstreamer1.0-dev,
                meson,
                nlohmann-json3-dev,
                pkgconf
@@ -44,6 +46,16 @@ Description: Helper library for the PiSP hardware block (runtime)
  Bayer or RGB/YUV image with a set of user defined configuration.
  .
  This package contains the runtime library.
+
+Package: gstreamer1.0-pispconvert
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${misc:Depends},
+         ${shlibs:Depends}
+Description: GStreamer element for PiSP hardware image conversion
+ This package provides a GStreamer plugin that uses the PiSP (Pi Image
+ Signal Processor) hardware for image conversion.
 
 Package: libpisp-common
 Architecture: all
