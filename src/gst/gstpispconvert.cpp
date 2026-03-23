@@ -1515,7 +1515,7 @@ static gboolean plugin_init(GstPlugin *plugin)
 }
 
 #define PACKAGE "pispconvert"
-#define VERSION "1.3.0"
+#define VERSION "1.4.0"
 #define GST_PACKAGE_NAME "GStreamer PiSP Plugin"
 #define GST_PACKAGE_ORIGIN "https://github.com/raspberrypi/libpisp"
 #define GST_LICENSE "BSD"
