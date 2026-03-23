@@ -18,13 +18,16 @@ import hashlib
 
 
 class ConvertTester:
-    def __init__(self, convert_binary, output_dir=None, input_dir=None, reference_dir=None):
+    def __init__(self, convert_binary, output_dir=None, input_dir=None, reference_dir=None, use_gstreamer=False, gst_plugin_path=None):
         """Initialize the tester with the path to the convert binary."""
         self.convert_binary = convert_binary
         self.output_dir = output_dir
         self.input_dir = input_dir
         self.reference_dir = reference_dir
-        if not os.path.exists(convert_binary):
+        self.use_gstreamer = use_gstreamer
+        self.gst_plugin_path = gst_plugin_path
+
+        if not use_gstreamer and not os.path.exists(convert_binary):
             raise FileNotFoundError(f"Convert binary not found: {convert_binary}")
 
         # Test cases: (input_file, output_file, input_format, output_format, reference_file)
@@ -34,24 +37,103 @@ class ConvertTester:
                 "output_file": "out_4056x3050_12168s_rgb888.rgb",
                 "input_format": "4056:3040:4056:YUV420P",
                 "output_format": "4056:3040:12168:RGB888",
-                "reference_file": "ref_4056x3050_12168s_rgb888.rgb"
+                "reference_file": "ref_4056x3050_12168s_rgb888.rgb",
+                "skip_gst": False
             },
             {
                 "input_file": "conv_800x600_1200s_422_yuyv.yuv",
                 "output_file": "out_1600x1200_422p.yuv",
                 "input_format": "800:600:1600:YUYV",
                 "output_format": "1600:1200:1600:YUV422P",
-                "reference_file": "ref_1600x1200_422p.yuv"
+                "reference_file": "ref_1600x1200_1600_422p.yuv",
+                "skip_gst": False
             },
             {
                 "input_file": "conv_rgb888_800x600_2432s.rgb",
                 "output_file": "out_4000x3000_4032s.yuv",
                 "input_format": "800:600:2432:RGB888",
-                "output_format": "4000:3000:0:YUV444P",
-                "reference_file": "ref_4000x3000_4032s.yuv"
+                "output_format": "4000:3000:4032:YUV444P",
+                "reference_file": "ref_4000x3000_4032s.yuv",
+                "skip_gst": True
             },
             # Add more test cases here as needed
         ]
+
+    def _parse_format(self, format_str):
+        """Parse format string like '4056:3040:4056:YUV420P' into components."""
+        parts = format_str.split(':')
+        if len(parts) != 4:
+            raise ValueError(f"Invalid format string: {format_str}")
+        return {
+            'width': int(parts[0]),
+            'height': int(parts[1]),
+            'stride': int(parts[2]),
+            'format': parts[3]
+        }
+
+    def _pisp_to_gst_format(self, pisp_format):
+        """Convert PiSP format to GStreamer format string."""
+        format_map = {
+            'YUV420P': 'I420',
+            'YVU420P': 'YV12',
+            'YUV422P': 'Y42B',
+            'YUV444P': 'Y444',
+            'YUYV': 'YUY2',
+            'UYVY': 'UYVY',
+            'RGB888': 'RGB',
+        }
+        return format_map.get(pisp_format, pisp_format)
+
+    def run_gstreamer(self, input_file, output_file, input_format, output_format):
+        """Run GStreamer pipeline with pispconvert."""
+        # Use input directory if specified
+        if self.input_dir:
+            input_file = os.path.join(self.input_dir, input_file)
+
+        # Use output directory if specified
+        if self.output_dir:
+            output_file = os.path.join(self.output_dir, output_file)
+
+        # Parse format strings
+        in_fmt = self._parse_format(input_format)
+        out_fmt = self._parse_format(output_format)
+
+        # Convert to GStreamer format names
+        gst_in_format = self._pisp_to_gst_format(in_fmt['format'])
+        gst_out_format = self._pisp_to_gst_format(out_fmt['format'])
+
+        # Build GStreamer pipeline
+        pipeline = [
+            'gst-launch-1.0',
+            'filesrc', f'location={input_file}', '!',
+            'rawvideoparse',
+            f'width={in_fmt["width"]}',
+            f'height={in_fmt["height"]}',
+            f'format={gst_in_format.lower()}',
+            'framerate=30/1', '!',
+            'pispconvert', '!',
+            f'video/x-raw,format={gst_out_format},width={out_fmt["width"]},height={out_fmt["height"]}', '!',
+            'filesink', f'location={output_file}'
+        ]
+
+        print(f"Running GStreamer pipeline:")
+        print(' '.join(pipeline))
+
+        # Set GST_PLUGIN_PATH environment variable if specified
+        env = os.environ.copy()
+        if self.gst_plugin_path:
+            env['GST_PLUGIN_PATH'] = self.gst_plugin_path
+            print(f"GST_PLUGIN_PATH={self.gst_plugin_path}")
+
+        try:
+            result = subprocess.run(pipeline, capture_output=True, text=True, check=True, env=env)
+            print("GStreamer pipeline completed successfully")
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"GStreamer pipeline failed with exit code {e.returncode}")
+            print(f"stdout: {e.stdout}")
+            print(f"stderr: {e.stderr}")
+            return False
 
     def run_convert(self, input_file, output_file, input_format, output_format):
         """Run the convert utility with the specified parameters."""
@@ -137,13 +219,26 @@ class ConvertTester:
             print(f"Error: Input file {input_file} does not exist")
             return False
 
-        # Run the convert utility
-        success = self.run_convert(
-            test_case['input_file'],
-            test_case['output_file'],
-            test_case['input_format'],
-            test_case['output_format']
-        )
+        # Skip GStreamer test if marked to skip
+        if self.use_gstreamer and test_case.get('skip_gst', False):
+            print(f"SKIPPED: Test case marked as skip_gst=True")
+            return None  # Return None to indicate skipped
+
+        # Run the convert utility or GStreamer pipeline
+        if self.use_gstreamer:
+            success = self.run_gstreamer(
+                test_case['input_file'],
+                test_case['output_file'],
+                test_case['input_format'],
+                test_case['output_format']
+            )
+        else:
+            success = self.run_convert(
+                test_case['input_file'],
+                test_case['output_file'],
+                test_case['input_format'],
+                test_case['output_format']
+            )
 
         if not success:
             return False
@@ -161,12 +256,17 @@ class ConvertTester:
                 output_file = os.path.join(self.output_dir, test_case['output_file'])
             return self.compare_files(output_file, reference_file)
         else:
-            print(f"Reference file {reference_file} not found, skipping comparison")
-            return True
+            print(f"Reference file {reference_file} not found")
+            return False
 
     def run_all_tests(self):
         """Run all test cases."""
-        print(f"Testing convert utility: {self.convert_binary}")
+        if self.use_gstreamer:
+            print("Testing with GStreamer pispconvert plugin")
+            if self.gst_plugin_path:
+                print(f"GST_PLUGIN_PATH: {self.gst_plugin_path}")
+        else:
+            print(f"Testing convert utility: {self.convert_binary}")
         if self.input_dir:
             print(f"Input directory: {self.input_dir}")
         if self.output_dir:
@@ -177,11 +277,16 @@ class ConvertTester:
 
         passed = 0
         failed = 0
+        skipped = 0
 
         for i, test_case in enumerate(self.test_cases, 1):
             print(f"\n--- Test case {i}/{len(self.test_cases)} ---")
 
-            if self.run_test_case(test_case):
+            result = self.run_test_case(test_case)
+            if result is None:
+                skipped += 1
+                print("⊘ Test SKIPPED")
+            elif result:
                 passed += 1
                 print("✓ Test PASSED")
             else:
@@ -191,6 +296,7 @@ class ConvertTester:
         print(f"\n=== Test Summary ===")
         print(f"Passed: {passed}")
         print(f"Failed: {failed}")
+        print(f"Skipped: {skipped}")
         print(f"Total: {len(self.test_cases)}")
 
         return failed == 0
@@ -198,16 +304,31 @@ class ConvertTester:
 
 def main():
     parser = argparse.ArgumentParser(description="Test script for libpisp convert utility")
-    parser.add_argument("convert_binary", help="Path to the convert binary")
+    parser.add_argument("convert_binary", nargs='?', default=None, help="Path to the convert binary (not needed with --gst-plugin-path)")
     parser.add_argument("--test-dir", help="Directory containing test files")
     parser.add_argument("--in", dest="input_dir", help="Directory containing input files")
     parser.add_argument("--out", help="Directory where output files will be written")
     parser.add_argument("--ref", help="Directory containing reference files")
+    parser.add_argument("--gst-plugin-path", help="Path to GStreamer plugin directory (enables GStreamer testing)")
 
     args = parser.parse_args()
 
     try:
-        tester = ConvertTester(args.convert_binary, args.out, args.input_dir, args.ref)
+        # Determine if using GStreamer based on --gst-plugin-path
+        use_gstreamer = args.gst_plugin_path is not None
+
+        # Validate arguments
+        if not use_gstreamer and not args.convert_binary:
+            parser.error("convert_binary is required unless --gst-plugin-path is specified")
+
+        tester = ConvertTester(
+            args.convert_binary,
+            args.out,
+            args.input_dir,
+            args.ref,
+            use_gstreamer=use_gstreamer,
+            gst_plugin_path=args.gst_plugin_path
+        )
 
         # Change to test directory if specified
         if args.test_dir:

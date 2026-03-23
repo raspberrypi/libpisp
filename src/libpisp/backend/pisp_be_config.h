@@ -8,6 +8,7 @@
 #ifndef _PISP_BE_CONFIG_H_
 #define _PISP_BE_CONFIG_H_
 
+#include <stdint.h>
 #include <linux/types.h>
 
 #include "common/pisp_common.h"
