@@ -3,13 +3,16 @@
 
 pisp_sources += files([
     'backend_device.cpp',
+    'buffer.cpp',
     'media_device.cpp',
     'v4l2_device.cpp'
     ])
 
 helper_headers = files([
     'backend_device.hpp',
+    'buffer.hpp',
     'device_fd.hpp',
+    'dma_heap.hpp',
     'media_device.hpp',
     'v4l2_device.hpp',
 ])
