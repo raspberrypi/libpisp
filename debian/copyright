@@ -6,10 +6,9 @@ Files: *
 Copyright: 2021-2025 Raspberry Pi Ltd.
 License: BSD-2-clause
 
-Files: */meson.build
+Files: LICENSES/CC0-1.0.txt
+       */meson.build
        meson_options.txt
-       utils/libpisp.wrap
-       utils/version.py
 Copyright: 2021-2023, Raspberry Pi Ltd.
 License: CC0-1.0
 
@@ -20,7 +19,8 @@ Files: src/libpisp/backend/pisp_be_config.h
 Copyright: 2021 - Raspberry Pi Ltd
 License: GPL-2.0-only-WITH-Linux-syscall-note
 
-Files: utils/checkstyle.py
+Files: LICENSES/GPL-2.0-or-later.txt
+       utils/checkstyle.py
 Copyright: 2018, Google Inc.
 License: GPL-2.0-or-later
 
