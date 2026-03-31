@@ -4,5 +4,6 @@ include:
 
 variables:
   SALSA_CI_DISABLE_BUILD_PACKAGE_I386: 1
-  SALSA_CI_DISABLE_BUILD_PACKAGE_ARM64: 0
+  SALSA_CI_DISABLE_BUILD_PACKAGE_ARM64: 1
+# See https://salsa.debian.org/salsa/support/-/issues/468
   SALSA_CI_DISABLE_LICENSERECON: 0
