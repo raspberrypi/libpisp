@@ -3,7 +3,7 @@ Source: https://github.com/raspberrypi/libpisp
 Upstream-Name: libpisp
 
 Files: *
-Copyright: 2021-2025 Raspberry Pi Ltd.
+Copyright: 2021-2026 Raspberry Pi Ltd.
 License: BSD-2-clause
 
 Files: LICENSES/CC0-1.0.txt
@@ -28,7 +28,7 @@ Files: debian/*
 Copyright: 2023-2025 Serge Schneider <serge@raspberrypi.com>
            2024-2025 Pragyansh Chaturvedi <pragyansh.chaturvedi@canonical.com>
            2025 Dave Jones <dave.jones@canonical.com>
-           2025 Collabora, Ltd.
+           2025-2026 Collabora, Ltd.
 License: BSD-2-clause
 
 License: BSD-2-clause
