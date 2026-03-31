@@ -70,3 +70,5 @@ pkg_mod.generate(libpisp,
 if get_option('examples')
     subdir('examples')
 endif
+
+subdir('gst')
