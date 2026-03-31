@@ -5,6 +5,7 @@ libpisp (1.4.0-1) UNRELEASED; urgency=medium
   * salsa-ci: enable licenserecon job
   * salsa-ci: disable arm64 job
   * salsa-ci: enable crossbuild arm64
+  * Remove redundant Priority field
 
  -- Dylan Aïssi <daissi@debian.org>  Tue, 31 Mar 2026 17:20:27 +0200
 
