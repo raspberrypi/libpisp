@@ -17,5 +17,14 @@ jobs:
         fetch-depth: 0
         clean: true
 
+    - name: Install ruff
+      run: pip install ruff
+
+    - name: Ruff check
+      run: ruff check utils/
+
+    - name: Ruff format
+      run: ruff format --check utils/
+
     - name: Check style
       run: ${{github.workspace}}/utils/checkstyle.py $(git log --format=%P -1 | awk '{print $1 ".." $2}')
