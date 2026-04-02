@@ -80,7 +80,7 @@ class ConvertTester:
             'YUV444P': 'Y444',
             'YUYV': 'YUY2',
             'UYVY': 'UYVY',
-            'RGB888': 'RGB',
+            'RGB888': 'BGR',
         }
         return format_map.get(pisp_format, pisp_format)
 
@@ -111,8 +111,9 @@ class ConvertTester:
             f'height={in_fmt["height"]}',
             f'format={gst_in_format.lower()}',
             'framerate=30/1', '!',
+            'video/x-raw,colorimetry=1:4:0:0', '!',
             'pispconvert', '!',
-            f'video/x-raw,format={gst_out_format},width={out_fmt["width"]},height={out_fmt["height"]}', '!',
+            f'video/x-raw,format={gst_out_format},width={out_fmt["width"]},height={out_fmt["height"]},colorimetry=1:4:0:0', '!',
             'filesink', f'location={output_file}'
         ]
 
