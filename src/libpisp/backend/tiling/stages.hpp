@@ -18,14 +18,19 @@ class Pipeline;
 class TilingException : public std::exception
 {
 public:
-	char const *what() const noexcept { return "Tiling Failed"; }
+	char const *what() const noexcept
+	{
+		return "Tiling Failed";
+	}
 };
 
 class Stage
 {
 public:
 	Stage(char const *name, Pipeline *pipeline, int struct_offset);
-	virtual ~Stage() {}
+	virtual ~Stage()
+	{
+	}
 	Pipeline *GetPipeline() const;
 	virtual Length2 GetInputImageSize() const = 0;
 	virtual Length2 GetOutputImageSize() const = 0;

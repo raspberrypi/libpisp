@@ -20,27 +20,67 @@ class Pwl
 public:
 	struct Interval
 	{
-		Interval(double _start, double _end) : start(_start), end(_end) {}
+		Interval(double _start, double _end) : start(_start), end(_end)
+		{
+		}
 		double start, end;
-		bool Contains(double value) { return value >= start && value <= end; }
-		double Clip(double value) { return value < start ? start : (value > end ? end : value); }
-		double Len() const { return end - start; }
+		bool Contains(double value)
+		{
+			return value >= start && value <= end;
+		}
+		double Clip(double value)
+		{
+			return value < start ? start : (value > end ? end : value);
+		}
+		double Len() const
+		{
+			return end - start;
+		}
 	};
 	struct Point
 	{
-		Point() : x(0), y(0) {}
-		Point(double _x, double _y) : x(_x), y(_y) {}
+		Point() : x(0), y(0)
+		{
+		}
+		Point(double _x, double _y) : x(_x), y(_y)
+		{
+		}
 		double x, y;
-		Point operator-(Point const &p) const { return Point(x - p.x, y - p.y); }
-		Point operator+(Point const &p) const { return Point(x + p.x, y + p.y); }
-		double operator%(Point const &p) const { return x * p.x + y * p.y; }
-		Point operator*(double f) const { return Point(x * f, y * f); }
-		Point operator/(double f) const { return Point(x / f, y / f); }
-		double Len2() const { return x * x + y * y; }
-		double Len() const { return std::sqrt(Len2()); }
+		Point operator-(Point const &p) const
+		{
+			return Point(x - p.x, y - p.y);
+		}
+		Point operator+(Point const &p) const
+		{
+			return Point(x + p.x, y + p.y);
+		}
+		double operator%(Point const &p) const
+		{
+			return x * p.x + y * p.y;
+		}
+		Point operator*(double f) const
+		{
+			return Point(x * f, y * f);
+		}
+		Point operator/(double f) const
+		{
+			return Point(x / f, y / f);
+		}
+		double Len2() const
+		{
+			return x * x + y * y;
+		}
+		double Len() const
+		{
+			return std::sqrt(Len2());
+		}
 	};
-	Pwl() {}
-	Pwl(std::vector<Point> const &points) : points_(points) {}
+	Pwl()
+	{
+	}
+	Pwl(std::vector<Point> const &points) : points_(points)
+	{
+	}
 	void Read(nlohmann::json const &params);
 	void Append(double x, double y, const double eps = 1e-6);
 	void Prepend(double x, double y, const double eps = 1e-6);
