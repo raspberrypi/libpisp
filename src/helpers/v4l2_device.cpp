@@ -155,8 +155,8 @@ std::vector<V4l2Device::BufferCache>::iterator V4l2Device::importBuffer(BufferRe
 	if (buffer_cache_.size() == max_slots_)
 	{
 		// Find and replace the first buffer that is not queued.
-		cache_it = std::find_if(buffer_cache_.begin(), buffer_cache_.end(),
-								[](const auto &buf) { return !buf.queued; });
+		cache_it =
+			std::find_if(buffer_cache_.begin(), buffer_cache_.end(), [](const auto &buf) { return !buf.queued; });
 		if (cache_it == buffer_cache_.end())
 			throw std::runtime_error("Unable to import buffer, run out of slots.");
 
@@ -164,8 +164,8 @@ std::vector<V4l2Device::BufferCache>::iterator V4l2Device::importBuffer(BufferRe
 	}
 	else
 	{
-		cache_it = buffer_cache_.emplace(buffer_cache_.end(),
-										 buffer.get().Fd(), buffer.get().Size(), buffer_cache_.size());
+		cache_it =
+			buffer_cache_.emplace(buffer_cache_.end(), buffer.get().Fd(), buffer.get().Size(), buffer_cache_.size());
 	}
 
 	return cache_it;
@@ -266,8 +266,8 @@ int V4l2Device::DequeueBuffer(unsigned int timeout_ms)
 		return -1;
 
 	// Find the buffer in cache with matching id and set queued to false
-	auto cache_it = std::find_if(buffer_cache_.begin(), buffer_cache_.end(),
-								 [&buf](const auto &b) { return b.id == buf.index; });
+	auto cache_it =
+		std::find_if(buffer_cache_.begin(), buffer_cache_.end(), [&buf](const auto &b) { return b.id == buf.index; });
 	if (cache_it != buffer_cache_.end())
 		cache_it->queued = false;
 

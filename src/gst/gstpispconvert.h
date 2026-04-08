@@ -107,4 +107,3 @@ GType gst_pisp_convert_get_type(void);
 GST_ELEMENT_REGISTER_DECLARE(pispconvert);
 
 G_END_DECLS
-

@@ -12,8 +12,8 @@
 
 #include "backend/pisp_be_config.h"
 
-#include "pisp_common.h"
 #include "logging.hpp"
+#include "pisp_common.h"
 
 namespace libpisp
 {
@@ -27,10 +27,10 @@ uint32_t compute_x_offset(uint32_t /* pisp_image_format */ format, int x)
 	// HoG features are slightly different from the rest.
 	if (PISP_IMAGE_FORMAT_HOG(format))
 	{
-		 // x here is in units of cells.
-		 // Output 16-bit word samples per bin. This is then packed to:
-		 // 32-bytes for an unsigned histogram cell.
-		 // 48-bytes for a signed histogram cell.
+		// x here is in units of cells.
+		// Output 16-bit word samples per bin. This is then packed to:
+		// 32-bytes for an unsigned histogram cell.
+		// 48-bytes for a signed histogram cell.
 		x_offset = x * ((format & PISP_IMAGE_FORMAT_HOG_UNSIGNED) ? 32 : 48);
 	}
 	else if (format & (PISP_IMAGE_FORMAT_INTEGRAL_IMAGE | PISP_IMAGE_FORMAT_BPP_32))

@@ -35,7 +35,7 @@ BraceWrapping:
   SplitEmptyFunction: true
   SplitEmptyRecord: true
   SplitEmptyNamespace: true
-  AfterNamespace: false
+  AfterNamespace: true
   AfterClass: true
 BreakBeforeBinaryOperators: None
 BreakBeforeInheritanceComma: false
@@ -46,7 +46,7 @@ BreakAfterJavaFieldAnnotations: false
 BreakStringLiterals: false
 CommentPragmas: '^ IWYU pragma:'
 CompactNamespaces: false
-PackConstructorInitializers: NextLineOnly
+PackConstructorInitializers: BinPack
 Cpp11BracedListStyle: false
 DerivePointerAlignment: false
 DisableFormat: false

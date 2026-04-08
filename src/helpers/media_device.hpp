@@ -43,4 +43,4 @@ private:
 	const MediaEnumerator *media_enumerator_;
 };
 
-} // namespace libpisp
+} // namespace libpisp::helpers
