@@ -903,14 +903,24 @@ void BackEnd::update_tiles()
 			}
 		}
 
-		// We need context both before and after dedistortion, and in any case the previous fixed amount was ungenerous.
-		// Add a fixed allowance for each of the Bayer and RGB pipelines (up to the split), if any stage requires it.
-		BayerEnables bayer_enables = config_->get_global().bayer_enables;
-		tiling_config.has_bayer_context =
-			!!(bayer_enables & (BayerEnable::Dpc | BayerEnable::Geq | BayerEnable::Tdn | BayerEnable::Sdn |
-								BayerEnable::Stitch | BayerEnable::Cdn | BayerEnable::Lsc | BayerEnable::Tonemap2 |
-								BayerEnable::Cac | BayerEnable::Debin | BayerEnable::Demosaic));
-		tiling_config.has_rgb_context = !!(rgb_enables & (RgbEnable::FalseColour | RgbEnable::Sharpen));
+		if (variant_ >= BERYL)
+		{
+			// We need context both before and after dedistortion, and in any case the previous fixed amount was ungenerous.
+			// Add a fixed allowance for each of the Bayer and RGB pipelines (up to the split), if any stage requires it.
+			BayerEnables bayer_enables = config_->get_global().bayer_enables;
+			tiling_config.has_bayer_context =
+				!!(bayer_enables & (BayerEnable::Dpc | BayerEnable::Geq | BayerEnable::Tdn | BayerEnable::Sdn |
+									BayerEnable::Stitch | BayerEnable::Cdn | BayerEnable::Lsc | BayerEnable::Tonemap2 |
+									BayerEnable::Cac | BayerEnable::Debin | BayerEnable::Demosaic));
+			tiling_config.has_rgb_context = !!(rgb_enables & (RgbEnable::FalseColour | RgbEnable::Sharpen));
+		}
+		else
+		{
+			// To keep the 2712 reference images from changing, keep a single context stage unconditionally.
+			// TODO: We should eventually remove this code path and use the above on 2712.
+			tiling_config.has_bayer_context = true;
+			tiling_config.has_rgb_context = false;
+		}
 
 		// Set compressed_input to false as otherwise the tiling would pad tiles up to multiples of 8 pixels even when these lie
 		// outside the actual image width (and we've chosen not to handle compression like that).
