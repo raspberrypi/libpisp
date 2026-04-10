@@ -50,8 +50,6 @@ struct _GstPispConvertPrivate
 {
 	/* C++ objects */
 	std::unique_ptr<libpisp::helpers::BackendDevice> backend_device;
-	std::unique_ptr<libpisp::BackEnd> backend;
-	const libpisp::PiSPVariant *variant;
 
 	/* Device info */
 	char *media_dev_path;

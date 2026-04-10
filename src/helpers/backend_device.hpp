@@ -6,6 +6,7 @@
  */
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_set>
 
@@ -14,16 +15,18 @@
 #include "media_device.hpp"
 #include "v4l2_device.hpp"
 
+#include "backend/backend.hpp"
+
 namespace libpisp::helpers
 {
 
 class BackendDevice
 {
 public:
-	BackendDevice(const std::string &device);
+	BackendDevice(const std::string &device = "");
 	~BackendDevice();
 
-	void Setup(const pisp_be_tiles_config &config, unsigned int buffer_count = 1, bool use_opaque_format = false);
+	void Prepare(unsigned int buffer_count = 1, bool use_opaque_format = false);
 
 	template <typename T>
 	int Run(const T &buffers);
@@ -38,6 +41,21 @@ public:
 		return nodes_.at(node);
 	}
 
+	std::string MediaDev() const
+	{
+		return media_dev_;
+	}
+
+	libpisp::BackEnd *Get()
+	{
+		return be_.get();
+	}
+
+	const libpisp::PiSPVariant &Variant() const
+	{
+		return variant_;
+	}
+
 	std::map<std::string, std::vector<BufferRef>> GetBuffers();
 	std::map<std::string, BufferRef> GetBufferSlice() const;
 	BufferRef ConfigBuffer()
@@ -50,6 +68,9 @@ private:
 	V4l2DevMap nodes_;
 	MediaDevice devices_;
 	std::unordered_set<std::string> nodes_enabled_;
+	std::string media_dev_;
+	std::unique_ptr<libpisp::BackEnd> be_;
+	libpisp::PiSPVariant variant_;
 };
 
 } // namespace libpisp::helpers

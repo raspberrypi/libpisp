@@ -7,6 +7,7 @@
 
 #include "backend_device.hpp"
 
+#include <algorithm>
 #include <cstring>
 
 using namespace libpisp::helpers;
@@ -27,7 +28,11 @@ const Buffer &AsBuffer(const Buffer &b)
 
 BackendDevice::BackendDevice(const std::string &device) : valid_(true)
 {
-	nodes_ = MediaDevice().OpenV4l2Nodes(device);
+	media_dev_ = MediaDevice().Acquire(device);
+	if (media_dev_.empty())
+		throw std::runtime_error("Unable to acquire any pisp_be device!");
+
+	nodes_ = MediaDevice().OpenV4l2Nodes(media_dev_);
 	if (nodes_.empty())
 	{
 		valid_ = false;
@@ -37,6 +42,16 @@ BackendDevice::BackendDevice(const std::string &device) : valid_(true)
 	// Allocate a config buffer to persist.
 	nodes_.at("pispbe-config").AllocateBuffers(1);
 	nodes_.at("pispbe-config").StreamOn();
+
+	const std::vector<libpisp::PiSPVariant> &variants = libpisp::get_variants();
+	const media_device_info info = MediaDevice().DeviceInfo(media_dev_);
+	auto variant = std::find_if(variants.begin(), variants.end(),
+								[&info](const auto &v) { return v.BackEndVersion() == info.hw_revision; });
+	if (variant == variants.end())
+		throw std::runtime_error("Backend hardware could not be identified: " + std::to_string(info.hw_revision));
+
+	variant_ = *variant;
+	be_ = std::make_unique<libpisp::BackEnd>(libpisp::BackEnd::Config({}), variant_);
 }
 
 BackendDevice::~BackendDevice()
@@ -47,10 +62,13 @@ BackendDevice::~BackendDevice()
 		nodes_.at(n).StreamOff();
 }
 
-void BackendDevice::Setup(const pisp_be_tiles_config &config, unsigned int buffer_count, bool use_opaque_format)
+void BackendDevice::Prepare(unsigned int buffer_count, bool use_opaque_format)
 {
 	for (auto const &n : nodes_enabled_)
 		nodes_.at(n).StreamOff();
+
+	pisp_be_tiles_config config = {};
+	be_->Prepare(&config);
 
 	nodes_enabled_.clear();
 

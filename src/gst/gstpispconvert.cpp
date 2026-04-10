@@ -358,7 +358,6 @@ static void gst_pisp_convert_init(GstPispConvert *self)
 	/* Initialize private data */
 	self->priv = new GstPispConvertPrivate();
 	self->priv->backend_device = nullptr;
-	self->priv->backend = nullptr;
 	self->priv->media_dev_path = nullptr;
 	self->priv->configured = FALSE;
 	self->priv->dmabuf_allocator = gst_dmabuf_allocator_new();
@@ -766,11 +765,13 @@ static void copy_pisp_to_buffer(const std::array<uint8_t *, 3> &mem, GstBuffer *
  */
 static gboolean gst_pisp_convert_configure(GstPispConvert *self)
 {
-	if (!self->priv->backend_device || !self->priv->backend)
+	if (!self->priv->backend_device)
 	{
 		GST_ERROR_OBJECT(self, "Backend not initialized");
 		return FALSE;
 	}
+
+	libpisp::BackEnd *backend = self->priv->backend_device->Get();
 
 	/* Check which outputs are enabled */
 	gboolean any_output = FALSE;
@@ -833,7 +834,7 @@ static gboolean gst_pisp_convert_configure(GstPispConvert *self)
 	try
 	{
 		pisp_be_global_config global;
-		self->priv->backend->GetGlobal(global);
+		backend->GetGlobal(global);
 		global.bayer_enables = 0;
 		global.rgb_enables = PISP_BE_RGB_ENABLE_INPUT;
 
@@ -849,7 +850,7 @@ static gboolean gst_pisp_convert_configure(GstPispConvert *self)
 		}
 		libpisp::compute_stride(input_cfg);
 		self->priv->in_hw_stride = input_cfg.stride;
-		self->priv->backend->SetInputFormat(input_cfg);
+		backend->SetInputFormat(input_cfg);
 
 		GST_INFO_OBJECT(self, "Input: %ux%u %s (stride: gst=%u hw=%u) colorspace %s", self->priv->in_width,
 						self->priv->in_height, self->priv->in_format, self->priv->in_stride, self->priv->in_hw_stride,
@@ -877,26 +878,26 @@ static gboolean gst_pisp_convert_configure(GstPispConvert *self)
 			}
 			libpisp::compute_optimal_stride(output_cfg[i].image, true);
 			self->priv->out_hw_stride[i] = output_cfg[i].image.stride;
-			self->priv->backend->SetOutputFormat(i, output_cfg[i]);
+			backend->SetOutputFormat(i, output_cfg[i]);
 
 			if ((g_str_equal(self->priv->out_format[i], "RGBX8888") ||
 				 g_str_equal(self->priv->out_format[i], "XRGB8888")) &&
-				!self->priv->variant->BackendRGB32Supported(0))
+				!self->priv->backend_device->Variant().BackendRGB32Supported(0))
 				GST_WARNING_OBJECT(self, "pisp_be HW does not support 32-bit RGB output, the image will be corrupt.");
 
 			if (!self->priv->out_colorspace[i])
 				self->priv->out_colorspace[i] = self->priv->in_colorspace;
 
-			global.rgb_enables |= configure_colour_conversion(self->priv->backend.get(), self->priv->in_format,
-															  self->priv->in_colorspace, self->priv->out_format[i],
-															  self->priv->out_colorspace[i], i);
+			global.rgb_enables |= configure_colour_conversion(backend, self->priv->in_format, self->priv->in_colorspace,
+															  self->priv->out_format[i], self->priv->out_colorspace[i],
+															  i);
 
 			GST_INFO_OBJECT(self, "Output%d: %ux%u %s (stride: gst=%u hw=%u) colorspace %s", i,
 							self->priv->out_width[i], self->priv->out_height[i], self->priv->out_format[i],
 							self->priv->out_stride[i], self->priv->out_hw_stride[i], self->priv->out_colorspace[i]);
 		}
 
-		self->priv->backend->SetGlobal(global);
+		backend->SetGlobal(global);
 
 		for (unsigned int i = 0; i < PISP_NUM_OUTPUTS; i++)
 		{
@@ -927,7 +928,7 @@ static gboolean gst_pisp_convert_configure(GstPispConvert *self)
 			/* Only call SetCrop if parameters changed */
 			if (memcmp(&crop, &self->priv->applied_crop[i], sizeof(crop)) != 0)
 			{
-				self->priv->backend->SetCrop(i, crop);
+				backend->SetCrop(i, crop);
 				self->priv->applied_crop[i] = crop;
 			}
 
@@ -936,15 +937,13 @@ static gboolean gst_pisp_convert_configure(GstPispConvert *self)
 														   (uint16_t)output_cfg[i].image.height };
 			if (memcmp(&smart_resize, &self->priv->applied_smart_resize[i], sizeof(smart_resize)) != 0)
 			{
-				self->priv->backend->SetSmartResize(i, smart_resize);
+				backend->SetSmartResize(i, smart_resize);
 				self->priv->applied_smart_resize[i] = smart_resize;
 			}
 		}
 
 		/* Prepare the hardware configuration */
-		pisp_be_tiles_config config = {};
-		self->priv->backend->Prepare(&config);
-		self->priv->backend_device->Setup(config, self->priv->output_buffer_count);
+		self->priv->backend_device->Prepare(self->priv->output_buffer_count);
 
 		self->priv->pisp_buffers = self->priv->backend_device->GetBuffers();
 		self->priv->buffer_slice_index = 0;
@@ -1197,17 +1196,7 @@ static gboolean gst_pisp_convert_start(GstPispConvert *self)
 
 	try
 	{
-		libpisp::helpers::MediaDevice devices;
-
-		std::string media_dev = devices.Acquire();
-		if (media_dev.empty())
-		{
-			GST_ERROR_OBJECT(self, "Unable to acquire any pisp_be device!");
-			return FALSE;
-		}
-
-		self->priv->media_dev_path = g_strdup(media_dev.c_str());
-		self->priv->backend_device = std::make_unique<libpisp::helpers::BackendDevice>(media_dev);
+		self->priv->backend_device = std::make_unique<libpisp::helpers::BackendDevice>();
 
 		if (!self->priv->backend_device->Valid())
 		{
@@ -1215,22 +1204,9 @@ static gboolean gst_pisp_convert_start(GstPispConvert *self)
 			return FALSE;
 		}
 
-		const std::vector<libpisp::PiSPVariant> &variants = libpisp::get_variants();
-		const media_device_info info = devices.DeviceInfo(media_dev);
+		self->priv->media_dev_path = g_strdup(self->priv->backend_device->MediaDev().c_str());
 
-		auto variant_it = std::find_if(variants.begin(), variants.end(),
-									   [&info](const auto &v) { return v.BackEndVersion() == info.hw_revision; });
-
-		if (variant_it == variants.end())
-		{
-			GST_ERROR_OBJECT(self, "Backend hardware could not be identified: %u", info.hw_revision);
-			return FALSE;
-		}
-
-		self->priv->variant = &(*variant_it);
-		self->priv->backend = std::make_unique<libpisp::BackEnd>(libpisp::BackEnd::Config({}), *variant_it);
-
-		GST_INFO_OBJECT(self, "Acquired device %s", media_dev.c_str());
+		GST_INFO_OBJECT(self, "Acquired device %s", self->priv->media_dev_path);
 	}
 	catch (const std::exception &e)
 	{
@@ -1272,7 +1248,6 @@ static gboolean gst_pisp_convert_stop(GstPispConvert *self)
 		self->priv->pending_segment = nullptr;
 	}
 
-	self->priv->backend.reset();
 	self->priv->backend_device.reset();
 
 	g_free(self->priv->media_dev_path);

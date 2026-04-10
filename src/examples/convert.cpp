@@ -258,15 +258,11 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 
-	std::string media_dev = devices.Acquire();
-	if (media_dev.empty())
-	{
-		std::cerr << "Unable to acquire any pisp_be device!" << std::endl;
-		exit(-1);
-	}
+	libpisp::helpers::BackendDevice backend_device {};
+	std::cerr << "Acquired device " << backend_device.MediaDev() << std::endl;
 
-	libpisp::helpers::BackendDevice backend_device { media_dev };
-	std::cerr << "Acquired device " << media_dev << std::endl;
+	libpisp::BackEnd *be = backend_device.Get();
+	const libpisp::PiSPVariant &variant = backend_device.Variant();
 
 	auto in_file = parse_format(args["input-format"].as<std::string>());
 	if (!Formats.count(in_file.format))
@@ -282,24 +278,12 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	const std::vector<libpisp::PiSPVariant> &variants = libpisp::get_variants();
-	const media_device_info info = devices.DeviceInfo(media_dev);
-	auto variant = std::find_if(variants.begin(), variants.end(),
-								[&info](const auto &v) { return v.BackEndVersion() == info.hw_revision; });
-	if (variant == variants.end())
-	{
-		std::cerr << "Backend hardware cound not be identified: " << info.hw_revision << std::endl;
-		exit(-1);
-	}
-
-	libpisp::BackEnd be(libpisp::BackEnd::Config({}), *variant);
-
 	pisp_be_global_config global;
-	be.GetGlobal(global);
+	be->GetGlobal(global);
 	global.bayer_enables = 0;
 	global.rgb_enables = PISP_BE_RGB_ENABLE_INPUT + PISP_BE_RGB_ENABLE_OUTPUT0;
 
-	if (in_file.format == "RGBX8888" && !variant->BackendRGB32Supported(0))
+	if (in_file.format == "RGBX8888" && !variant.BackendRGB32Supported(0))
 	{
 		std::cerr << "Backend hardware does not support RGBX input" << std::endl;
 		exit(-1);
@@ -310,10 +294,10 @@ int main(int argc, char *argv[])
 	i.format = libpisp::get_pisp_image_format(in_file.format);
 	assert(i.format);
 	libpisp::compute_optimal_stride(i);
-	be.SetInputFormat(i);
+	be->SetInputFormat(i);
 
 	pisp_be_output_format_config o = {};
-	if (out_file.format == "RGBX8888" && !variant->BackendRGB32Supported(0))
+	if (out_file.format == "RGBX8888" && !variant.BackendRGB32Supported(0))
 	{
 		// Hack to generate RGBX even when BE_MINOR_VERSION < 1 using Resample
 		if (out_file.width < i.width)
@@ -330,7 +314,7 @@ int main(int argc, char *argv[])
 		csc.offsets[0] = 131072; // round to nearest after Resample, for 8-bit output
 		csc.offsets[1] = 131072;
 		csc.offsets[2] = 131072;
-		be.SetCsc(0, csc);
+		be->SetCsc(0, csc);
 		global.rgb_enables |= PISP_BE_RGB_ENABLE_CSC0;
 	}
 	else
@@ -341,7 +325,7 @@ int main(int argc, char *argv[])
 	}
 	assert(o.image.format);
 	libpisp::compute_optimal_stride(o.image, true);
-	be.SetOutputFormat(0, o);
+	be->SetOutputFormat(0, o);
 
 	if (!out_file.stride)
 		out_file.stride = o.image.stride;
@@ -349,27 +333,24 @@ int main(int argc, char *argv[])
 	if (in_file.format >= "U")
 	{
 		pisp_be_ccm_config csc;
-		be.InitialiseYcbcrInverse(csc, "jpeg");
-		be.SetCcm(csc);
+		be->InitialiseYcbcrInverse(csc, "jpeg");
+		be->SetCcm(csc);
 		global.rgb_enables |= PISP_BE_RGB_ENABLE_CCM;
 	}
 
 	if (out_file.format >= "U")
 	{
 		pisp_be_ccm_config csc;
-		be.InitialiseYcbcr(csc, "jpeg");
-		be.SetCsc(0, csc);
+		be->InitialiseYcbcr(csc, "jpeg");
+		be->SetCsc(0, csc);
 		global.rgb_enables |= PISP_BE_RGB_ENABLE_CSC0;
 	}
 
-	be.SetGlobal(global);
-	be.SetCrop(0, { 0, 0, i.width, i.height });
-	be.SetSmartResize(0, { o.image.width, o.image.height });
+	be->SetGlobal(global);
+	be->SetCrop(0, { 0, 0, i.width, i.height });
+	be->SetSmartResize(0, { o.image.width, o.image.height });
 
-	pisp_be_tiles_config config = {};
-	be.Prepare(&config);
-
-	backend_device.Setup(config);
+	backend_device.Prepare();
 	auto buffers = backend_device.GetBufferSlice();
 
 	std::string input_filename = args["input"].as<std::string>();
