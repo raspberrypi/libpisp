@@ -1,10 +1,6 @@
 # SPDX-License-Identifier: CC0-1.0
 # Copyright (C) 2025, Raspberry Pi Ltd
 
-if get_option('beryl_config_hack') == true
-    add_project_arguments('-DBERYL_CONFIG_HACK=1', language : 'cpp')
-endif
-
 pisp_sources += files([
     'backend_device.cpp',
     'media_device.cpp',

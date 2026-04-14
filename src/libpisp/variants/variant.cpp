@@ -54,7 +54,7 @@ const PiSPVariant BERYL(
 	"BERYL",							// name
 	0x0003,								// id
 	0x00114666,							// fe_version (front-end version)
-	0x00352320,							// be_version (back-end version)
+	0x00353f20,							// be_version (back-end version)
 	2,									// num_fe (number of front-ends)
 	1,									// num_be (number of back-ends)
 	{ 2, 2 },							// num_fe_branches (branches per front-end)

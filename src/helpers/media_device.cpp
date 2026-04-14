@@ -73,8 +73,13 @@ private:
 
 			// Find a pisp_be device link,
 			const std::string link(fs::read_symlink(media_device).string());
+#ifdef BERYL_CONFIG_HACK
+			if (link.find("isp_be") == std::string::npos)
+				continue;
+#else
 			if (link.find("pisp_be") == std::string::npos)
 				continue;
+#endif
 
 			// Find the /dev/mediaX device node.
 			const std::string::size_type pos = link.find_last_of("/");
