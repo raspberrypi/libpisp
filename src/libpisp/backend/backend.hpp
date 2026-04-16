@@ -179,7 +179,7 @@ public:
 
 	void set_max_tile_width(unsigned int width)
 	{
-		sw_.max_tile_width = width;
+		sw_.max_tile_width = std::min(width, variant_.back_end_max_tile_width(0));
 	}
 
 	void set_max_stripe_height(unsigned int height)
