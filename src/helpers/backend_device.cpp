@@ -110,14 +110,7 @@ void BackendDevice::prepare(unsigned int buffer_count, bool use_opaque_format)
 		}
 	}
 
-#ifdef BERYL_CONFIG_HACK
-	uint8_t *dst = (uint8_t *)config_buffer_.mem[0];
-	std::memcpy(dst + 112, &config.v2.config, sizeof(config.v2.config));
-	std::memcpy(dst + 0x2be0, &config.v2.tiles, sizeof(pisp_tile2) * config.v2.num_tiles);
-	*(uint32_t*)(dst + 0x53e0) = config.v2.num_tiles;
-#else
 	std::memcpy(reinterpret_cast<pisp_be_tiles_config *>(config_buffer_.mem[0]), &config, sizeof(config));
-#endif
 }
 
 std::map<std::string, V4l2Device::Buffer> BackendDevice::acquire_buffers()

@@ -33,15 +33,6 @@ add_project_arguments(logging_args, language : 'cpp')
 # Needed to avoid (erroneous) warnings on the use of addresses of fields in __attribute__((packed)) structs.
 add_project_arguments('-Wno-address-of-packed-member', language : 'cpp')
 
-# The beryl_config_hack option adds buffer config fields to pisp_be_config2 in the
-# public header pisp_be_config.h. Export via compile_args/extra_cflags so that
-# consumers see the same struct layout as the library.
-beryl_config_args = []
-if get_option('beryl_config_hack') == true
-    beryl_config_args = ['-DBERYL_CONFIG_HACK=1']
-    add_project_arguments(beryl_config_args, language : ['c', 'cpp'])
-endif
-
 # Generate a version string:
 version_cmd = [meson.project_source_root() / 'utils' / 'version.py', meson.project_version()]
 version_template = meson.project_source_root() / 'utils' / 'version.cpp.in'
@@ -69,14 +60,13 @@ libpisp_dep = declare_dependency(
     include_directories : include_directories(inc_dirs),
     link_with : libpisp,
     sources : [pisp_build_config],
-    compile_args : beryl_config_args,
 )
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libpisp,
                  description : 'PiSP Library',
                  subdirs : 'libpisp',
-                 extra_cflags : beryl_config_args)
+)
 
 if get_option('examples')
     subdir('examples')
