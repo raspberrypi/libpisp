@@ -8,8 +8,9 @@
 
 #include <string>
 
-namespace libpisp {
+namespace libpisp
+{
 
-const std::string& version();
+const std::string &version();
 
 } // namespace libpisp

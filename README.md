@@ -69,5 +69,15 @@ To test the plugin without installing:
 GST_PLUGIN_PATH=<build_dir>/src/gst gst-inspect-1.0 pispconvert
 ```
 
+## For Developers
+
+This project uses [pre-commit](https://pre-commit.com/) to run formatting and linting checks on each commit. To install:
+
+```sh
+pip install pre-commit
+pre-commit install
+pre-commit install --hook-type commit-msg
+```
+
 ## License
 Copyright © 2023, Raspberry Pi Ltd. Released under the BSD-2-Clause License.

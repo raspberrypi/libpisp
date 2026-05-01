@@ -10,7 +10,8 @@
 
 #include <linux/types.h>
 
-struct pisp_image_format_config {
+struct pisp_image_format_config
+{
 	/* size in pixels */
 	__u16 width;
 	__u16 height;
@@ -21,7 +22,8 @@ struct pisp_image_format_config {
 	__s32 stride2;
 } __attribute__((packed));
 
-enum pisp_bayer_order {
+enum pisp_bayer_order
+{
 	/*
 	 * Note how bayer_order&1 tells you if G is on the even pixels of the
 	 * checkerboard or not, and bayer_order&2 tells you if R is on the even
@@ -36,7 +38,8 @@ enum pisp_bayer_order {
 	PISP_BAYER_ORDER_GREYSCALE = 128
 };
 
-enum pisp_image_format {
+enum pisp_image_format
+{
 	/*
 	 * Precise values are mostly tbd. Generally these will be portmanteau
 	 * values comprising bit fields and flags. This format must be shared
@@ -90,64 +93,42 @@ enum pisp_image_format {
 
 	/* Lastly a few specific instantiations of the above. */
 	PISP_IMAGE_FORMAT_SINGLE_16 = PISP_IMAGE_FORMAT_BPS_16,
-	PISP_IMAGE_FORMAT_THREE_16 = PISP_IMAGE_FORMAT_BPS_16 |
-				     PISP_IMAGE_FORMAT_THREE_CHANNEL
+	PISP_IMAGE_FORMAT_THREE_16 = PISP_IMAGE_FORMAT_BPS_16 | PISP_IMAGE_FORMAT_THREE_CHANNEL
 };
 
-#define PISP_IMAGE_FORMAT_BPS_8(fmt)                                           \
-	(((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) == PISP_IMAGE_FORMAT_BPS_8)
-#define PISP_IMAGE_FORMAT_BPS_10(fmt)                                          \
-	(((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) == PISP_IMAGE_FORMAT_BPS_10)
-#define PISP_IMAGE_FORMAT_BPS_12(fmt)                                          \
-	(((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) == PISP_IMAGE_FORMAT_BPS_12)
-#define PISP_IMAGE_FORMAT_BPS_16(fmt)                                          \
-	(((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) == PISP_IMAGE_FORMAT_BPS_16)
-#define PISP_IMAGE_FORMAT_BPS(fmt)                                             \
-	(((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) ?                                \
-	       8 + (2 << (((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) - 1)) : 8)
-#define PISP_IMAGE_FORMAT_SHIFT(fmt)                                           \
-	(((fmt) & PISP_IMAGE_FORMAT_SHIFT_MASK) / PISP_IMAGE_FORMAT_SHIFT_1)
-#define PISP_IMAGE_FORMAT_THREE_CHANNEL(fmt)                                   \
-	((fmt) & PISP_IMAGE_FORMAT_THREE_CHANNEL)
-#define PISP_IMAGE_FORMAT_SINGLE_CHANNEL(fmt)                                  \
-	(!((fmt) & PISP_IMAGE_FORMAT_THREE_CHANNEL))
-#define PISP_IMAGE_FORMAT_COMPRESSED(fmt)                                      \
-	(((fmt) & PISP_IMAGE_FORMAT_COMPRESSION_MASK) !=                       \
-	 PISP_IMAGE_FORMAT_UNCOMPRESSED)
-#define PISP_IMAGE_FORMAT_SAMPLING_444(fmt)                                    \
-	(((fmt) & PISP_IMAGE_FORMAT_SAMPLING_MASK) ==                          \
-	 PISP_IMAGE_FORMAT_SAMPLING_444)
-#define PISP_IMAGE_FORMAT_SAMPLING_422(fmt)                                    \
-	(((fmt) & PISP_IMAGE_FORMAT_SAMPLING_MASK) ==                          \
-	 PISP_IMAGE_FORMAT_SAMPLING_422)
-#define PISP_IMAGE_FORMAT_SAMPLING_420(fmt)                                    \
-	(((fmt) & PISP_IMAGE_FORMAT_SAMPLING_MASK) ==                          \
-	 PISP_IMAGE_FORMAT_SAMPLING_420)
-#define PISP_IMAGE_FORMAT_ORDER_NORMAL(fmt)                                    \
-	(!((fmt) & PISP_IMAGE_FORMAT_ORDER_SWAPPED))
-#define PISP_IMAGE_FORMAT_ORDER_SWAPPED(fmt)                                   \
-	((fmt) & PISP_IMAGE_FORMAT_ORDER_SWAPPED)
-#define PISP_IMAGE_FORMAT_INTERLEAVED(fmt)                                     \
-	(((fmt) & PISP_IMAGE_FORMAT_PLANARITY_MASK) ==                         \
-	 PISP_IMAGE_FORMAT_PLANARITY_INTERLEAVED)
-#define PISP_IMAGE_FORMAT_SEMIPLANAR(fmt)                                      \
-	(((fmt) & PISP_IMAGE_FORMAT_PLANARITY_MASK) ==                         \
-	 PISP_IMAGE_FORMAT_PLANARITY_SEMI_PLANAR)
-#define PISP_IMAGE_FORMAT_PLANAR(fmt)                                          \
-	(((fmt) & PISP_IMAGE_FORMAT_PLANARITY_MASK) ==                         \
-	 PISP_IMAGE_FORMAT_PLANARITY_PLANAR)
-#define PISP_IMAGE_FORMAT_WALLPAPER(fmt)                                       \
-	((fmt) & PISP_IMAGE_FORMAT_WALLPAPER_ROLL)
+#define PISP_IMAGE_FORMAT_BPS_8(fmt) (((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) == PISP_IMAGE_FORMAT_BPS_8)
+#define PISP_IMAGE_FORMAT_BPS_10(fmt) (((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) == PISP_IMAGE_FORMAT_BPS_10)
+#define PISP_IMAGE_FORMAT_BPS_12(fmt) (((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) == PISP_IMAGE_FORMAT_BPS_12)
+#define PISP_IMAGE_FORMAT_BPS_16(fmt) (((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) == PISP_IMAGE_FORMAT_BPS_16)
+#define PISP_IMAGE_FORMAT_BPS(fmt)                                                                                     \
+	(((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) ? 8 + (2 << (((fmt) & PISP_IMAGE_FORMAT_BPS_MASK) - 1)) : 8)
+#define PISP_IMAGE_FORMAT_SHIFT(fmt) (((fmt) & PISP_IMAGE_FORMAT_SHIFT_MASK) / PISP_IMAGE_FORMAT_SHIFT_1)
+#define PISP_IMAGE_FORMAT_THREE_CHANNEL(fmt) ((fmt) & PISP_IMAGE_FORMAT_THREE_CHANNEL)
+#define PISP_IMAGE_FORMAT_SINGLE_CHANNEL(fmt) (!((fmt) & PISP_IMAGE_FORMAT_THREE_CHANNEL))
+#define PISP_IMAGE_FORMAT_COMPRESSED(fmt)                                                                              \
+	(((fmt) & PISP_IMAGE_FORMAT_COMPRESSION_MASK) != PISP_IMAGE_FORMAT_UNCOMPRESSED)
+#define PISP_IMAGE_FORMAT_SAMPLING_444(fmt)                                                                            \
+	(((fmt) & PISP_IMAGE_FORMAT_SAMPLING_MASK) == PISP_IMAGE_FORMAT_SAMPLING_444)
+#define PISP_IMAGE_FORMAT_SAMPLING_422(fmt)                                                                            \
+	(((fmt) & PISP_IMAGE_FORMAT_SAMPLING_MASK) == PISP_IMAGE_FORMAT_SAMPLING_422)
+#define PISP_IMAGE_FORMAT_SAMPLING_420(fmt)                                                                            \
+	(((fmt) & PISP_IMAGE_FORMAT_SAMPLING_MASK) == PISP_IMAGE_FORMAT_SAMPLING_420)
+#define PISP_IMAGE_FORMAT_ORDER_NORMAL(fmt) (!((fmt) & PISP_IMAGE_FORMAT_ORDER_SWAPPED))
+#define PISP_IMAGE_FORMAT_ORDER_SWAPPED(fmt) ((fmt) & PISP_IMAGE_FORMAT_ORDER_SWAPPED)
+#define PISP_IMAGE_FORMAT_INTERLEAVED(fmt)                                                                             \
+	(((fmt) & PISP_IMAGE_FORMAT_PLANARITY_MASK) == PISP_IMAGE_FORMAT_PLANARITY_INTERLEAVED)
+#define PISP_IMAGE_FORMAT_SEMIPLANAR(fmt)                                                                              \
+	(((fmt) & PISP_IMAGE_FORMAT_PLANARITY_MASK) == PISP_IMAGE_FORMAT_PLANARITY_SEMI_PLANAR)
+#define PISP_IMAGE_FORMAT_PLANAR(fmt) (((fmt) & PISP_IMAGE_FORMAT_PLANARITY_MASK) == PISP_IMAGE_FORMAT_PLANARITY_PLANAR)
+#define PISP_IMAGE_FORMAT_WALLPAPER(fmt) ((fmt) & PISP_IMAGE_FORMAT_WALLPAPER_ROLL)
 #define PISP_IMAGE_FORMAT_BPP_32(fmt) ((fmt) & PISP_IMAGE_FORMAT_BPP_32)
-#define PISP_IMAGE_FORMAT_HOG(fmt)                                             \
-	((fmt) &                                                               \
-	 (PISP_IMAGE_FORMAT_HOG_SIGNED | PISP_IMAGE_FORMAT_HOG_UNSIGNED))
-#define PISP_IMAGE_FORMAT_X_VALUE(fmt)                                     \
-	((fmt) & PISP_IMAGE_FORMAT_X_VALUE)
+#define PISP_IMAGE_FORMAT_HOG(fmt) ((fmt) & (PISP_IMAGE_FORMAT_HOG_SIGNED | PISP_IMAGE_FORMAT_HOG_UNSIGNED))
+#define PISP_IMAGE_FORMAT_X_VALUE(fmt) ((fmt) & PISP_IMAGE_FORMAT_X_VALUE)
 
 #define PISP_WALLPAPER_WIDTH 128 /* in bytes */
 
-struct pisp_bla_config {
+struct pisp_bla_config
+{
 	__u16 black_level_r;
 	__u16 black_level_gr;
 	__u16 black_level_gb;
@@ -156,14 +137,16 @@ struct pisp_bla_config {
 	__u8 pad[2];
 } __attribute__((packed));
 
-struct pisp_wbg_config {
+struct pisp_wbg_config
+{
 	__u16 gain_r;
 	__u16 gain_g;
 	__u16 gain_b;
 	__u8 pad[2];
 } __attribute__((packed));
 
-struct pisp_compress_config {
+struct pisp_compress_config
+{
 	/* value subtracted from incoming data */
 	__u16 offset;
 	__u8 pad;
@@ -171,7 +154,8 @@ struct pisp_compress_config {
 	__u8 mode;
 } __attribute__((packed));
 
-struct pisp_decompress_config {
+struct pisp_decompress_config
+{
 	/* value added to reconstructed data */
 	__u16 offset;
 	__u8 pad;
@@ -179,7 +163,8 @@ struct pisp_decompress_config {
 	__u8 mode;
 } __attribute__((packed));
 
-enum pisp_axi_flags {
+enum pisp_axi_flags
+{
 	/*
 	 * round down bursts to end at a 32-byte boundary, to align following
 	 * bursts
@@ -191,7 +176,8 @@ enum pisp_axi_flags {
 	PISP_AXI_FLAG_PANIC = 32,
 };
 
-struct pisp_axi_config {
+struct pisp_axi_config
+{
 	/*
 	 * burst length minus one, which must be in the range 0:15; OR'd with
 	 * flags

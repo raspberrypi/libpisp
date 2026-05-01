@@ -8,8 +8,8 @@
 #ifndef _PISP_BE_CONFIG_H_
 #define _PISP_BE_CONFIG_H_
 
-#include <stdint.h>
 #include <linux/types.h>
+#include <stdint.h>
 
 #include "common/pisp_common.h"
 
@@ -32,7 +32,8 @@
 
 #define PISP_BACK_END_NUM_TILES 64
 
-enum pisp_be_bayer_enable {
+enum pisp_be_bayer_enable
+{
 	PISP_BE_BAYER_ENABLE_INPUT = 0x000001,
 	PISP_BE_BAYER_ENABLE_DECOMPRESS = 0x000002,
 	PISP_BE_BAYER_ENABLE_DPC = 0x000004,
@@ -58,7 +59,8 @@ enum pisp_be_bayer_enable {
 	PISP_BE_BAYER_ENABLE_DEMOSAIC = 0x400000,
 };
 
-enum pisp_be_rgb_enable {
+enum pisp_be_rgb_enable
+{
 	PISP_BE_RGB_ENABLE_INPUT = 0x000001,
 	PISP_BE_RGB_ENABLE_CCM = 0x000002,
 	PISP_BE_RGB_ENABLE_SAT_CONTROL = 0x000004,
@@ -88,7 +90,8 @@ enum pisp_be_rgb_enable {
  * We use the enable flags to show when blocks are "dirty", but we need some
  * extra ones too.
  */
-enum pisp_be_dirty {
+enum pisp_be_dirty
+{
 	PISP_BE_DIRTY_GLOBAL = 0x0001,
 	PISP_BE_DIRTY_SH_FC_COMBINE = 0x0002,
 	PISP_BE_DIRTY_CROP = 0x0004
@@ -101,7 +104,8 @@ enum pisp_be_dirty {
  * @bayer_order:	Bayer input format ordering
  * @pad:		Padding bytes
  */
-struct pisp_be_global_config {
+struct pisp_be_global_config
+{
 	__u32 bayer_enables;
 	__u32 rgb_enables;
 	__u8 bayer_order;
@@ -112,7 +116,8 @@ struct pisp_be_global_config {
  * struct pisp_be_input_buffer_config - PiSP Back End input buffer
  * @addr:		Input buffer address
  */
-struct pisp_be_input_buffer_config {
+struct pisp_be_input_buffer_config
+{
 	/* low 32 bits followed by high 32 bits (for each of up to 3 planes) */
 	__u32 addr[3][2];
 } __attribute__((packed));
@@ -127,7 +132,8 @@ struct pisp_be_input_buffer_config {
  * @pad:		Padding byte
  * @flags:		DPC configuration flags
  */
-struct pisp_be_dpc_config {
+struct pisp_be_dpc_config
+{
 	__u8 coeff_level;
 	__u8 coeff_range;
 	__u8 pad;
@@ -145,7 +151,8 @@ struct pisp_be_dpc_config {
  * @min:		Minimum value the threshold may have
  * @max:		Maximum value the threshold may have
  */
-struct pisp_be_geq_config {
+struct pisp_be_geq_config
+{
 	__u16 offset;
 #define PISP_BE_GEQ_SHARPER (1U << 15)
 #define PISP_BE_GEQ_SLOPE ((1 << 10) - 1)
@@ -159,7 +166,8 @@ struct pisp_be_geq_config {
  * struct pisp_be_tdn_input_buffer_config - PiSP Back End TDN input buffer
  * @addr:		TDN input buffer address
  */
-struct pisp_be_tdn_input_buffer_config {
+struct pisp_be_tdn_input_buffer_config
+{
 	/* low 32 bits followed by high 32 bits */
 	__u32 addr[2];
 } __attribute__((packed));
@@ -177,7 +185,8 @@ struct pisp_be_tdn_input_buffer_config {
  * @reset:		Disable TDN operations
  * @pad:		Padding byte
  */
-struct pisp_be_tdn_config {
+struct pisp_be_tdn_config
+{
 	__u16 black_level;
 	__u16 ratio;
 	__u16 noise_constant;
@@ -191,7 +200,8 @@ struct pisp_be_tdn_config {
  * struct pisp_be_tdn_output_buffer_config - PiSP Back End TDN output buffer
  * @addr:		TDN output buffer address
  */
-struct pisp_be_tdn_output_buffer_config {
+struct pisp_be_tdn_output_buffer_config
+{
 	/* low 32 bits followed by high 32 bits */
 	__u32 addr[2];
 } __attribute__((packed));
@@ -210,7 +220,8 @@ struct pisp_be_tdn_output_buffer_config {
  * @noise_constant2:	Second noise constant used for noise estimation
  * @noise_slope2:	Second slope value used for noise estimation
  */
-struct pisp_be_sdn_config {
+struct pisp_be_sdn_config
+{
 	__u16 black_level;
 	__u8 leakage;
 	__u8 pad;
@@ -224,7 +235,8 @@ struct pisp_be_sdn_config {
  * struct pisp_be_stitch_input_buffer_config - PiSP Back End Stitch input
  * @addr:		Stitch input buffer address
  */
-struct pisp_be_stitch_input_buffer_config {
+struct pisp_be_stitch_input_buffer_config
+{
 	/* low 32 bits followed by high 32 bits */
 	__u32 addr[2];
 } __attribute__((packed));
@@ -246,7 +258,8 @@ struct pisp_be_stitch_input_buffer_config {
  *				pixels are used
  * @motion_threshold_recip:	Reciprocal of motion_threshold_256 value
  */
-struct pisp_be_stitch_config {
+struct pisp_be_stitch_config
+{
 	__u16 threshold_lo;
 	__u8 threshold_diff_power;
 	__u8 pad;
@@ -262,7 +275,8 @@ struct pisp_be_stitch_config {
  * struct pisp_be_stitch_output_buffer_config - PiSP Back End Stitch output
  * @addr:		Stitch input buffer address
  */
-struct pisp_be_stitch_output_buffer_config {
+struct pisp_be_stitch_output_buffer_config
+{
 	/* low 32 bits followed by high 32 bits */
 	__u32 addr[2];
 } __attribute__((packed));
@@ -276,7 +290,8 @@ struct pisp_be_stitch_output_buffer_config {
  * @iir_strength:	Relative strength of the IIR part of the filter
  * @g_adjust:		Proportion of the change assigned to the G channel
  */
-struct pisp_be_cdn_config {
+struct pisp_be_cdn_config
+{
 	__u16 thresh;
 	__u8 iir_strength;
 	__u8 g_adjust;
@@ -295,13 +310,14 @@ struct pisp_be_cdn_config {
  * @grid_step_y:	Reciprocal of cell size height
  * @lut_packed:		Jointly-coded RGB gains for each LSC grid
  */
-struct pisp_be_lsc_config {
+struct pisp_be_lsc_config
+{
 	/* (1<<18) / grid_cell_width */
 	__u16 grid_step_x;
 	/* (1<<18) / grid_cell_height */
 	__u16 grid_step_y;
 	/* RGB gains jointly encoded in 32 bits */
-#define PISP_BE_LSC_LUT_SIZE	(PISP_BE_LSC_GRID_SIZE + 1)
+#define PISP_BE_LSC_LUT_SIZE (PISP_BE_LSC_GRID_SIZE + 1)
 	__u32 lut_packed[PISP_BE_LSC_LUT_SIZE][PISP_BE_LSC_LUT_SIZE];
 } __attribute__((packed));
 
@@ -310,7 +326,8 @@ struct pisp_be_lsc_config {
  * @offset_x:		Horizontal offset into the LSC table of this tile
  * @offset_y:		Vertical offset into the LSC table of this tile
  */
-struct pisp_be_lsc_extra {
+struct pisp_be_lsc_extra
+{
 	__u16 offset_x;
 	__u16 offset_y;
 } __attribute__((packed));
@@ -328,13 +345,14 @@ struct pisp_be_lsc_extra {
  * @grid_step_y:	Reciprocal of cell size height
  * @lut:		Pixel shift for the CAC grid
  */
-struct pisp_be_cac_config {
+struct pisp_be_cac_config
+{
 	/* (1<<20) / grid_cell_width */
 	__u16 grid_step_x;
 	/* (1<<20) / grid_cell_height */
 	__u16 grid_step_y;
 	/* [gridy][gridx][rb][xy] */
-#define PISP_BE_CAC_LUT_SIZE		(PISP_BE_CAC_GRID_SIZE + 1)
+#define PISP_BE_CAC_LUT_SIZE (PISP_BE_CAC_GRID_SIZE + 1)
 	__s8 lut[PISP_BE_CAC_LUT_SIZE][PISP_BE_CAC_LUT_SIZE][2][2];
 } __attribute__((packed));
 
@@ -343,7 +361,8 @@ struct pisp_be_cac_config {
  * @offset_x:		Horizontal offset into the CAC table of this tile
  * @offset_y:		Horizontal offset into the CAC table of this tile
  */
-struct pisp_be_cac_extra {
+struct pisp_be_cac_extra
+{
 	__u16 offset_x;
 	__u16 offset_y;
 } __attribute__((packed));
@@ -360,7 +379,8 @@ struct pisp_be_cac_extra {
  * @v_enable:		Vertical debinning enable
  * @pad:		Padding bytes
  */
-struct pisp_be_debin_config {
+struct pisp_be_debin_config
+{
 	__s8 coeffs[PISP_BE_DEBIN_NUM_COEFFS];
 	__s8 h_enable;
 	__s8 v_enable;
@@ -380,7 +400,8 @@ struct pisp_be_debin_config {
  * @strength:		Strength factor
  * @lut:		Look-up table for tonemap curve
  */
-struct pisp_be_tonemap_config {
+struct pisp_be_tonemap_config
+{
 	__u16 detail_constant;
 	__u16 detail_slope;
 	__u16 iir_strength;
@@ -397,7 +418,8 @@ struct pisp_be_tonemap_config {
  * @fc_mode:		Built-in false colour suppression mode
  * @pad:		Padding bytes
  */
-struct pisp_be_demosaic_config {
+struct pisp_be_demosaic_config
+{
 	__u8 sharper;
 	__u8 fc_mode;
 	__u8 pad[2];
@@ -412,7 +434,8 @@ struct pisp_be_demosaic_config {
  * @pad:		Padding bytes
  * @offsets:		Offsets triplet
  */
-struct pisp_be_ccm_config {
+struct pisp_be_ccm_config
+{
 	__s16 coeffs[9];
 	__u8 pad[2];
 	__s32 offsets[3];
@@ -428,7 +451,8 @@ struct pisp_be_ccm_config {
  * @shift_b:		Left shift for Blue colour channel
  * @pad:		Padding byte
  */
-struct pisp_be_sat_control_config {
+struct pisp_be_sat_control_config
+{
 	__u8 shift_r;
 	__u8 shift_g;
 	__u8 shift_b;
@@ -443,7 +467,8 @@ struct pisp_be_sat_control_config {
  * @distance:		Distance of neighbouring pixels, either 1 or 2
  * @pad:		Padding bytes
  */
-struct pisp_be_false_colour_config {
+struct pisp_be_false_colour_config
+{
 	__u8 distance;
 	__u8 pad[3];
 } __attribute__((packed));
@@ -499,7 +524,8 @@ struct pisp_be_false_colour_config {
  * @black:		Black output pixel filter mask
  * @grey:		Grey output pixel filter mask
  */
-struct pisp_be_sharpen_config {
+struct pisp_be_sharpen_config
+{
 	__s8 kernel0[PISP_BE_SHARPEN_SIZE * PISP_BE_SHARPEN_SIZE];
 	__s8 pad0[3];
 	__s8 kernel1[PISP_BE_SHARPEN_SIZE * PISP_BE_SHARPEN_SIZE];
@@ -557,7 +583,8 @@ struct pisp_be_sharpen_config {
  *			channel
  * @pad:		Padding byte
  */
-struct pisp_be_sh_fc_combine_config {
+struct pisp_be_sh_fc_combine_config
+{
 	__u8 y_factor;
 	__u8 c1_factor;
 	__u8 c2_factor;
@@ -570,7 +597,8 @@ struct pisp_be_sh_fc_combine_config {
  * struct pisp_be_gamma_config - PiSP Back End Gamma configuration
  * @lut:		Gamma curve look-up table
  */
-struct pisp_be_gamma_config {
+struct pisp_be_gamma_config
+{
 	__u32 lut[PISP_BE_GAMMA_LUT_SIZE];
 } __attribute__((packed));
 
@@ -584,7 +612,8 @@ struct pisp_be_gamma_config {
  * @width:		Width of the cropped tile output
  * @height:		Height of the cropped tile output
  */
-struct pisp_be_crop_config {
+struct pisp_be_crop_config
+{
 	__u16 offset_x, offset_y;
 	__u16 width, height;
 } __attribute__((packed));
@@ -600,7 +629,8 @@ struct pisp_be_crop_config {
  * @scale_factor_v:	Vertical scale factor
  * @coef:		Resample coefficients
  */
-struct pisp_be_resample_config {
+struct pisp_be_resample_config
+{
 	__u16 scale_factor_h, scale_factor_v;
 	__s16 coef[PISP_BE_RESAMPLE_FILTER_SIZE];
 } __attribute__((packed));
@@ -615,7 +645,8 @@ struct pisp_be_resample_config {
  * @initial_phase_h:	Initial horizontal phase
  * @initial_phase_v:	Initial vertical phase
  */
-struct pisp_be_resample_extra {
+struct pisp_be_resample_extra
+{
 	__u16 scaled_width;
 	__u16 scaled_height;
 	__s16 initial_phase_h[3];
@@ -632,7 +663,8 @@ struct pisp_be_resample_extra {
  * @scale_recip_h:	Horizontal reciprocal factor
  * @scale_recip_v:	Vertical reciprocal factor
  */
-struct pisp_be_downscale_config {
+struct pisp_be_downscale_config
+{
 	__u16 scale_factor_h;
 	__u16 scale_factor_v;
 	__u16 scale_recip_h;
@@ -644,7 +676,8 @@ struct pisp_be_downscale_config {
  * @scaled_width:	Scaled image width
  * @scaled_height:	Scaled image height
  */
-struct pisp_be_downscale_extra {
+struct pisp_be_downscale_extra
+{
 	__u16 scaled_width;
 	__u16 scaled_height;
 } __attribute__((packed));
@@ -658,13 +691,15 @@ struct pisp_be_downscale_extra {
  * @channel_mix:	Channels proportions to use
  * @stride:		Stride in bytes between blocks directly below
  */
-struct pisp_be_hog_config {
+struct pisp_be_hog_config
+{
 	__u8 compute_signed;
 	__u8 channel_mix[3];
 	__u32 stride;
 } __attribute__((packed));
 
-struct pisp_be_axi_config {
+struct pisp_be_axi_config
+{
 	__u8 r_qos; /* Read QoS */
 	__u8 r_cache_prot; /* Read { prot[2:0], cache[3:0] } */
 	__u8 w_qos; /* Write QoS */
@@ -678,15 +713,16 @@ struct pisp_be_axi_config {
  * @PISP_BE_TRANSFORM_VFLIP:	Vertical flip
  * @PISP_BE_TRANSFORM_ROT180:	180 degress rotation
  */
-enum pisp_be_transform {
+enum pisp_be_transform
+{
 	PISP_BE_TRANSFORM_NONE = 0x0,
 	PISP_BE_TRANSFORM_HFLIP = 0x1,
 	PISP_BE_TRANSFORM_VFLIP = 0x2,
-	PISP_BE_TRANSFORM_ROT180 =
-		(PISP_BE_TRANSFORM_HFLIP | PISP_BE_TRANSFORM_VFLIP)
+	PISP_BE_TRANSFORM_ROT180 = (PISP_BE_TRANSFORM_HFLIP | PISP_BE_TRANSFORM_VFLIP)
 };
 
-struct pisp_be_output_format_config {
+struct pisp_be_output_format_config
+{
 	struct pisp_image_format_config image;
 	__u8 transform;
 	__u8 pad[3];
@@ -700,7 +736,8 @@ struct pisp_be_output_format_config {
  * struct pisp_be_output_buffer_config - PiSP Back End Output buffer
  * @addr:		Output buffer address
  */
-struct pisp_be_output_buffer_config {
+struct pisp_be_output_buffer_config
+{
 	/* low 32 bits followed by high 32 bits (for each of 3 planes) */
 	__u32 addr[3][2];
 } __attribute__((packed));
@@ -709,7 +746,8 @@ struct pisp_be_output_buffer_config {
  * struct pisp_be_hog_buffer_config - PiSP Back End HOG buffer
  * @addr:		HOG buffer address
  */
-struct pisp_be_hog_buffer_config {
+struct pisp_be_hog_buffer_config
+{
 	/* low 32 bits followed by high 32 bits */
 	__u32 addr[2];
 } __attribute__((packed));
@@ -756,7 +794,8 @@ struct pisp_be_hog_buffer_config {
  * @hog:			HOG configuration
  * @axi:			AXI bus configuration
  */
-struct pisp_be_config {
+struct pisp_be_config
+{
 	/* For backward compatibility */
 	uint8_t pad0[112];
 	/* Processing configuration: */
@@ -795,8 +834,7 @@ struct pisp_be_config {
 	struct pisp_be_ccm_config csc[PISP_BACK_END_NUM_OUTPUTS];
 	struct pisp_be_downscale_config downscale[PISP_BACK_END_NUM_OUTPUTS];
 	struct pisp_be_resample_config resample[PISP_BACK_END_NUM_OUTPUTS];
-	struct pisp_be_output_format_config
-				output_format[PISP_BACK_END_NUM_OUTPUTS];
+	struct pisp_be_output_format_config output_format[PISP_BACK_END_NUM_OUTPUTS];
 	struct pisp_be_hog_config hog;
 	struct pisp_be_axi_config axi;
 	/* For backward compatibility */
@@ -810,7 +848,8 @@ struct pisp_be_config {
  * @PISP_TOP_EDGE:		Top edge tile
  * @PISP_BOTTOM_EDGE:		Bottom edge tile
  */
-enum pisp_tile_edge {
+enum pisp_tile_edge
+{
 	PISP_LEFT_EDGE = (1 << 0),
 	PISP_RIGHT_EDGE = (1 << 1),
 	PISP_TOP_EDGE = (1 << 2),
@@ -870,7 +909,8 @@ enum pisp_tile_edge {
  * @output_hog_addr_offset:	Offset in bytes into the HOG buffer where
  *				results of this tile are to be written
  */
-struct pisp_tile {
+struct pisp_tile
+{
 	__u8 edge; /* enum pisp_tile_edge */
 	__u8 pad0[3];
 	/* 4 bytes */
@@ -926,7 +966,8 @@ struct pisp_tile {
  * @num_tiles:	Number of tiles
  * @config:	PiSP Back End configuration
  */
-struct pisp_be_tiles_config {
+struct pisp_be_tiles_config
+{
 	struct pisp_be_config config;
 	struct pisp_tile tiles[PISP_BACK_END_NUM_TILES];
 	__u32 num_tiles;

@@ -113,4 +113,4 @@ private:
 	v4l2_format v4l2_format_;
 };
 
-} // namespace libpisp
+} // namespace libpisp::helpers

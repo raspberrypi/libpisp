@@ -39,8 +39,8 @@ public:
 		enum Flags
 		{
 			NONE = 0,
-			LOW_LATENCY = 1,	// Attempt to process image with lowest possible latency (no longer implemented)
-			HIGH_PRIORITY = 2 	// Not currently implemented
+			LOW_LATENCY = 1, // Attempt to process image with lowest possible latency (no longer implemented)
+			HIGH_PRIORITY = 2 // Not currently implemented
 		};
 
 		Config(unsigned int _max_stripe_height = 0, unsigned int _max_tile_width = 0, unsigned int _flags = 0,
@@ -139,8 +139,7 @@ public:
 	void GetOutputFormat(unsigned int i, pisp_be_output_format_config &output_format) const;
 	void SetResample(unsigned int i, pisp_be_resample_config const &resample,
 					 pisp_be_resample_extra const &resample_extra);
-	void GetResample(unsigned int i, pisp_be_resample_config &resample,
-					 pisp_be_resample_extra &resample_extra) const;
+	void GetResample(unsigned int i, pisp_be_resample_config &resample, pisp_be_resample_extra &resample_extra) const;
 	void SetResample(unsigned int i, pisp_be_resample_extra const &resample_extra);
 	void GetResample(unsigned int i, pisp_be_resample_extra &resample_extra) const;
 	void SetDownscale(unsigned int i, pisp_be_downscale_config const &downscale,

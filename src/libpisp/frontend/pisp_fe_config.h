@@ -13,13 +13,13 @@
 
 #define PISP_FE_NUM_OUTPUTS 2
 
-#define PISP_FE_ENABLE_CROP(i) (PISP_FE_ENABLE_CROP0<<(4*i))
-#define PISP_FE_ENABLE_DOWNSCALE(i) (PISP_FE_ENABLE_DOWNSCALE0<<(4*i))
-#define PISP_FE_ENABLE_COMPRESS(i) (PISP_FE_ENABLE_COMPRESS0<<(4*i))
-#define PISP_FE_ENABLE_OUTPUT(i) (PISP_FE_ENABLE_OUTPUT0<<(4*i))
+#define PISP_FE_ENABLE_CROP(i) (PISP_FE_ENABLE_CROP0 << (4 * i))
+#define PISP_FE_ENABLE_DOWNSCALE(i) (PISP_FE_ENABLE_DOWNSCALE0 << (4 * i))
+#define PISP_FE_ENABLE_COMPRESS(i) (PISP_FE_ENABLE_COMPRESS0 << (4 * i))
+#define PISP_FE_ENABLE_OUTPUT(i) (PISP_FE_ENABLE_OUTPUT0 << (4 * i))
 
-
-typedef enum {
+typedef enum
+{
 	PISP_FE_ENABLE_INPUT = 0x000001,
 	PISP_FE_ENABLE_DECOMPRESS = 0x000002,
 	PISP_FE_ENABLE_DECOMPAND = 0x000004,
@@ -47,19 +47,22 @@ typedef enum {
  * We use the enable flags to show when blocks are "dirty", but we need some
  * extra ones too.
  */
-typedef enum {
+typedef enum
+{
 	PISP_FE_DIRTY_GLOBAL = 0x0001,
 	PISP_FE_DIRTY_FLOATING = 0x0002,
 	PISP_FE_DIRTY_OUTPUT_AXI = 0x0004
 } pisp_fe_dirty;
 
-typedef struct {
+typedef struct
+{
 	uint32_t enables;
 	uint8_t bayer_order;
 	uint8_t pad[3];
 } pisp_fe_global_config;
 
-typedef struct {
+typedef struct
+{
 	/* burst length minus one, in the range 0..15; OR'd with flags */
 	uint8_t maxlen_flags;
 	/* { prot[2:0], cache[3:0] } fields */
@@ -68,7 +71,8 @@ typedef struct {
 	uint16_t qos;
 } pisp_fe_input_axi_config;
 
-typedef struct {
+typedef struct
+{
 	/* burst length minus one, in the range 0..15; OR'd with flags */
 	uint8_t maxlen_flags;
 	/* { prot[2:0], cache[3:0] } fields */
@@ -81,7 +85,8 @@ typedef struct {
 	uint16_t throttle;
 } pisp_fe_output_axi_config;
 
-typedef struct {
+typedef struct
+{
 	uint8_t streaming;
 	uint8_t pad[3];
 	pisp_image_format_config format;
@@ -91,13 +96,15 @@ typedef struct {
 	uint8_t pad2[3];
 } pisp_fe_input_config;
 
-typedef struct {
+typedef struct
+{
 	pisp_image_format_config format;
 	uint16_t ilines;
 	uint8_t pad[2];
 } pisp_fe_output_config;
 
-typedef struct {
+typedef struct
+{
 	uint32_t addr_lo;
 	uint32_t addr_hi;
 	uint16_t frame_id;
@@ -106,12 +113,14 @@ typedef struct {
 
 #define PISP_FE_DECOMPAND_LUT_SIZE 65
 
-typedef struct {
+typedef struct
+{
 	uint16_t lut[PISP_FE_DECOMPAND_LUT_SIZE];
 	uint16_t pad;
 } pisp_fe_decompand_config;
 
-typedef struct {
+typedef struct
+{
 	uint8_t coeff_level;
 	uint8_t coeff_range;
 	uint8_t coeff_range2;
@@ -122,7 +131,8 @@ typedef struct {
 
 #define PISP_FE_LSC_LUT_SIZE 16
 
-typedef struct {
+typedef struct
+{
 	uint8_t shift;
 	uint8_t pad0;
 	uint16_t scale;
@@ -131,7 +141,8 @@ typedef struct {
 	uint16_t lut[PISP_FE_LSC_LUT_SIZE];
 } pisp_fe_lsc_config;
 
-typedef struct {
+typedef struct
+{
 	uint16_t gain_r;
 	uint16_t gain_g;
 	uint16_t gain_b;
@@ -139,7 +150,8 @@ typedef struct {
 	uint8_t pad;
 } pisp_fe_rgby_config;
 
-typedef struct {
+typedef struct
+{
 	uint16_t offset_x;
 	uint16_t offset_y;
 	uint16_t size_x;
@@ -155,7 +167,8 @@ typedef struct {
 	uint8_t pad1[2];
 } pisp_fe_agc_stats_config;
 
-typedef struct {
+typedef struct
+{
 	uint16_t offset_x;
 	uint16_t offset_y;
 	uint16_t size_x;
@@ -170,20 +183,23 @@ typedef struct {
 	uint16_t b_hi;
 } pisp_fe_awb_stats_config;
 
-typedef struct {
+typedef struct
+{
 	uint16_t offset_x;
 	uint16_t offset_y;
 	uint16_t size_x;
 	uint16_t size_y;
 } pisp_fe_floating_stats_region;
 
-typedef struct {
+typedef struct
+{
 	pisp_fe_floating_stats_region regions[PISP_FLOATING_STATS_NUM_ZONES];
 } pisp_fe_floating_stats_config;
 
 #define PISP_FE_CDAF_NUM_WEIGHTS 8
 
-typedef struct {
+typedef struct
+{
 	uint16_t noise_constant;
 	uint16_t noise_slope;
 	uint16_t offset_x;
@@ -195,26 +211,28 @@ typedef struct {
 	uint32_t mode;
 } pisp_fe_cdaf_stats_config;
 
-typedef struct {
+typedef struct
+{
 	uint32_t addr_lo;
 	uint32_t addr_hi;
 } pisp_fe_stats_buffer_config;
 
-typedef struct {
+typedef struct
+{
 	uint16_t offset_x;
 	uint16_t offset_y;
 	uint16_t width;
 	uint16_t height;
 } pisp_fe_crop_config;
 
-typedef enum {
-	DOWNSCALE_BAYER =
-		1, /* downscale the four Bayer components independently... */
-	DOWNSCALE_BIN =
-		2 /* ...without trying to preserve their spatial relationship */
+typedef enum
+{
+	DOWNSCALE_BAYER = 1, /* downscale the four Bayer components independently... */
+	DOWNSCALE_BIN = 2 /* ...without trying to preserve their spatial relationship */
 } pisp_fe_downscale_flags;
 
-typedef struct {
+typedef struct
+{
 	uint8_t xin;
 	uint8_t xout;
 	uint8_t yin;
@@ -225,13 +243,15 @@ typedef struct {
 	uint16_t output_height;
 } pisp_fe_downscale_config;
 
-typedef struct {
+typedef struct
+{
 	uint32_t addr_lo;
 	uint32_t addr_hi;
 } pisp_fe_output_buffer_config;
 
 /* Each of the two output channels/branches: */
-typedef struct {
+typedef struct
+{
 	pisp_fe_crop_config crop;
 	pisp_fe_downscale_config downscale;
 	pisp_compress_config compress;
@@ -240,7 +260,8 @@ typedef struct {
 } pisp_fe_output_branch_config;
 
 /* And finally one to rule them all: */
-typedef struct {
+typedef struct
+{
 	/* I/O configuration: */
 	pisp_fe_stats_buffer_config stats_buffer;
 	pisp_fe_output_buffer_config output_buffer[PISP_FE_NUM_OUTPUTS];
