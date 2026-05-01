@@ -139,8 +139,7 @@ private:
 	MediaDevList device_list_;
 };
 
-MediaDevice::MediaDevice()
-	: media_enumerator_(MediaEnumerator::Get())
+MediaDevice::MediaDevice() : media_enumerator_(MediaEnumerator::Get())
 {
 }
 
@@ -170,8 +169,8 @@ std::string MediaDevice::Acquire(const std::string &device)
 		if (lockf(fd.Get(), F_TLOCK, 0))
 			continue;
 
-		lock_map_.emplace(std::piecewise_construct,
-						  std::forward_as_tuple(m.media_node), std::forward_as_tuple(std::move(fd)));
+		lock_map_.emplace(std::piecewise_construct, std::forward_as_tuple(m.media_node),
+						  std::forward_as_tuple(std::move(fd)));
 
 		return m.media_node;
 	}

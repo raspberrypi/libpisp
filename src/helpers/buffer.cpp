@@ -19,8 +19,7 @@
 
 using namespace libpisp::helpers;
 
-Buffer::Sync::Sync(BufferRef buffer, Access access)
-	: buffer_(buffer), access_(access)
+Buffer::Sync::Sync(BufferRef buffer, Access access) : buffer_(buffer), access_(access)
 {
 	struct dma_buf_sync dma_sync {};
 
@@ -67,13 +66,11 @@ const std::array<size_t, 3> &Buffer::Sync::Size() const
 	return buffer_.get().Size();
 }
 
-Buffer::Buffer()
-	: size(), mem(), fd({ -1, -1, -1 })
+Buffer::Buffer() : size(), mem(), fd({ -1, -1, -1 })
 {
 }
 
-Buffer::Buffer(const Buffer &other)
-	: size(other.size), mem(), fd({ -1, -1, -1 })
+Buffer::Buffer(const Buffer &other) : size(other.size), mem(), fd({ -1, -1, -1 })
 {
 	for (unsigned int p = 0; p < 3; p++)
 	{
@@ -92,8 +89,7 @@ Buffer::Buffer(const Buffer &other)
 	}
 }
 
-Buffer::Buffer(Buffer &&other)
-	: size(other.size), mem(other.mem), fd(other.fd)
+Buffer::Buffer(Buffer &&other) : size(other.size), mem(other.mem), fd(other.fd)
 {
 	// Clear other without closing: we took ownership of its fds.
 	other.size = {};
@@ -101,8 +97,7 @@ Buffer::Buffer(Buffer &&other)
 	other.mem = {};
 }
 
-Buffer::Buffer(const std::array<int, 3> &fd, const std::array<size_t, 3> &size)
-	: size(size), mem(), fd(fd)
+Buffer::Buffer(const std::array<int, 3> &fd, const std::array<size_t, 3> &size) : size(size), mem(), fd(fd)
 {
 }
 

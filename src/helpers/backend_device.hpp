@@ -52,4 +52,4 @@ private:
 	std::unordered_set<std::string> nodes_enabled_;
 };
 
-} // namespace libpisp
+} // namespace libpisp::helpers

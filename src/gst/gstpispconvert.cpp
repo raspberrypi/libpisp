@@ -34,14 +34,14 @@ GST_DEBUG_CATEGORY_STATIC(gst_pisp_convert_debug);
 /* Supported GStreamer formats */
 #define PISP_FORMATS "{ RGB, RGBx, BGRx, I420, YV12, Y42B, Y444, YUY2, UYVY, NV12, NV12_128C8, NV12_10LE32_128C8 }"
 /* Supported DRM fourccs */
-#define PISP_DRM_FORMATS "{ RG24, XB24, XR24, YU12, YV12, YU16, YU24, YUYV, UYVY, NV12, NV12:0x0700000000000004, P030:0x0700000000000004 }"
+#define PISP_DRM_FORMATS                                                                                               \
+	"{ RG24, XB24, XR24, YU12, YV12, YU16, YU24, YUYV, UYVY, NV12, NV12:0x0700000000000004, P030:0x0700000000000004 }"
 
-#define PISP_SRC_CAPS \
-	"video/x-raw(memory:DMABuf), format=(string)DMA_DRM, drm-format=(string)" PISP_DRM_FORMATS \
-	", width=(int)[1,32768], height=(int)[1,32768], framerate=(fraction)[0/1,2147483647/1]" \
-	";" \
-	GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_MEMORY_DMABUF, PISP_FORMATS) ";" \
-	GST_VIDEO_CAPS_MAKE(PISP_FORMATS)
+#define PISP_SRC_CAPS                                                                                                  \
+	"video/x-raw(memory:DMABuf), format=(string)DMA_DRM, drm-format=(string)" PISP_DRM_FORMATS                         \
+	", width=(int)[1,32768], height=(int)[1,32768], framerate=(fraction)[0/1,2147483647/1]"                            \
+	";" GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_MEMORY_DMABUF,                                              \
+										  PISP_FORMATS) ";" GST_VIDEO_CAPS_MAKE(PISP_FORMATS)
 
 static GstStaticPadTemplate sink_template = GST_STATIC_PAD_TEMPLATE(
 	"sink", GST_PAD_SINK, GST_PAD_ALWAYS,
@@ -53,13 +53,11 @@ static GstStaticPadTemplate sink_template = GST_STATIC_PAD_TEMPLATE(
 		/* System memory */
 		GST_VIDEO_CAPS_MAKE(PISP_FORMATS)));
 
-static GstStaticPadTemplate src0_template = GST_STATIC_PAD_TEMPLATE(
-	"src0", GST_PAD_SRC, GST_PAD_ALWAYS,
-	GST_STATIC_CAPS(PISP_SRC_CAPS));
+static GstStaticPadTemplate src0_template =
+	GST_STATIC_PAD_TEMPLATE("src0", GST_PAD_SRC, GST_PAD_ALWAYS, GST_STATIC_CAPS(PISP_SRC_CAPS));
 
-static GstStaticPadTemplate src1_template = GST_STATIC_PAD_TEMPLATE(
-	"src1", GST_PAD_SRC, GST_PAD_ALWAYS,
-	GST_STATIC_CAPS(PISP_SRC_CAPS));
+static GstStaticPadTemplate src1_template =
+	GST_STATIC_PAD_TEMPLATE("src1", GST_PAD_SRC, GST_PAD_ALWAYS, GST_STATIC_CAPS(PISP_SRC_CAPS));
 
 #define gst_pisp_convert_parent_class parent_class
 G_DEFINE_TYPE(GstPispConvert, gst_pisp_convert, GST_TYPE_ELEMENT);
@@ -154,9 +152,9 @@ static const char *colorimetry_to_pisp(const GstVideoColorimetry *colorimetry)
 }
 
 /* Configure colour space conversion blocks for the backend */
-static uint32_t configure_colour_conversion(libpisp::BackEnd *backend, const char *in_format,
-											const char *in_colorspace, const char *out_format,
-											const char *out_colorspace, unsigned int output_index)
+static uint32_t configure_colour_conversion(libpisp::BackEnd *backend, const char *in_format, const char *in_colorspace,
+											const char *out_format, const char *out_colorspace,
+											unsigned int output_index)
 {
 	uint32_t rgb_enables = 0;
 
@@ -177,8 +175,7 @@ static uint32_t configure_colour_conversion(libpisp::BackEnd *backend, const cha
 		backend->SetCsc(output_index, csc);
 		rgb_enables |= PISP_BE_RGB_ENABLE_CSC(output_index);
 	}
-	else if (g_str_equal(out_format, "RGB888") ||
-			 g_str_equal(out_format, "RGBX8888") ||
+	else if (g_str_equal(out_format, "RGB888") || g_str_equal(out_format, "RGBX8888") ||
 			 g_str_equal(out_format, "XRGB8888"))
 	{
 		/* R/B channel swap to match GStreamer/DRM byte ordering */
@@ -252,21 +249,18 @@ static void gst_pisp_convert_class_init(GstPispConvertClass *klass)
 		gobject_class, PROP_CROP,
 		g_param_spec_string("crop", "Crop region for all outputs",
 							"Crop region as 'x,y,width,height' applied to all outputs (0,0,0,0 = full input)",
-							"0,0,0,0",
-							static_cast<GParamFlags>(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+							"0,0,0,0", static_cast<GParamFlags>(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
 	g_object_class_install_property(
 		gobject_class, PROP_CROP0,
 		g_param_spec_string("crop0", "Crop region for output 0",
-							"Crop region as 'x,y,width,height' (0,0,0,0 = no crop / full input)",
-							"0,0,0,0",
+							"Crop region as 'x,y,width,height' (0,0,0,0 = no crop / full input)", "0,0,0,0",
 							static_cast<GParamFlags>(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
 	g_object_class_install_property(
 		gobject_class, PROP_CROP1,
 		g_param_spec_string("crop1", "Crop region for output 1",
-							"Crop region as 'x,y,width,height' (0,0,0,0 = no crop / full input)",
-							"0,0,0,0",
+							"Crop region as 'x,y,width,height' (0,0,0,0 = no crop / full input)", "0,0,0,0",
 							static_cast<GParamFlags>(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
 	element_class->change_state = GST_DEBUG_FUNCPTR(gst_pisp_convert_change_state);
@@ -533,8 +527,8 @@ static gboolean parse_input_caps(GstPispConvert *self, GstCaps *caps)
 		self->priv->in_colorspace = colorimetry_to_pisp(&colorimetry);
 
 		GST_INFO_OBJECT(self, "Input DMA-DRM format: drm-format=%s, pisp=%s, colorspace=%s (matrix=%d, range=%d)",
-						drm_format, self->priv->in_format, self->priv->in_colorspace,
-						colorimetry.matrix, colorimetry.range);
+						drm_format, self->priv->in_format, self->priv->in_colorspace, colorimetry.matrix,
+						colorimetry.range);
 	}
 	else
 	{
@@ -548,9 +542,9 @@ static gboolean parse_input_caps(GstPispConvert *self, GstCaps *caps)
 		self->priv->in_stride = GST_VIDEO_INFO_PLANE_STRIDE(&in_info, 0);
 		self->priv->in_format = gst_format_to_pisp(GST_VIDEO_INFO_FORMAT(&in_info));
 		self->priv->in_colorspace = colorimetry_to_pisp(&GST_VIDEO_INFO_COLORIMETRY(&in_info));
-		GST_INFO_OBJECT(self, "Input format: pisp=%s, colorspace=%s (matrix=%d, range=%d)",
-						self->priv->in_format, self->priv->in_colorspace,
-						GST_VIDEO_INFO_COLORIMETRY(&in_info).matrix, GST_VIDEO_INFO_COLORIMETRY(&in_info).range);
+		GST_INFO_OBJECT(self, "Input format: pisp=%s, colorspace=%s (matrix=%d, range=%d)", self->priv->in_format,
+						self->priv->in_colorspace, GST_VIDEO_INFO_COLORIMETRY(&in_info).matrix,
+						GST_VIDEO_INFO_COLORIMETRY(&in_info).range);
 	}
 
 	if (!self->priv->in_colorspace)
@@ -661,14 +655,13 @@ static void add_video_meta(GstBuffer *buffer, const char *pisp_format, guint wid
 	for (guint p = 0; p < n_planes; p++)
 	{
 		offsets[p] = offset;
-		strides[p] = hw_stride * GST_VIDEO_INFO_PLANE_STRIDE(&vinfo, p) /
-					 GST_VIDEO_INFO_PLANE_STRIDE(&vinfo, 0);
-		mem = gst_buffer_peek_memory (buffer, p);
+		strides[p] = hw_stride * GST_VIDEO_INFO_PLANE_STRIDE(&vinfo, p) / GST_VIDEO_INFO_PLANE_STRIDE(&vinfo, 0);
+		mem = gst_buffer_peek_memory(buffer, p);
 		offset += mem->size;
 	}
 
-	gst_buffer_add_video_meta_full(buffer, GST_VIDEO_FRAME_FLAG_NONE, gst_fmt,
-								   width, height, n_planes, offsets, strides);
+	gst_buffer_add_video_meta_full(buffer, GST_VIDEO_FRAME_FLAG_NONE, gst_fmt, width, height, n_planes, offsets,
+								   strides);
 }
 
 static void copy_planes(std::array<uint8_t *, 3> src, guint src_stride, std::array<uint8_t *, 3> dst, guint dst_stride,
@@ -887,19 +880,20 @@ static gboolean gst_pisp_convert_configure(GstPispConvert *self)
 			self->priv->backend->SetOutputFormat(i, output_cfg[i]);
 
 			if ((g_str_equal(self->priv->out_format[i], "RGBX8888") ||
-				 g_str_equal(self->priv->out_format[i], "XRGB8888")) && !self->priv->variant->BackendRGB32Supported(0))
+				 g_str_equal(self->priv->out_format[i], "XRGB8888")) &&
+				!self->priv->variant->BackendRGB32Supported(0))
 				GST_WARNING_OBJECT(self, "pisp_be HW does not support 32-bit RGB output, the image will be corrupt.");
 
 			if (!self->priv->out_colorspace[i])
 				self->priv->out_colorspace[i] = self->priv->in_colorspace;
 
-			global.rgb_enables |= configure_colour_conversion(self->priv->backend.get(),
-								self->priv->in_format, self->priv->in_colorspace,
-								self->priv->out_format[i], self->priv->out_colorspace[i], i);
+			global.rgb_enables |= configure_colour_conversion(self->priv->backend.get(), self->priv->in_format,
+															  self->priv->in_colorspace, self->priv->out_format[i],
+															  self->priv->out_colorspace[i], i);
 
-			GST_INFO_OBJECT(self, "Output%d: %ux%u %s (stride: gst=%u hw=%u) colorspace %s", i, self->priv->out_width[i],
-							self->priv->out_height[i], self->priv->out_format[i], self->priv->out_stride[i],
-							self->priv->out_hw_stride[i], self->priv->out_colorspace[i]);
+			GST_INFO_OBJECT(self, "Output%d: %ux%u %s (stride: gst=%u hw=%u) colorspace %s", i,
+							self->priv->out_width[i], self->priv->out_height[i], self->priv->out_format[i],
+							self->priv->out_stride[i], self->priv->out_hw_stride[i], self->priv->out_colorspace[i]);
 		}
 
 		self->priv->backend->SetGlobal(global);
@@ -1141,8 +1135,8 @@ static GstFlowReturn gst_pisp_convert_chain(GstPad *pad [[maybe_unused]], GstObj
 				goto cleanup;
 			}
 
-			add_video_meta(outbuf[i], self->priv->out_format[i], self->priv->out_width[i],
-						   self->priv->out_height[i], self->priv->out_hw_stride[i]);
+			add_video_meta(outbuf[i], self->priv->out_format[i], self->priv->out_width[i], self->priv->out_height[i],
+						   self->priv->out_hw_stride[i]);
 
 			GST_DEBUG_OBJECT(self, "Using zero-copy output%d path", i);
 		}

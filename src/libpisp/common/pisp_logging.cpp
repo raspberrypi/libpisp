@@ -29,7 +29,8 @@ namespace trivial = boost::log::trivial;
 namespace libpisp
 {
 
-namespace {
+namespace
+{
 
 std::mutex mutex;
 
@@ -39,16 +40,12 @@ boost::shared_ptr<sinks::synchronous_sink<sinks::text_file_backend>> file;
 void logging_file_init(const char *filename, unsigned int level)
 {
 	logging::formatter format =
-		expr::format("[libpisp %1%] %2%")
-		% expr::attr<trivial::severity_level>("Severity")
-		% expr::smessage;
+		expr::format("[libpisp %1%] %2%") % expr::attr<trivial::severity_level>("Severity") % expr::smessage;
 
 	// file sink
-	file = logging::add_file_log(
-			keywords::file_name = filename,
-			keywords::rotation_size = 1 * 1024 * 1024,
-			keywords::open_mode = std::ios_base::trunc,
-			keywords::filter = trivial::severity >= level);
+	file = logging::add_file_log(keywords::file_name = filename, keywords::rotation_size = 1 * 1024 * 1024,
+								 keywords::open_mode = std::ios_base::trunc,
+								 keywords::filter = trivial::severity >= level);
 	file->set_formatter(format);
 	file->locked_backend()->auto_flush(true);
 }
@@ -68,9 +65,7 @@ void logging_init()
 	logging::add_common_attributes();
 
 	logging::formatter format =
-		expr::format("[libpisp %1%] %2%")
-		% expr::attr<trivial::severity_level>("Severity")
-		% expr::smessage;
+		expr::format("[libpisp %1%] %2%") % expr::attr<trivial::severity_level>("Severity") % expr::smessage;
 
 	char *lev = std::getenv("LIBPISP_LOG_LEVEL");
 	if (lev)
