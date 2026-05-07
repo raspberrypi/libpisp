@@ -548,7 +548,7 @@ void FrontEnd::fix_output_size(unsigned int output_num)
 		if (fe_config_.global.enables & block_enable(PISP_FE_ENABLE_CROP0, output_num))
 		{
 			image_config.width = fe_config_.ch[output_num].crop.width;
-			image_config.width = fe_config_.ch[output_num].crop.height;
+			image_config.height = fe_config_.ch[output_num].crop.height;
 		}
 
 		if (fe_config_.global.enables & block_enable(PISP_FE_ENABLE_DOWNSCALE0, output_num))
