@@ -410,15 +410,30 @@ void BackEnd::SetOutputFormat(unsigned int i, pisp_be_output_format_config const
 	PISP_ASSERT(i < variant_.BackEndNumBranches(0));
 	be_config_.output_format[i] = output_format;
 	be_config_.output_format[i].pad[0] = be_config_.output_format[i].pad[1] = be_config_.output_format[i].pad[2] = 0;
+	be_config_extra_.output_format[i] = { 0, 0 };
 	be_config_extra_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_OUTPUT(i);
 	// Should only need a retile if the transform has changed, othwise a finalise_tile will do.
 	retile_ = true;
+}
+
+void BackEnd::SetOutputFormat(unsigned int i, pisp_be_output_format_config const &output_format,
+							  pisp_be_output_format_extra const &output_extra)
+{
+	SetOutputFormat(i, output_format);
+	be_config_extra_.output_format[i] = output_extra;
 }
 
 void BackEnd::GetOutputFormat(unsigned int i, pisp_be_output_format_config &output_format) const
 {
 	PISP_ASSERT(i < variant_.BackEndNumBranches(0));
 	output_format = be_config_.output_format[i];
+}
+
+void BackEnd::GetOutputFormat(unsigned int i, pisp_be_output_format_config &output_format,
+							  pisp_be_output_format_extra &output_extra) const
+{
+	GetOutputFormat(i, output_format);
+	output_extra = be_config_extra_.output_format[i];
 }
 
 void BackEnd::SetSmartResize(unsigned int i, BackEnd::SmartResize const &smart_resize)
