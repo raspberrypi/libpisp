@@ -410,7 +410,7 @@ void BackEnd::SetOutputFormat(unsigned int i, pisp_be_output_format_config const
 	PISP_ASSERT(i < variant_.BackEndNumBranches(0));
 	be_config_.output_format[i] = output_format;
 	be_config_.output_format[i].pad[0] = be_config_.output_format[i].pad[1] = be_config_.output_format[i].pad[2] = 0;
-	be_config_extra_.output_format[i] = { 0, 0 };
+	be_config_extra_.output_format[i] = { 0, 0, { 0, 0 } };
 	be_config_extra_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_OUTPUT(i);
 	// Should only need a retile if the transform has changed, othwise a finalise_tile will do.
 	retile_ = true;
@@ -421,6 +421,13 @@ void BackEnd::SetOutputFormat(unsigned int i, pisp_be_output_format_config const
 {
 	SetOutputFormat(i, output_format);
 	be_config_extra_.output_format[i] = output_extra;
+}
+
+void BackEnd::SetOutputFormatExtra(unsigned int i, pisp_be_output_format_extra const &output_extra)
+{
+	be_config_extra_.output_format[i] = output_extra;
+	be_config_extra_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_OUTPUT(i);
+	finalise_tiling_ = true;
 }
 
 void BackEnd::GetOutputFormat(unsigned int i, pisp_be_output_format_config &output_format) const
