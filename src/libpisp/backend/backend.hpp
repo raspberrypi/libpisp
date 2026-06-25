@@ -138,6 +138,7 @@ public:
 	void SetOutputFormat(unsigned int i, pisp_be_output_format_config const &output_format);
 	void SetOutputFormat(unsigned int i, pisp_be_output_format_config const &output_format,
 						 pisp_be_output_format_extra const &output_extra);
+	void SetOutputFormatExtra(unsigned int i, pisp_be_output_format_extra const &output_extra);
 	void GetOutputFormat(unsigned int i, pisp_be_output_format_config &output_format) const;
 	void GetOutputFormat(unsigned int i, pisp_be_output_format_config &output_format,
 						 pisp_be_output_format_extra &output_extra) const;

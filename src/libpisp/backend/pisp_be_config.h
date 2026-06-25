@@ -739,10 +739,15 @@ struct pisp_be_output_format_config
  *
  * @offset_x:	Horizontal offset of the output window
  * @offset_y:	Vertical offset of the output window
+ * @offset_bytes:	Offset of the output window in bytes for up to two output planes
+ *
+ * Applications will normally pass either offset_x/y or offset_bytes, leaving the
+ * ones they aren't using at zero.
  */
 struct pisp_be_output_format_extra {
 	__u16 offset_x;
 	__u16 offset_y;
+	__u32 offset_bytes[2];
 } __attribute__((packed));
 
 /**
