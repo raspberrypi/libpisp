@@ -1,3 +1,10 @@
+libpisp (1.6.0-1) trixie; urgency=medium
+
+  * New upstream version 1.6.0
+  * debian/copyright: Drop superfluous utils/checkstyle.py stanza
+
+ -- Serge Schneider <serge@raspberrypi.com>  Mon, 29 Jun 2026 17:17:40 +0100
+
 libpisp (1.5.0-1) trixie; urgency=medium
 
   * New upstream version 1.5.0
