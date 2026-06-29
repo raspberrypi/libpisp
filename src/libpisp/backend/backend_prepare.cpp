@@ -947,8 +947,12 @@ void BackEnd::finaliseTiling()
 			if (be_config_.output_format[j].transform & PISP_BE_TRANSFORM_VFLIP)
 				t.output_offset_y[j] = be_config_.output_format[j].image.height - output_offset_y_unflipped - 1;
 
-			compute_addr_offset(be_config_.output_format[j].image, t.output_offset_x[j], t.output_offset_y[j],
+			compute_addr_offset(be_config_.output_format[j].image,
+								t.output_offset_x[j] + be_config_extra_.output_format[j].offset_x,
+								t.output_offset_y[j] + be_config_extra_.output_format[j].offset_y,
 								&t.output_addr_offset[j], &t.output_addr_offset2[j]);
+			t.output_addr_offset[j] += be_config_extra_.output_format[j].offset_bytes[0];
+			t.output_addr_offset2[j] += be_config_extra_.output_format[j].offset_bytes[1];
 
 			PISP_LOG(debug, "Branch " << j << " output offsets " << t.output_offset_x[j] << "," << t.output_offset_y[j]
 									  << " address offsets " << t.output_addr_offset[j] << " and "
