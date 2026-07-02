@@ -155,6 +155,7 @@ void write_yuv422i(std::ofstream &out, std::array<uint8_t *, 3> &mem, unsigned i
 	write_plane(out, mem[0], width * 2, height, file_stride, buffer_stride);
 }
 
+// clang-format off
 struct FormatFuncs
 {
 	std::function<void(const std::array<uint8_t *, 3> &, std::ifstream &, unsigned int, unsigned int, unsigned int,
@@ -173,6 +174,7 @@ const std::map<std::string, FormatFuncs> Formats =
 	{ "YUYV", { read_yuv422i, write_yuv422i } },
 	{ "UYVY", { read_yuv422i, write_yuv422i } },
 };
+// clang-format on
 
 struct Format
 {
@@ -218,6 +220,7 @@ int main(int argc, char *argv[])
 
 	cxxopts::Options options(argv[0], "PiSP Image Converter");
 
+	// clang-format off
 	options.add_options()
 		("input", "Input file", cxxopts::value<std::string>())
 		("output", "Output file", cxxopts::value<std::string>())
@@ -229,6 +232,7 @@ int main(int argc, char *argv[])
 		("l,list", "Enumerate the media device nodes")
 		("h,help", "Print usage")
 	;
+	// clang-format on
 
 	options.parse_positional({ "input", "output" });
 	options.positional_help("<input file> <output file>");
@@ -376,8 +380,8 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	std::cerr << "Reading " << input_filename << " "
-			  << in_file.width << ":" << in_file.height << ":" << in_file.stride << ":" << in_file.format << std::endl;
+	std::cerr << "Reading " << input_filename << " " << in_file.width << ":" << in_file.height << ":" << in_file.stride
+			  << ":" << in_file.format << std::endl;
 
 	{
 		Buffer::Sync input(buffers.at("pispbe-input"), Buffer::Sync::Access::ReadWrite);

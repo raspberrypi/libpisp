@@ -25,8 +25,7 @@ const Buffer &AsBuffer(const Buffer &b)
 
 } // namespace
 
-BackendDevice::BackendDevice(const std::string &device)
-	: valid_(true)
+BackendDevice::BackendDevice(const std::string &device) : valid_(true)
 {
 	nodes_ = MediaDevice().OpenV4l2Nodes(device);
 	if (nodes_.empty())

@@ -203,7 +203,7 @@ void finalise_tdn(pisp_be_config &config)
 		throw std::runtime_error("BackEnd::finalise: TDN output does not match compression mode");
 
 	if (tdn_output_enabled)
-          check_rawio_format(config.tdn_output_format, config.input_format.width, config.input_format.height);
+		check_rawio_format(config.tdn_output_format, config.input_format.width, config.input_format.height);
 
 	if (tdn_input_enabled)
 		check_rawio_format(config.tdn_input_format, config.input_format.width, config.input_format.height);
@@ -337,9 +337,10 @@ void check_tiles(TileArray const &tiles, uint32_t rgb_enables, unsigned int numB
 
 				if (width_after_crop < PISP_BACK_END_MIN_TILE_WIDTH)
 				{
-					PISP_LOG(warning, "Tile narrow after crop: tile " << tile_num << " output " << i
-						 << " input_width " << tile.input_width << " after_crop " << width_after_crop
-						 << " crop start " << tile.crop_x_start[i] << " end " << tile.crop_x_end[i]);
+					PISP_LOG(warning, "Tile narrow after crop: tile "
+										  << tile_num << " output " << i << " input_width " << tile.input_width
+										  << " after_crop " << width_after_crop << " crop start "
+										  << tile.crop_x_start[i] << " end " << tile.crop_x_end[i]);
 					if (!rh_edge)
 						throw std::runtime_error("Tile width too small after crop");
 				}
@@ -348,9 +349,10 @@ void check_tiles(TileArray const &tiles, uint32_t rgb_enables, unsigned int numB
 
 				if (tile.resample_in_width[i] < PISP_BACK_END_MIN_TILE_WIDTH)
 				{
-					PISP_LOG(warning, "Tile narrow after downscale: tile " << tile_num << " output " << i
-						 << " input_width " << tile.input_width << " after_crop " << width_after_crop
-						 << " after downscale " << tile.resample_in_width[i]);
+					PISP_LOG(warning, "Tile narrow after downscale: tile "
+										  << tile_num << " output " << i << " input_width " << tile.input_width
+										  << " after_crop " << width_after_crop << " after downscale "
+										  << tile.resample_in_width[i]);
 					if (!rh_edge)
 						throw std::runtime_error("Tile width too small after downscale");
 				}
@@ -562,9 +564,9 @@ void BackEnd::updateSmartResize()
 				uint16_t resampler_output_width = smart_resize_[i].width;
 				uint16_t resampler_output_height = smart_resize_[i].height;
 
-				PISP_LOG(debug, "Smart resize branch " << i
-						 << " input size " << input_width << " x " << input_height
-						 << " output size " << smart_resize_[i].width << " x " <<  smart_resize_[i].height);
+				PISP_LOG(debug, "Smart resize branch " << i << " input size " << input_width << " x " << input_height
+													   << " output size " << smart_resize_[i].width << " x "
+													   << smart_resize_[i].height);
 
 				// We're doing to use the downscaler if it's available and we're downscaling
 				// by more than 2x.
@@ -581,9 +583,8 @@ void BackEnd::updateSmartResize()
 						// Try to put 2x downscale into the resampler, everything else into
 						// the downscaler. But remember that it must do *at least* 2x, and no
 						// more than 8x (being careful to round that limit up)..
-						downscaler_output_width = std::clamp(resampler_output_width * 2,
-															 (input_width + 7) / 8,
-															 input_width / 2);
+						downscaler_output_width =
+							std::clamp(resampler_output_width * 2, (input_width + 7) / 8, input_width / 2);
 					}
 					// Now the same for the height.
 					if (resampler_output_height * 2 < input_height)
@@ -591,13 +592,12 @@ void BackEnd::updateSmartResize()
 						// Try to put 2x downscale into the resampler, everything else into
 						// the downscaler. But remember that it must do *at least* 2x and no
 						// more than 8x (being careful to round that limit up)..
-						downscaler_output_height = std::clamp(resampler_output_height * 2,
-															  (input_height + 7) / 8,
-															  input_height / 2);
+						downscaler_output_height =
+							std::clamp(resampler_output_height * 2, (input_height + 7) / 8, input_height / 2);
 					}
 
-					PISP_LOG(debug, "Using downscaler, output size "
-							 << downscaler_output_width << " x " <<  downscaler_output_height);
+					PISP_LOG(debug, "Using downscaler, output size " << downscaler_output_width << " x "
+																	 << downscaler_output_height);
 
 					// Now program up the downscaler.
 					pisp_be_downscale_extra downscale = {};
@@ -640,8 +640,8 @@ void BackEnd::updateSmartResize()
 				pisp_be_resample_config resample = {};
 				pisp_be_resample_extra resample_extra = {};
 
-				if (scale_factor_x > 2.1 &&
-					scale_factor_x < scale_factor_y * 1.1 && scale_factor_y < scale_factor_x * 1.1)
+				if (scale_factor_x > 2.1 && scale_factor_x < scale_factor_y * 1.1 &&
+					scale_factor_y < scale_factor_x * 1.1)
 				{
 					PISP_LOG(debug, "Setting the PPF as a trapezoidal filter");
 
@@ -947,8 +947,12 @@ void BackEnd::finaliseTiling()
 			if (be_config_.output_format[j].transform & PISP_BE_TRANSFORM_VFLIP)
 				t.output_offset_y[j] = be_config_.output_format[j].image.height - output_offset_y_unflipped - 1;
 
-			compute_addr_offset(be_config_.output_format[j].image, t.output_offset_x[j], t.output_offset_y[j],
+			compute_addr_offset(be_config_.output_format[j].image,
+								t.output_offset_x[j] + be_config_extra_.output_format[j].offset_x,
+								t.output_offset_y[j] + be_config_extra_.output_format[j].offset_y,
 								&t.output_addr_offset[j], &t.output_addr_offset2[j]);
+			t.output_addr_offset[j] += be_config_extra_.output_format[j].offset_bytes[0];
+			t.output_addr_offset2[j] += be_config_extra_.output_format[j].offset_bytes[1];
 
 			PISP_LOG(debug, "Branch " << j << " output offsets " << t.output_offset_x[j] << "," << t.output_offset_y[j]
 									  << " address offsets " << t.output_addr_offset[j] << " and "

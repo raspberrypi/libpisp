@@ -28,9 +28,18 @@ def mitchell(B, C, N):
     for i in range(N):
         ax = abs(x[i])
         if ax < 1:
-            h[i] = ((12 - 9 * B - 6 * C) * ax**3 + (-18 + 12 * B + 6 * C) * ax**2 + (6 - 2 * B)) / 6
+            h[i] = (
+                (12 - 9 * B - 6 * C) * ax**3
+                + (-18 + 12 * B + 6 * C) * ax**2
+                + (6 - 2 * B)
+            ) / 6
         elif (ax >= 1) and (ax < 2):
-            h[i] = ((-B - 6 * C) * ax**3 + (6 * B + 30 * C) * ax**2 + (-12 * B - 48 * C) * ax + (8 * B + 24 * C)) / 6
+            h[i] = (
+                (-B - 6 * C) * ax**3
+                + (6 * B + 30 * C) * ax**2
+                + (-12 * B - 48 * C) * ax
+                + (8 * B + 24 * C)
+            ) / 6
     return h
 
 
@@ -50,14 +59,33 @@ def bicubic_spline(a, N):
 
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('--phases', metavar='P', type=int, help='Number of phases.', default=16)
-    parser.add_argument('--taps', metavar='T', type=int, help='Number of filter taps per phase.', default=6)
-    parser.add_argument('--precision', metavar='PR', type=int, help='Filter precision required.', default=10)
-    parser.add_argument('--filter', type=str, metavar='F',
-                        help='Filter type and parameters, e.g.: \n'
-                        '"Mitchell, b = 0.333, c = 0.333"\n'
-                        '"Lanczos, order = 3"\n'
-                        '"bicubic_spline, a=-0.5"', required=True)
+    parser.add_argument(
+        "--phases", metavar="P", type=int, help="Number of phases.", default=16
+    )
+    parser.add_argument(
+        "--taps",
+        metavar="T",
+        type=int,
+        help="Number of filter taps per phase.",
+        default=6,
+    )
+    parser.add_argument(
+        "--precision",
+        metavar="PR",
+        type=int,
+        help="Filter precision required.",
+        default=10,
+    )
+    parser.add_argument(
+        "--filter",
+        type=str,
+        metavar="F",
+        help="Filter type and parameters, e.g.: \n"
+        '"Mitchell, b = 0.333, c = 0.333"\n'
+        '"Lanczos, order = 3"\n'
+        '"bicubic_spline, a=-0.5"',
+        required=True,
+    )
 
     args = parser.parse_args()
 
@@ -66,24 +94,26 @@ def main():
     precision = args.precision
 
     # Parse the filter string and pick out the needed parameters.
-    filt = args.filter.split(',')
-    params = {'a': 0., 'b': 0., 'c': 0., 'order': 0}
+    filt = args.filter.split(",")
+    params = {"a": 0.0, "b": 0.0, "c": 0.0, "order": 0}
     for param in filt[1:]:
-        p = param.replace(' ', '').split('=')
+        p = param.replace(" ", "").split("=")
         params[p[0]] = type(params[p[0]])(p[1])
 
     # Generate the filter.
-    if (filt[0].lower() == 'mitchell'):
-        filter = f'"Michell - Netravali (B = {params["b"]:.3f}, C = {params["c"]:.3f})": [\n'
-        h = mitchell(params['b'], params['c'], phases * taps)
-    elif (filt[0].lower() == 'lanczos'):
+    if filt[0].lower() == "mitchell":
+        filter = (
+            f'"Michell - Netravali (B = {params["b"]:.3f}, C = {params["c"]:.3f})": [\n'
+        )
+        h = mitchell(params["b"], params["c"], phases * taps)
+    elif filt[0].lower() == "lanczos":
         filter = f'"Lanczos order {params["order"]}": [\n'
-        h = lanczos(params['order'], phases * taps)
-    elif (filt[0].lower() == 'bicubic_spline'):
+        h = lanczos(params["order"], phases * taps)
+    elif filt[0].lower() == "bicubic_spline":
         filter = f'"Bicubic-spline (a = {params["a"]:.3f})": [\n'
-        h = bicubic_spline(params['a'], phases * taps)
+        h = bicubic_spline(params["a"], phases * taps)
     else:
-        print(f'Invalid filter ({filt[0]}) selected!')
+        print(f"Invalid filter ({filt[0]}) selected!")
         exit()
 
     # Normalise and convert to fixed-point.
@@ -98,13 +128,13 @@ def main():
         max_index = np.nonzero(ppf[i] == ppf[i].max())[0]
         ppf[i, max_index] += (1 << precision) - np.int32(ppf[i].sum() / max_index.size)
 
-    nl = '\n'
+    nl = "\n"
     for i in range(phases):
-        phase = ', '.join([f'{c:>4}' for c in ppf[i, :]])
-        filter += f'    {phase}{nl+"]" if i==phases-1 else ","+nl}'
+        phase = ", ".join([f"{c:>4}" for c in ppf[i, :]])
+        filter += f"    {phase}{nl + ']' if i == phases - 1 else ',' + nl}"
 
     print(filter)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
