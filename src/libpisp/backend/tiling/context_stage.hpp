@@ -16,8 +16,9 @@ class ContextStage : public BasicStage
 public:
 	struct Config
 	{
-		Config(Crop2 const &_context, Length2 const &_alignment)
-			: context(_context), alignment(_alignment) {}
+		Config(Crop2 const &_context, Length2 const &_alignment) : context(_context), alignment(_alignment)
+		{
+		}
 		Crop2 context;
 		Length2 alignment;
 	};
