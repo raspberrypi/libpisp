@@ -101,6 +101,7 @@ struct BeGlobal
 	BayerEnables bayer_enables;
 	RgbEnables rgb_enables;
 	uint8_t bayer_order;
+	uint8_t quad_bayer;
 };
 
 // LSC/CAC/Downscale/Resample have extra non-register fields:

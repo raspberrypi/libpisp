@@ -379,7 +379,8 @@ void BackendConfigAdapter::set_global(const BeGlobal &global)
 		cfg->global.bayer_enables = bayer_enables_to_hw(global.bayer_enables);
 		cfg->global.rgb_enables = rgb_enables_to_hw(global.rgb_enables);
 		cfg->global.bayer_order = global.bayer_order;
-		cfg->global.pad[0] = cfg->global.pad[1] = cfg->global.pad[2] = 0;
+		cfg->global.quad_bayer = holds_alternative<pisp_be_config2 *>(config_) && global.quad_bayer;
+		cfg->global.pad[0] = cfg->global.pad[1] = 0;
 	});
 }
 
@@ -391,6 +392,7 @@ BeGlobal BackendConfigAdapter::get_global() const
 		global.bayer_enables = hw_to_bayer_enables(cfg->global.bayer_enables);
 		global.rgb_enables = hw_to_rgb_enables(cfg->global.rgb_enables);
 		global.bayer_order = cfg->global.bayer_order;
+		global.quad_bayer = holds_alternative<pisp_be_config2 *>(config_) && cfg->global.quad_bayer;
 	});
 
 	return global;
@@ -998,7 +1000,6 @@ void BackendConfigAdapter::set_demosaic(const BeDemosaicConfig &demosaic)
 		},
 		[&demosaic](pisp_be_config2 *cfg) {
 			cfg->demosaic = demosaic;
-			cfg->demosaic.pad[0] = cfg->demosaic.pad[1] = cfg->demosaic.pad[2] = 0;
 		}
 	});
 }

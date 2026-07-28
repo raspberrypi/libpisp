@@ -50,6 +50,7 @@ const std::vector<ConfigBlock> be_config {
 			{ "bayer_enables", offsetof(pisp_be_global_config, bayer_enables), sizeof(uint32_t), 1 },
 			{ "rgb_enables", offsetof(pisp_be_global_config, rgb_enables), sizeof(uint32_t), 1 },
 			{ "bayer_order", offsetof(pisp_be_global_config, bayer_order), sizeof(uint8_t), 1 },
+			{ "quad_bayer", offsetof(pisp_be_global_config, quad_bayer), sizeof(uint8_t), 1 },
 		}
 	},
 	{
@@ -661,6 +662,8 @@ const std::vector<ConfigBlock> be_config2 {
 			{ "min_scale", offsetof(pisp_be_demosaic2_config, min_scale), sizeof(uint8_t), 1 },
 			{ "max_scale", offsetof(pisp_be_demosaic2_config, max_scale), sizeof(uint8_t), 1 },
 			{ "threshold_scale", offsetof(pisp_be_demosaic2_config, threshold_scale), sizeof(uint8_t), 1 },
+			{ "qb_sharpness", offsetof(pisp_be_demosaic2_config, qb_sharpness), sizeof(uint8_t), 1 },
+			{ "qb_threshold", offsetof(pisp_be_demosaic2_config, qb_threshold), sizeof(uint16_t), 1 },
 		}
 	},
 	{

@@ -114,13 +114,15 @@ enum pisp_be_dirty {
  * @bayer_enables:	Bayer input enable flags
  * @rgb_enables:	RGB output enable flags
  * @bayer_order:	Bayer input format ordering
+ * @quad_bayer:         Quad Bayer flag (v2 only)
  * @pad:		Padding bytes
  */
 struct pisp_be_global_config {
 	__u32 bayer_enables;
 	__u32 rgb_enables;
 	__u8 bayer_order;
-	__u8 pad[3];
+	__u8 quad_bayer;
+	__u8 pad[2];
 } __attribute__((packed));
 
 /**
@@ -1007,7 +1009,8 @@ struct pisp_be_demosaic2_config {
 	__u8 max_scale;
 
 	__u8 threshold_scale;
-	__u8 pad[3];
+	__u8 qb_sharpness;
+	__u16 qb_threshold;
 } __attribute__((packed));
 
 struct pisp_be_resample2_config {
