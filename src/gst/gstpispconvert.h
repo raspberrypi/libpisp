@@ -81,6 +81,7 @@ struct _GstPispConvertPrivate
 	guint out_hw_stride[PISP_NUM_OUTPUTS]; // Hardware buffer stride
 	const char *out_format[PISP_NUM_OUTPUTS];
 	const char *out_colorspace[PISP_NUM_OUTPUTS];
+	bool out_rb_swap[PISP_NUM_OUTPUTS]; // Memory stores B,G,R channel order
 	gboolean output_enabled[PISP_NUM_OUTPUTS]; // Track which outputs are active
 
 	/* dmabuf support */

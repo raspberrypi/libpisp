@@ -67,7 +67,7 @@ GST_ELEMENT_REGISTER_DEFINE(pispconvert, "pispconvert", GST_RANK_PRIMARY, GST_TY
 static const std::map<GstVideoFormat, std::string> gst_pisp_format_map = {
 	{ GST_VIDEO_FORMAT_RGB, "RGB888" },
 	{ GST_VIDEO_FORMAT_RGBx, "RGBX8888" },
-	{ GST_VIDEO_FORMAT_BGRx, "XRGB8888" },
+	{ GST_VIDEO_FORMAT_BGRx, "RGBX8888" },
 	{ GST_VIDEO_FORMAT_I420, "YUV420P" },
 	{ GST_VIDEO_FORMAT_YV12, "YVU420P" },
 	{ GST_VIDEO_FORMAT_Y42B, "YUV422P" },
@@ -84,7 +84,7 @@ static const std::map<std::string, std::string> drm_pisp_format_map = {
 	{ "RG24", "RGB888" },
 	{ "BG24", "RGB888" },
 	{ "XB24", "RGBX8888" },
-	{ "XR24", "XRGB8888" },
+	{ "XR24", "RGBX8888" },
 	{ "YU12", "YUV420P" },
 	{ "YV12", "YVU420P" },
 	{ "YU16", "YUV422P" },
@@ -96,20 +96,33 @@ static const std::map<std::string, std::string> drm_pisp_format_map = {
 	{ "P030:0x0700000000000004", "YUV420SP10_COL128" },
 };
 
+/* Formats storing channels in B,G,R memory order need an R/B swap relative to
+ * the hardware's native R,G,B channel output. Keyed on the GStreamer/DRM
+ * format as the PiSP format string does not encode the channel order. */
+static bool require_rb_swap(GstVideoFormat format)
+{
+	return format == GST_VIDEO_FORMAT_BGRx;
+}
+
+static bool require_rb_swap(const gchar *drm_format)
+{
+	return drm_format && (g_str_equal(drm_format, "XR24") || g_str_equal(drm_format, "RG24"));
+}
+
 static const char *gst_format_to_pisp(GstVideoFormat format)
 {
 	auto it = gst_pisp_format_map.find(format);
 	return it != gst_pisp_format_map.end() ? it->second.c_str() : nullptr;
 }
 
-static GstVideoFormat pisp_to_gst_video_format(const char *pisp_format)
+static GstVideoFormat pisp_to_gst_video_format(const char *pisp_format, bool rb_swap)
 {
 	if (!pisp_format)
 		return GST_VIDEO_FORMAT_UNKNOWN;
 
 	for (const auto &[gst_fmt, pisp_fmt] : gst_pisp_format_map)
 	{
-		if (g_str_equal(pisp_format, pisp_fmt.c_str()))
+		if (g_str_equal(pisp_format, pisp_fmt.c_str()) && rb_swap == require_rb_swap(gst_fmt))
 			return gst_fmt;
 	}
 	return GST_VIDEO_FORMAT_UNKNOWN;
@@ -153,7 +166,7 @@ static const char *colorimetry_to_pisp(const GstVideoColorimetry *colorimetry)
 
 /* Configure colour space conversion blocks for the backend */
 static uint32_t configure_colour_conversion(libpisp::BackEnd *backend, const char *in_format, const char *in_colorspace,
-											const char *out_format, const char *out_colorspace,
+											const char *out_format, bool out_rb_swap, const char *out_colorspace,
 											unsigned int output_index)
 {
 	uint32_t rgb_enables = 0;
@@ -175,8 +188,7 @@ static uint32_t configure_colour_conversion(libpisp::BackEnd *backend, const cha
 		backend->SetCsc(output_index, csc);
 		rgb_enables |= PISP_BE_RGB_ENABLE_CSC(output_index);
 	}
-	else if (g_str_equal(out_format, "RGB888") || g_str_equal(out_format, "RGBX8888") ||
-			 g_str_equal(out_format, "XRGB8888"))
+	else if (out_rb_swap)
 	{
 		/* R/B channel swap to match GStreamer/DRM byte ordering */
 		pisp_be_ccm_config csc = {};
@@ -371,6 +383,7 @@ static void gst_pisp_convert_init(GstPispConvert *self)
 		self->priv->out_stride[i] = 0;
 		self->priv->out_hw_stride[i] = 0;
 		self->priv->out_format[i] = nullptr;
+		self->priv->out_rb_swap[i] = false;
 		self->priv->output_enabled[i] = FALSE;
 		self->priv->use_dmabuf_output[i] = FALSE;
 		self->priv->output_pool[i] = nullptr;
@@ -447,6 +460,7 @@ static gboolean parse_output_caps(GstPispConvert *self, guint index, GstCaps *ca
 		gst_structure_get_int(out_structure, "width", (gint *)&self->priv->out_width[index]);
 		gst_structure_get_int(out_structure, "height", (gint *)&self->priv->out_height[index]);
 		self->priv->out_format[index] = drm_format_to_pisp(drm_format);
+		self->priv->out_rb_swap[index] = require_rb_swap(drm_format);
 		self->priv->out_stride[index] = 0;
 
 		GstVideoColorimetry colorimetry = {};
@@ -470,6 +484,7 @@ static gboolean parse_output_caps(GstPispConvert *self, guint index, GstCaps *ca
 		self->priv->out_height[index] = GST_VIDEO_INFO_HEIGHT(&out_info);
 		self->priv->out_stride[index] = GST_VIDEO_INFO_PLANE_STRIDE(&out_info, 0);
 		self->priv->out_format[index] = gst_format_to_pisp(GST_VIDEO_INFO_FORMAT(&out_info));
+		self->priv->out_rb_swap[index] = require_rb_swap(GST_VIDEO_INFO_FORMAT(&out_info));
 		self->priv->out_colorspace[index] = colorimetry_to_pisp(&GST_VIDEO_INFO_COLORIMETRY(&out_info));
 		GST_INFO_OBJECT(self, "Output%u format: pisp=%s, colorspace=%s (matrix=%d, range=%d)", index,
 						self->priv->out_format[index], self->priv->out_colorspace[index],
@@ -637,9 +652,10 @@ static GstBuffer *libpisp_to_gst_dmabuf(const Buffer &buffer, GstAllocator *dmab
 }
 
 /* Attach GstVideoMeta with the correct hardware stride to a dmabuf output buffer */
-static void add_video_meta(GstBuffer *buffer, const char *pisp_format, guint width, guint height, guint hw_stride)
+static void add_video_meta(GstBuffer *buffer, const char *pisp_format, bool rb_swap, guint width, guint height,
+						   guint hw_stride)
 {
-	GstVideoFormat gst_fmt = pisp_to_gst_video_format(pisp_format);
+	GstVideoFormat gst_fmt = pisp_to_gst_video_format(pisp_format, rb_swap);
 	if (gst_fmt == GST_VIDEO_FORMAT_UNKNOWN)
 		return;
 
@@ -889,7 +905,8 @@ static gboolean gst_pisp_convert_configure(GstPispConvert *self)
 
 			global.rgb_enables |= configure_colour_conversion(self->priv->backend.get(), self->priv->in_format,
 															  self->priv->in_colorspace, self->priv->out_format[i],
-															  self->priv->out_colorspace[i], i);
+															  self->priv->out_rb_swap[i], self->priv->out_colorspace[i],
+															  i);
 
 			GST_INFO_OBJECT(self, "Output%d: %ux%u %s (stride: gst=%u hw=%u) colorspace %s", i,
 							self->priv->out_width[i], self->priv->out_height[i], self->priv->out_format[i],
@@ -1135,8 +1152,8 @@ static GstFlowReturn gst_pisp_convert_chain(GstPad *pad [[maybe_unused]], GstObj
 				goto cleanup;
 			}
 
-			add_video_meta(outbuf[i], self->priv->out_format[i], self->priv->out_width[i], self->priv->out_height[i],
-						   self->priv->out_hw_stride[i]);
+			add_video_meta(outbuf[i], self->priv->out_format[i], self->priv->out_rb_swap[i], self->priv->out_width[i],
+						   self->priv->out_height[i], self->priv->out_hw_stride[i]);
 
 			GST_DEBUG_OBJECT(self, "Using zero-copy output%d path", i);
 		}
