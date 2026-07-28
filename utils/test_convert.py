@@ -106,8 +106,6 @@ class ConvertTester:
         # Convert to GStreamer format names
         gst_in_format = self._pisp_to_gst_format(in_fmt["format"])
         gst_out_format = self._pisp_to_gst_format(out_fmt["format"])
-        # pispconvert swaps R/B for RGB, use BGR file output to match convert reference
-        gst_file_format = "BGR" if gst_out_format == "RGB" else gst_out_format
 
         # Build GStreamer pipeline
         pipeline = [
@@ -126,10 +124,6 @@ class ConvertTester:
             "pispconvert",
             "!",
             f"video/x-raw,format={gst_out_format},width={out_fmt['width']},height={out_fmt['height']},colorimetry=1:4:0:0",
-            "!",
-            "videoconvert",
-            "!",
-            f"video/x-raw,format={gst_file_format},width={out_fmt['width']},height={out_fmt['height']}",
             "!",
             "filesink",
             f"location={output_file}",
