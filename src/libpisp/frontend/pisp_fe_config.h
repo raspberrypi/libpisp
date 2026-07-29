@@ -142,8 +142,8 @@ typedef struct {
 typedef struct {
 	uint8_t quad;  // Quad Bayer option
 	uint8_t h_avg; // Average two horizontal same-component neighbours
-	uint8_t h_sel; // select the left sample (when not averaging); default is right
-	uint8_t pad;   // [placeholder for a future v_sel flag]
+	uint8_t v_avg; // Average two vertical neighbours (for Quad Bayer only)
+	uint8_t pad;
 } pisp_fe_stats_decimate_config;
 
 typedef struct {
