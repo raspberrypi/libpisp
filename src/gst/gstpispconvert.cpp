@@ -32,7 +32,7 @@ GST_DEBUG_CATEGORY_STATIC(gst_pisp_convert_debug);
 #define GST_CAT_DEFAULT gst_pisp_convert_debug
 
 /* Supported GStreamer formats */
-#define PISP_FORMATS "{ RGB, RGBx, BGRx, I420, YV12, Y42B, Y444, YUY2, UYVY, NV12, NV12_128C8, NV12_10LE32_128C8 }"
+#define PISP_FORMATS "{ RGB, BGR, RGBx, BGRx, I420, YV12, Y42B, Y444, YUY2, UYVY, NV12, NV12_128C8, NV12_10LE32_128C8 }"
 /* Supported DRM fourccs */
 #define PISP_DRM_FORMATS                                                                                               \
 	"{ RG24, XB24, XR24, YU12, YV12, YU16, YU24, YUYV, UYVY, NV12, NV12:0x0700000000000004, P030:0x0700000000000004 }"
@@ -66,6 +66,7 @@ GST_ELEMENT_REGISTER_DEFINE(pispconvert, "pispconvert", GST_RANK_PRIMARY, GST_TY
 /* Bidirectional mapping between GstVideoFormat and PiSP format strings */
 static const std::map<GstVideoFormat, std::string> gst_pisp_format_map = {
 	{ GST_VIDEO_FORMAT_RGB, "RGB888" },
+	{ GST_VIDEO_FORMAT_BGR, "RGB888" },
 	{ GST_VIDEO_FORMAT_RGBx, "RGBX8888" },
 	{ GST_VIDEO_FORMAT_BGRx, "RGBX8888" },
 	{ GST_VIDEO_FORMAT_I420, "YUV420P" },
@@ -101,7 +102,7 @@ static const std::map<std::string, std::string> drm_pisp_format_map = {
  * format as the PiSP format string does not encode the channel order. */
 static bool require_rb_swap(GstVideoFormat format)
 {
-	return format == GST_VIDEO_FORMAT_BGRx;
+	return format == GST_VIDEO_FORMAT_BGR || format == GST_VIDEO_FORMAT_BGRx;
 }
 
 static bool require_rb_swap(const gchar *drm_format)
