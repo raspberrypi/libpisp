@@ -375,6 +375,11 @@ static void gst_pisp_convert_init(GstPispConvert *self)
 	self->priv->configured = FALSE;
 	self->priv->dmabuf_allocator = gst_dmabuf_allocator_new();
 	self->priv->use_dmabuf_input = FALSE;
+	self->priv->in_has_meta = FALSE;
+	self->priv->in_n_mem = 0;
+	self->priv->in_meta_stride = { 0, 0, 0 };
+	self->priv->in_meta_offset = { 0, 0, 0 };
+	self->priv->force_memcpy_input = FALSE;
 
 	for (unsigned int i = 0; i < PISP_NUM_OUTPUTS; i++)
 	{
@@ -680,16 +685,16 @@ static void add_video_meta(GstBuffer *buffer, const char *pisp_format, bool rb_s
 								   strides);
 }
 
-static void copy_planes(std::array<uint8_t *, 3> src, guint src_stride, std::array<uint8_t *, 3> dst, guint dst_stride,
-						guint width, guint height, const char *format)
+static void copy_planes(std::array<uint8_t *, 3> src, std::array<guint, 3> src_stride, std::array<uint8_t *, 3> dst,
+						std::array<guint, 3> dst_stride, guint width, guint height, const char *format)
 {
-	GST_DEBUG("copy_planes: %ux%u, src_stride=%u, dst_stride=%u, format=%s", width, height, src_stride, dst_stride,
-			  format);
+	GST_DEBUG("copy_planes: %ux%u, src_stride=%u, dst_stride=%u, format=%s", width, height, src_stride[0],
+			  dst_stride[0], format);
 
 	/* YUV420SP_COL128 (NV12 column 128) - special tiled format */
 	if (strncmp(format, "YUV420SP_COL128", 15) == 0 || strncmp(format, "YUV420SP10_COL128", 17) == 0)
 	{
-		guint y_size = GST_VIDEO_TILE_X_TILES(src_stride) * 128 * GST_VIDEO_TILE_Y_TILES(src_stride) * 8;
+		guint y_size = GST_VIDEO_TILE_X_TILES(src_stride[0]) * 128 * GST_VIDEO_TILE_Y_TILES(src_stride[0]) * 8;
 		memcpy(dst[0], src[0], y_size);
 
 		uint8_t *src_uv = src[1] ? src[1] : src[0] + y_size;
@@ -698,12 +703,31 @@ static void copy_planes(std::array<uint8_t *, 3> src, guint src_stride, std::arr
 		return;
 	}
 
+	/* Semi-planar YUV formats: interleaved UV plane at half height (YUV420SP) */
+	if (is_yuv_format(format) && strstr(format, "SP") != nullptr)
+	{
+		/* Copy Y plane line by line */
+		for (guint y = 0; y < height; ++y)
+			memcpy(dst[0] + y * dst_stride[0], src[0] + y * src_stride[0], width);
+
+		guint src_uv_stride = src_stride[1] ? src_stride[1] : src_stride[0];
+		guint dst_uv_stride = dst_stride[1] ? dst_stride[1] : dst_stride[0];
+
+		/* Calculate plane pointers if not explicitly provided (single contiguous buffer) */
+		uint8_t *src_uv = src[1] ? src[1] : src[0] + src_stride[0] * height;
+		uint8_t *dst_uv = dst[1] ? dst[1] : dst[0] + dst_stride[0] * height;
+
+		for (guint y = 0; y < height / 2; ++y)
+			memcpy(dst_uv + y * dst_uv_stride, src_uv + y * src_uv_stride, width);
+		return;
+	}
+
 	/* Planar YUV formats: YUV420P, YVU420P, YUV422P, YUV444P */
 	if (is_yuv_format(format) && strstr(format, "P") != nullptr)
 	{
 		/* Copy Y plane line by line */
 		for (guint y = 0; y < height; ++y)
-			memcpy(dst[0] + y * dst_stride, src[0] + y * src_stride, width);
+			memcpy(dst[0] + y * dst_stride[0], src[0] + y * src_stride[0], width);
 
 		/* Determine UV subsampling */
 		guint uv_width, uv_height;
@@ -723,13 +747,13 @@ static void copy_planes(std::array<uint8_t *, 3> src, guint src_stride, std::arr
 			uv_height = height;
 		}
 
-		guint src_uv_stride = (uv_width == width) ? src_stride : src_stride / 2;
-		guint dst_uv_stride = (uv_width == width) ? dst_stride : dst_stride / 2;
+		guint src_uv_stride = src_stride[1] ? src_stride[1] : (uv_width == width) ? src_stride[0] : src_stride[0] / 2;
+		guint dst_uv_stride = dst_stride[1] ? dst_stride[1] : (uv_width == width) ? dst_stride[0] : dst_stride[0] / 2;
 
 		/* Calculate plane pointers if not explicitly provided (single contiguous buffer) */
-		uint8_t *src_u = src[1] ? src[1] : src[0] + src_stride * height;
+		uint8_t *src_u = src[1] ? src[1] : src[0] + src_stride[0] * height;
 		uint8_t *src_v = src[2] ? src[2] : src_u + src_uv_stride * uv_height;
-		uint8_t *dst_u = dst[1] ? dst[1] : dst[0] + dst_stride * height;
+		uint8_t *dst_u = dst[1] ? dst[1] : dst[0] + dst_stride[0] * height;
 		uint8_t *dst_v = dst[2] ? dst[2] : dst_u + dst_uv_stride * uv_height;
 
 		/* Copy U and V planes */
@@ -746,19 +770,22 @@ static void copy_planes(std::array<uint8_t *, 3> src, guint src_stride, std::arr
 	guint line_stride = width * bytes_per_pixel;
 
 	for (guint y = 0; y < height; ++y)
-		memcpy(dst[0] + y * dst_stride, src[0] + y * src_stride, line_stride);
+		memcpy(dst[0] + y * dst_stride[0], src[0] + y * src_stride[0], line_stride);
 }
 
 static void copy_buffer_to_pisp(GstBuffer *gstbuf, std::array<uint8_t *, 3> &mem, guint width, guint height,
-								guint gst_stride, guint hw_stride, const char *format)
+								const std::array<guint, 3> &gst_stride, const std::array<gsize, 3> &gst_offset,
+								guint hw_stride, const char *format)
 {
 	GstMapInfo map;
 	gst_buffer_map(gstbuf, &map, GST_MAP_READ);
 
-	/* GstBuffer is always contiguous - planes calculated from offsets */
-	std::array<uint8_t *, 3> src = { map.data, nullptr, nullptr };
+	/* Plane pointers from the GstVideoMeta offsets; zero offsets leave the
+	 * pointer unset so copy_planes derives a contiguous layout. */
+	std::array<uint8_t *, 3> src = { map.data + gst_offset[0], gst_offset[1] ? map.data + gst_offset[1] : nullptr,
+									 gst_offset[2] ? map.data + gst_offset[2] : nullptr };
 
-	copy_planes(src, gst_stride, mem, hw_stride, width, height, format);
+	copy_planes(src, gst_stride, mem, { hw_stride, 0, 0 }, width, height, format);
 
 	gst_buffer_unmap(gstbuf, &map);
 }
@@ -772,9 +799,44 @@ static void copy_pisp_to_buffer(const std::array<uint8_t *, 3> &mem, GstBuffer *
 	/* GstBuffer is always contiguous - planes calculated from offsets */
 	std::array<uint8_t *, 3> dst = { map.data, nullptr, nullptr };
 
-	copy_planes(const_cast<std::array<uint8_t *, 3> &>(mem), hw_stride, dst, gst_stride, width, height, format);
+	copy_planes(const_cast<std::array<uint8_t *, 3> &>(mem), { hw_stride, 0, 0 }, dst, { gst_stride, 0, 0 }, width,
+				height, format);
 
 	gst_buffer_unmap(gstbuf, &map);
+}
+
+/*
+ * Check whether the input buffer layout described by the GstVideoMeta can be
+ * consumed directly by the hardware. Zero-copy needs hardware-aligned strides
+ * and, for a single memory block, planes contiguous at those strides (the
+ * V4L2 device derives plane offsets from the configured stride and height).
+ */
+static gboolean zero_copy_layout_ok(GstPispConvert *self)
+{
+	const std::array<guint, 3> &stride = self->priv->in_meta_stride;
+	const std::array<gsize, 3> &offset = self->priv->in_meta_offset;
+	const char *format = self->priv->in_format;
+	guint height = self->priv->in_height;
+
+	if (offset[0] != 0 || stride[0] % PISP_BACK_END_OUTPUT_MIN_ALIGN)
+		return FALSE;
+
+	/* Per-plane memory blocks: offsets fall on memory boundaries */
+	if (self->priv->in_n_mem > 1)
+		return TRUE;
+
+	if (is_yuv_format(format) && strstr(format, "SP") != nullptr)
+		return offset[1] == (gsize)stride[0] * height;
+
+	if (is_yuv_format(format) && strstr(format, "P") != nullptr)
+	{
+		guint uv_height = strstr(format, "420") != nullptr ? height / 2 : height;
+		return stride[1] == stride[2] && offset[1] == (gsize)stride[0] * height &&
+			   offset[2] == offset[1] + (gsize)stride[1] * uv_height;
+	}
+
+	/* Packed single-plane formats */
+	return TRUE;
 }
 
 /*
@@ -863,7 +925,30 @@ static gboolean gst_pisp_convert_configure(GstPispConvert *self)
 			GST_ERROR_OBJECT(self, "Failed to get input format");
 			return FALSE;
 		}
-		libpisp::compute_stride(input_cfg);
+
+		/* For zero-copy input the hardware must read with the producer's
+		 * actual strides (from GstVideoMeta) rather than our computed ones.
+		 * COL128 formats keep their tile-encoded stride semantics. */
+		self->priv->force_memcpy_input = FALSE;
+		gboolean col128 = strstr(self->priv->in_format, "COL128") != nullptr;
+
+		if (self->priv->use_dmabuf_input && self->priv->in_has_meta && !col128)
+		{
+			if (zero_copy_layout_ok(self))
+			{
+				input_cfg.stride = self->priv->in_meta_stride[0];
+				input_cfg.stride2 = self->priv->in_meta_stride[1];
+			}
+			else
+			{
+				GST_INFO_OBJECT(self, "Input buffer layout unsuitable for zero-copy, using memcpy path");
+				self->priv->force_memcpy_input = TRUE;
+				libpisp::compute_stride(input_cfg);
+			}
+		}
+		else
+			libpisp::compute_stride(input_cfg);
+
 		self->priv->in_hw_stride = input_cfg.stride;
 		self->priv->backend->SetInputFormat(input_cfg);
 
@@ -1048,6 +1133,38 @@ static GstFlowReturn gst_pisp_convert_chain(GstPad *pad [[maybe_unused]], GstObj
 	GstFlowReturn ret = GST_FLOW_OK;
 	GstBuffer *outbuf[PISP_NUM_OUTPUTS] = { nullptr, nullptr };
 
+	/* Pick up the buffer's actual plane layout from GstVideoMeta, falling
+	 * back to the caps-derived stride with contiguous planes. */
+	GstVideoMeta *meta = gst_buffer_get_video_meta(inbuf);
+	std::array<guint, 3> meta_stride = { self->priv->in_stride, 0, 0 };
+	std::array<gsize, 3> meta_offset = { 0, 0, 0 };
+	if (meta)
+	{
+		for (guint p = 0; p < MIN(meta->n_planes, 3u); p++)
+		{
+			meta_stride[p] = meta->stride[p];
+			meta_offset[p] = meta->offset[p];
+		}
+		GST_LOG_OBJECT(self,
+					   "Input meta: planes=%u strides=%u/%u/%u offsets=%" G_GSIZE_FORMAT "/%" G_GSIZE_FORMAT
+					   "/%" G_GSIZE_FORMAT " buffer size=%" G_GSIZE_FORMAT " n_mem=%u",
+					   meta->n_planes, meta_stride[0], meta_stride[1], meta_stride[2], meta_offset[0], meta_offset[1],
+					   meta_offset[2], gst_buffer_get_size(inbuf), gst_buffer_n_memory(inbuf));
+	}
+
+	/* The zero-copy input configuration depends on the buffer layout */
+	if (self->priv->configured && self->priv->use_dmabuf_input &&
+		(meta_stride != self->priv->in_meta_stride || meta_offset != self->priv->in_meta_offset))
+	{
+		GST_INFO_OBJECT(self, "Input buffer layout changed, reconfiguring");
+		self->priv->configured = FALSE;
+	}
+
+	self->priv->in_has_meta = meta != nullptr;
+	self->priv->in_meta_stride = meta_stride;
+	self->priv->in_meta_offset = meta_offset;
+	self->priv->in_n_mem = gst_buffer_n_memory(inbuf);
+
 	/* Configure on first buffer if not already configured */
 	if (!self->priv->configured)
 	{
@@ -1105,7 +1222,7 @@ static GstFlowReturn gst_pisp_convert_chain(GstPad *pad [[maybe_unused]], GstObj
 		slice.emplace(node_name, buffers[index]);
 
 	/* Prepare input: copy to slice buffer (memcpy path) or get dmabuf (zero-copy path) */
-	if (input_is_dmabuf && self->priv->use_dmabuf_input)
+	if (input_is_dmabuf && self->priv->use_dmabuf_input && !self->priv->force_memcpy_input)
 	{
 		std::optional<Buffer> dmabuf_input = gst_to_libpisp_buffer(inbuf);
 		if (!dmabuf_input)
@@ -1122,8 +1239,8 @@ static GstFlowReturn gst_pisp_convert_chain(GstPad *pad [[maybe_unused]], GstObj
 		Buffer::Sync s(slice.at("pispbe-input"), Buffer::Sync::Access::ReadWrite);
 		const auto &mem = s.Get();
 		copy_buffer_to_pisp(inbuf, const_cast<std::array<uint8_t *, 3> &>(mem), self->priv->in_width,
-							self->priv->in_height, self->priv->in_stride, self->priv->in_hw_stride,
-							self->priv->in_format);
+							self->priv->in_height, self->priv->in_meta_stride, self->priv->in_meta_offset,
+							self->priv->in_hw_stride, self->priv->in_format);
 		GST_DEBUG_OBJECT(self, "Using memcpy input path");
 	}
 
@@ -1296,6 +1413,8 @@ static gboolean gst_pisp_convert_stop(GstPispConvert *self)
 	self->priv->media_dev_path = nullptr;
 	self->priv->configured = FALSE;
 	self->priv->use_dmabuf_input = FALSE;
+	self->priv->in_has_meta = FALSE;
+	self->priv->force_memcpy_input = FALSE;
 
 	return TRUE;
 }

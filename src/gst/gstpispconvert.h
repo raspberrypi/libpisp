@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <array>
 #include <gst/gst.h>
 #include <map>
 #include <memory>
@@ -73,6 +74,13 @@ struct _GstPispConvertPrivate
 	guint in_hw_stride; // Hardware buffer stride
 	const char *in_format;
 	const char *in_colorspace;
+
+	/* Input buffer layout from GstVideoMeta (falls back to caps-derived stride) */
+	gboolean in_has_meta;
+	guint in_n_mem;
+	std::array<guint, 3> in_meta_stride;
+	std::array<gsize, 3> in_meta_offset;
+	gboolean force_memcpy_input; // Buffer layout unsuitable for zero-copy
 
 	/* Output format info - arrays for dual outputs */
 	guint out_width[PISP_NUM_OUTPUTS];
