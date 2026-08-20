@@ -27,7 +27,8 @@ enum class RgbEnable : uint32_t
 	Ycbcr			= 0x00000010,
 	FalseColour		= 0x00000020,
 	Sharpen			= 0x00000040,
-	YcbcrInverse	= 0x00000080,
+	PrefColours    		= 0x00000080,
+	YcbcrInverse	= 0x00000100,
 	PreCsc0			= 0x00000400,
 	PreCsc1			= 0x00000800,
 	Gamma0			= 0x00001000,
@@ -218,6 +219,7 @@ using BeSatControlConfig = struct pisp_be_sat_control_config;
 using BeFalseColourConfig = struct pisp_be_false_colour_config;
 using BeSharpenConfig = struct pisp_be_sharpen_config;
 using BeShFcCombineConfig = struct pisp_be_sh_fc_combine_config;
+using BePrefColoursConfig = struct pisp_be_pref_colours_config;
 using BeTonemapConfig = struct pisp_be_tonemap_config;
 using BeCompressConfig = struct pisp_compress_config;
 using BeTonemap2Config = struct pisp_be_tonemap2_config;
@@ -384,6 +386,9 @@ public:
 
 	void set_sh_fc_combine(const BeShFcCombineConfig &sh_fc_combine);
 	BeShFcCombineConfig get_sh_fc_combine() const;
+
+	void set_pref_colours(const BePrefColoursConfig &pref_colours);
+	BePrefColoursConfig get_pref_colours() const;
 
 	void set_ycbcr_inverse(const BeCcmConfig &ycbcr_inverse);
 	BeCcmConfig get_ycbcr_inverse() const;

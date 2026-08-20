@@ -29,6 +29,7 @@ const std::map<RgbEnable, EnableMapping> rgb_enable_map =
 	{ RgbEnable::Ycbcr,			{ PISP_BE_RGB_ENABLE_YCBCR,			PISP_BE_RGB_ENABLE2_YCBCR } },
 	{ RgbEnable::FalseColour,	{ PISP_BE_RGB_ENABLE_FALSE_COLOUR,	PISP_BE_RGB_ENABLE2_FALSE_COLOUR } },
 	{ RgbEnable::Sharpen,		{ PISP_BE_RGB_ENABLE_SHARPEN,		PISP_BE_RGB_ENABLE2_SHARPEN } },
+	{ RgbEnable::PrefColours,      	{ 0,		PISP_BE_RGB_ENABLE2_PREF_COLOURS } },
 	{ RgbEnable::YcbcrInverse,	{ PISP_BE_RGB_ENABLE_YCBCR_INVERSE,	PISP_BE_RGB_ENABLE2_YCBCR_INVERSE } },
 	{ RgbEnable::PreCsc0,		{ 0,								PISP_BE_RGB_ENABLE2_PRE_CSC0 } },
 	{ RgbEnable::PreCsc1,		{ 0,								PISP_BE_RGB_ENABLE2_PRE_CSC1 } },
@@ -703,6 +704,30 @@ void BackendConfigAdapter::set_sh_fc_combine(const BeShFcCombineConfig &sh_fc_co
 BeShFcCombineConfig BackendConfigAdapter::get_sh_fc_combine() const
 {
 	return visit([](auto *cfg) -> BeShFcCombineConfig { return cfg->sh_fc_combine; });
+}
+
+void BackendConfigAdapter::set_pref_colours(const BePrefColoursConfig &pref_colours)
+{
+	visit(overloaded {
+		[]([[maybe_unused]] pisp_be_config *cfg) {
+			// Throw error?
+		},
+		[&pref_colours](pisp_be_config2 *cfg) {
+			cfg->pref_colours = pref_colours;
+		}
+	});
+}
+
+BePrefColoursConfig BackendConfigAdapter::get_pref_colours() const
+{
+	return visit(overloaded {
+		[]([[maybe_unused]] pisp_be_config *cfg) -> BePrefColoursConfig {
+			// Throw error?
+			return {};
+		},
+
+		[](pisp_be_config2 *cfg) -> BePrefColoursConfig { return cfg->pref_colours; }
+	});
 }
 
 void BackendConfigAdapter::set_ycbcr_inverse(const BeCcmConfig &ycbcr_inverse)

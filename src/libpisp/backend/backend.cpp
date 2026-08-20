@@ -330,6 +330,17 @@ BeCcmConfig BackEnd::get_pre_csc(unsigned int i) const
 	return config_->get_pre_csc(i);
 }
 
+void BackEnd::set_pref_colours(BePrefColoursConfig const &pref_colours)
+{
+	config_->set_pref_colours(pref_colours);
+	pipe_->dirty_flags_rgb |= RgbEnable::PrefColours;
+}
+
+BePrefColoursConfig BackEnd::get_pref_colours() const
+{
+	return config_->get_pref_colours();
+}
+
 void BackEnd::set_resample(unsigned int i, BeResampleConfig const &resample)
 {
 	config_->set_resample(i, resample);

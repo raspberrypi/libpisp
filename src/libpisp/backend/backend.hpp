@@ -108,6 +108,8 @@ public:
 	BeCcmConfig get_post_csc(unsigned int i) const;
 	void set_pre_csc(unsigned int i, BeCcmConfig const &csc);
 	BeCcmConfig get_pre_csc(unsigned int i) const;
+	void set_pref_colours(BePrefColoursConfig const &pref_colours);
+	BePrefColoursConfig get_pref_colours() const;
 	void set_resample(unsigned int i, BeResampleConfig const &resample);
 	BeResampleConfig get_resample(unsigned int i) const;
 	void set_sat_control(BeSatControlConfig const &sat_control);

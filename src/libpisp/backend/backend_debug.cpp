@@ -743,6 +743,12 @@ const std::vector<ConfigBlock> be_config2 {
 		}
 	},
 	{
+		"pref_colours", offsetof(pisp_be_config2, pref_colours),
+		{
+			{ "lut", offsetof(pisp_be_pref_colours_config, lut), sizeof(uint32_t), PISP_ARRAY_SIZE(pisp_be_pref_colours_config, lut) },
+		}
+	},
+	{
 		"ycbcr_inverse", offsetof(pisp_be_config2, ycbcr_inverse),
 		{
 			{ "coeffs", offsetof(pisp_be_ccm_config, coeffs), sizeof(int16_t), PISP_ARRAY_SIZE(pisp_be_ccm_config, coeffs) },
