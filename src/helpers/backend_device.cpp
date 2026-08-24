@@ -87,8 +87,8 @@ void BackendDevice::prepare(unsigned int buffer_count, bool use_opaque_format)
 		  	[](const BackEnd *be) { return be->get_stitch_output_format(); } },
 
 		{ "pispbe-tonemap_input",
-			[](const BeGlobal &g) { return g.bayer_enables & BayerEnable::Tonemap2Input; },
-		  	[](const BackEnd *be) { return be->get_tonemap2_format(); } },
+			[](const BeGlobal &g) { return g.bayer_enables & BayerEnable::TonemapInput; },
+			[](const BackEnd *be) { return be->get_tonemap_format(); } },
 	};
 	// clang-format on
 

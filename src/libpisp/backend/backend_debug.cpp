@@ -618,7 +618,7 @@ const std::vector<ConfigBlock> be_config2 {
 		}
 	},
 	{
-		"tonemap2_format", offsetof(pisp_be_config2, tonemap2_format),
+		"tonemap_format", offsetof(pisp_be_config2, tonemap_format),
 		{
 			{ "width", offsetof(pisp_image_format_config, width), sizeof(uint16_t), 1 },
 			{ "height", offsetof(pisp_image_format_config, height), sizeof(uint16_t), 1 },

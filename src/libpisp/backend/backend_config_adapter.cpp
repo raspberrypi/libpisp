@@ -73,7 +73,7 @@ const std::map<BayerEnable, EnableMapping> bayer_enable_map =
 	{ BayerEnable::Cac,					{ PISP_BE_BAYER_ENABLE_CAC,					PISP_BE_BAYER_ENABLE_CAC } },
 	{ BayerEnable::Debin,				{ PISP_BE_BAYER_ENABLE_DEBIN,				PISP_BE_BAYER_ENABLE_DEBIN } },
 	{ BayerEnable::Demosaic,			{ PISP_BE_BAYER_ENABLE_DEMOSAIC,			PISP_BE_BAYER_ENABLE_DEMOSAIC } },
-	{ BayerEnable::Tonemap2Input,		{ 0,										PISP_BE_BAYER_ENABLE_TONEMAP_INPUT } },
+	{ BayerEnable::TonemapInput,		{ 0,										PISP_BE_BAYER_ENABLE_TONEMAP_INPUT } },
 	{ BayerEnable::Transpose,			{ PISP_BE_BAYER_ENABLE_TRANSPOSE,			PISP_BE_BAYER_ENABLE_TRANSPOSE } },
 };
 
@@ -990,19 +990,19 @@ BeTonemap2Config BackendConfigAdapter::get_tonemap2() const
 	});
 }
 
-void BackendConfigAdapter::set_tonemap2_format(ImageFormatConfig const &format)
+void BackendConfigAdapter::set_tonemap_format(ImageFormatConfig const &format)
 {
 	visit(overloaded {
 		[&format]([[maybe_unused]] pisp_be_config *cfg) {
 			// Throw exception?
 		},
 		[&format](pisp_be_config2 *cfg) {
-			cfg->tonemap2_format = format;
+			cfg->tonemap_format = format;
 		}
 	});
 }
 
-ImageFormatConfig BackendConfigAdapter::get_tonemap2_format() const
+ImageFormatConfig BackendConfigAdapter::get_tonemap_format() const
 {
 	return visit(overloaded {
 		[]([[maybe_unused]] pisp_be_config *cfg) -> ImageFormatConfig {
@@ -1010,7 +1010,7 @@ ImageFormatConfig BackendConfigAdapter::get_tonemap2_format() const
 			return {};
 		},
 		[](pisp_be_config2 *cfg) -> ImageFormatConfig {
-			return cfg->tonemap2_format;
+			return cfg->tonemap_format;
 		}
 	});
 }
@@ -1025,6 +1025,8 @@ void BackendConfigAdapter::set_demosaic(const BeDemosaicConfig &demosaic)
 		},
 		[&demosaic](pisp_be_config2 *cfg) {
 			cfg->demosaic = demosaic;
+			cfg->demosaic.pad0[0] = cfg->demosaic.pad0[1] = cfg->demosaic.pad0[2] = 0;
+			cfg->demosaic.pad1 = 0;
 		}
 	});
 }

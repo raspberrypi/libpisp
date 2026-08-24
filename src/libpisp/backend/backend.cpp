@@ -548,15 +548,15 @@ BeTonemap2Config BackEnd::get_tonemap2() const
 	return config_->get_tonemap2();
 }
 
-void BackEnd::set_tonemap2_format(ImageFormatConfig const &format)
+void BackEnd::set_tonemap_format(ImageFormatConfig const &format)
 {
-	config_->set_tonemap2_format(format);
-	pipe_->dirty_flags_bayer |= BayerEnable::Tonemap2Input;
+	config_->set_tonemap_format(format);
+	pipe_->dirty_flags_bayer |= BayerEnable::TonemapInput;
 }
 
-ImageFormatConfig BackEnd::get_tonemap2_format() const
+ImageFormatConfig BackEnd::get_tonemap_format() const
 {
-	return config_->get_tonemap2_format();
+	return config_->get_tonemap_format();
 }
 
 void BackEnd::set_wbg(WbgConfig const &wbg)

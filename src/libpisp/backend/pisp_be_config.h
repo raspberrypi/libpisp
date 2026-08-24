@@ -978,7 +978,7 @@ struct pisp_be_tonemap2_config {
 	// 2348 bytes
 };
 
-struct pisp_be_tonemap2_buffer_config {
+struct pisp_be_tonemap_buffer_config {
 	/* low 32 bits followed by high 32 bits */
 	__u32 addr[2];
 };
@@ -1028,7 +1028,9 @@ struct pisp_be_demosaic2_config {
 	__u8 max_scale;
 
 	__u8 threshold_scale;
+	__u8 pad0[3];
 	__u8 qb_sharpness;
+	__u8 pad1;
 	__u16 qb_threshold;
 } __attribute__((packed));
 
@@ -1196,7 +1198,7 @@ struct pisp_be_config2 {
 	struct pisp_be_cdn_config cdn;
 	struct pisp_be_cac_config cac;
 	struct pisp_be_debin_config debin;
-	struct pisp_image_format_config tonemap2_format; /* inserted for Beryl */
+	struct pisp_image_format_config tonemap_format; /* inserted for Beryl */
 	struct pisp_be_tonemap2_config tonemap2; /* for Beryl, replaces tonemap */
 	struct pisp_be_demosaic2_config demosaic;
 	struct pisp_be_dedistort_config dedistort; /* inserted for Beryl */
@@ -1237,9 +1239,10 @@ struct pisp_be_tiles_config {
 
 		// v2
 		struct {
+			__u32 num_tiles;
+			__u32 pad_align[6];
 			struct pisp_be_config2 config;
 			struct pisp_tile2 tiles[PISP_BACK_END_NUM_TILES];
-			__u32 num_tiles;
 		} __attribute__((packed)) v2;
 	};
 } __attribute__((packed));

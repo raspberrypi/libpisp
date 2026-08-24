@@ -75,7 +75,7 @@ enum class BayerEnable : uint32_t
 	Demosaic		= 0x00400000,
 	Transpose		= 0x01000000,
 	Tonemap2		= 0x02000000,
-	Tonemap2Input	= 0x04000000,
+	TonemapInput	= 0x04000000,
 };
 
 using BayerEnables = Bitfield<BayerEnable>;
@@ -417,8 +417,8 @@ public:
 	void set_tonemap2(const BeTonemap2Config &tonemap);
 	BeTonemap2Config get_tonemap2() const;
 
-	void set_tonemap2_format(const ImageFormatConfig &format);
-	ImageFormatConfig get_tonemap2_format() const;
+	void set_tonemap_format(const ImageFormatConfig &format);
+	ImageFormatConfig get_tonemap_format() const;
 
 	void set_demosaic(const BeDemosaicConfig &demosaic);
 	BeDemosaicConfig get_demosaic() const;

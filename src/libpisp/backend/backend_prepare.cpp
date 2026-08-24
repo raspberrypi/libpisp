@@ -225,7 +225,7 @@ void BackEnd::finalise_dedistort()
 
 void BackEnd::finalise_tonemap2()
 {
-	const ImageFormatConfig &format = config_->get_tonemap2_format();
+	const ImageFormatConfig &format = config_->get_tonemap_format();
 	BeTonemap2Config tonemap = config_->get_tonemap2();
 	uint16_t width = post_transpose_width(), height = post_transpose_height();
 

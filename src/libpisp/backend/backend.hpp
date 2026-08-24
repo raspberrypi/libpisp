@@ -144,8 +144,8 @@ public:
 	BeTonemapConfig get_tonemap() const;
 	void set_tonemap2(BeTonemap2Config const &tonemap);
 	BeTonemap2Config get_tonemap2() const;
-	void set_tonemap2_format(ImageFormatConfig const &format);
-	ImageFormatConfig get_tonemap2_format() const;
+	void set_tonemap_format(ImageFormatConfig const &format);
+	ImageFormatConfig get_tonemap_format() const;
 	void set_wbg(WbgConfig const &wbg);
 	WbgConfig get_wbg() const;
 	void set_ycbcr(BeCcmConfig const &ycbcr);
