@@ -969,7 +969,7 @@ void BackendConfigAdapter::set_tonemap2(const BeTonemap2Config &tonemap)
 		},
 		[&tonemap](pisp_be_config2 *cfg) {
 			cfg->tonemap2 = tonemap;
-			cfg->tonemap2.pad0[0] = cfg->tonemap2.pad0[1] = cfg->tonemap2.pad0[2] = 0;
+			cfg->tonemap2.pad0[0] = cfg->tonemap2.pad0[1] = 0;
 			cfg->tonemap2.pad1[0] = cfg->tonemap2.pad1[1] = 0;
 			cfg->tonemap2.pad2[0] = cfg->tonemap2.pad2[1] = cfg->tonemap2.pad2[2] = 0;
 			cfg->tonemap2.pad3 = 0;
@@ -1025,7 +1025,7 @@ void BackendConfigAdapter::set_demosaic(const BeDemosaicConfig &demosaic)
 		},
 		[&demosaic](pisp_be_config2 *cfg) {
 			cfg->demosaic = demosaic;
-			cfg->demosaic.pad0[0] = cfg->demosaic.pad0[1] = cfg->demosaic.pad0[2] = 0;
+			cfg->demosaic.pad0[0] = cfg->demosaic.pad0[1] = 0;
 			cfg->demosaic.pad1 = 0;
 		}
 	});

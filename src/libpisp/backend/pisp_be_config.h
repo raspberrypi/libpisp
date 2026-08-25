@@ -956,7 +956,8 @@ struct pisp_be_tonemap2_config {
 	__u16 dy_sd_recip;
 	// 16 bytes
 	__u8 centre_weight;
-	__u8 pad0[3];
+	__u8 overlay_mode;
+	__u8 pad0[2];
 	// 20 bytes
 	__u16 spatial_gains[PISP_BE_TONEMAP2_GRID_SIZE + 1][PISP_BE_TONEMAP2_GRID_SIZE + 1];
 	__u8 pad1[2];
@@ -1028,7 +1029,8 @@ struct pisp_be_demosaic2_config {
 	__u8 max_scale;
 
 	__u8 threshold_scale;
-	__u8 pad0[3];
+	__u8 nonlinear;
+	__u8 pad0[2];
 	__u8 qb_sharpness;
 	__u8 pad1;
 	__u16 qb_threshold;
