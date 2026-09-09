@@ -347,7 +347,7 @@ void BackEnd::initialise_default_config(const std::string &filename)
 	initialise_debin(debin, root);
 	set_debin(debin);
 
-	libpisp::BeDemosaicConfig demosaic;
+	libpisp::BeDemosaicConfig demosaic{};
 	initialise_demosaic(demosaic, root);
 	set_demosaic(demosaic);
 
