@@ -1,3 +1,9 @@
+libpisp (1.7.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 1.7.0
+
+ -- Dylan Aïssi <daissi@debian.org>  Fri, 11 Sep 2026 12:04:19 +0200
+
 libpisp (1.6.0-1) unstable; urgency=medium
 
   * New upstream version 1.6.0
