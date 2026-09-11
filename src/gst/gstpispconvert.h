@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <array>
 #include <gst/gst.h>
 #include <map>
 #include <memory>
@@ -74,6 +75,13 @@ struct _GstPispConvertPrivate
 	const char *in_format;
 	const char *in_colorspace;
 
+	/* Input buffer layout from GstVideoMeta (falls back to caps-derived stride) */
+	gboolean in_has_meta;
+	guint in_n_mem;
+	std::array<guint, 3> in_meta_stride;
+	std::array<gsize, 3> in_meta_offset;
+	gboolean force_memcpy_input; // Buffer layout unsuitable for zero-copy
+
 	/* Output format info - arrays for dual outputs */
 	guint out_width[PISP_NUM_OUTPUTS];
 	guint out_height[PISP_NUM_OUTPUTS];
@@ -81,6 +89,7 @@ struct _GstPispConvertPrivate
 	guint out_hw_stride[PISP_NUM_OUTPUTS]; // Hardware buffer stride
 	const char *out_format[PISP_NUM_OUTPUTS];
 	const char *out_colorspace[PISP_NUM_OUTPUTS];
+	bool out_rb_swap[PISP_NUM_OUTPUTS]; // Memory stores B,G,R channel order
 	gboolean output_enabled[PISP_NUM_OUTPUTS]; // Track which outputs are active
 
 	/* dmabuf support */

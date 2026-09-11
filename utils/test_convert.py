@@ -39,10 +39,10 @@ class ConvertTester:
         self.test_cases = [
             {
                 "input_file": "conv_yuv420_4056x3040_4056s.yuv",
-                "output_file": "out_4056x3050_12168s_rgb888.rgb",
+                "output_file": "out_4056x3040_12168s_rgb888.rgb",
                 "input_format": "4056:3040:4056:YUV420P",
                 "output_format": "4056:3040:12168:RGB888",
-                "reference_file": "ref_4056x3050_12168s_rgb888.rgb",
+                "reference_file": "ref_4056x3040_12168s_rgb888.rgb",
                 "skip_gst": False,
             },
             {
@@ -60,6 +60,61 @@ class ConvertTester:
                 "output_format": "4000:3000:4032:YUV444P",
                 "reference_file": "ref_4000x3000_4032s.yuv",
                 "skip_gst": True,
+            },
+            # Strided inputs: the harness rewrites the input with padded rows,
+            # passing the strides to rawvideoparse (exercising pispconvert's
+            # GstVideoMeta stride handling) or to the convert utility via the
+            # format string. Convert mode is skipped automatically if the
+            # strides do not follow its luma/chroma derivation rules.
+            {
+                "input_file": "conv_yuv420_4056x3040_4056s.yuv",
+                "output_file": "out_4056x3040_strided_rgb888.rgb",
+                "input_format": "4056:3040:4056:YUV420P",
+                "output_format": "4056:3040:12168:RGB888",
+                "input_strides": [4160, 2080, 2080],
+                "reference_file": "ref_4056x3040_12168s_rgb888.rgb",
+            },
+            {
+                "input_file": "conv_800x600_1200s_422_yuyv.yuv",
+                "output_file": "out_1600x1200_strided_422p.yuv",
+                "input_format": "800:600:1600:YUYV",
+                "output_format": "1600:1200:1600:YUV422P",
+                "input_strides": [1728],
+                "reference_file": "ref_1600x1200_1600_422p.yuv",
+            },
+            # RGB input with its native padded stride (2432 vs 800*3=2400).
+            # The packed-stride output reference allows this to run in both
+            # modes, unlike the 4032-stride variant above.
+            {
+                "input_file": "conv_rgb888_800x600_2432s.rgb",
+                "output_file": "out_4000x3000_4000s.yuv",
+                "input_format": "800:600:2432:RGB888",
+                "output_format": "4000:3000:4000:YUV444P",
+                "input_strides": [2432],
+                "reference_file": "ref_4000x3000_4000s.yuv",
+            },
+            # BGR output variants exercise the pispconvert R/B swap CSC.
+            # videoconvert repacks the file back to RGB so the RGB888
+            # references can be reused; a wrong channel order in the element
+            # shows up as a swapped file. GStreamer only.
+            {
+                "input_file": "conv_yuv420_4056x3040_4056s.yuv",
+                "output_file": "out_4056x3040_bgr_rgb888.rgb",
+                "input_format": "4056:3040:4056:YUV420P",
+                "output_format": "4056:3040:12168:BGR",
+                "file_format": "RGB",
+                "reference_file": "ref_4056x3040_12168s_rgb888.rgb",
+                "skip_convert": True,
+            },
+            {
+                "input_file": "conv_yuv420_4056x3040_4056s.yuv",
+                "output_file": "out_4056x3040_strided_bgr_rgb888.rgb",
+                "input_format": "4056:3040:4056:YUV420P",
+                "output_format": "4056:3040:12168:BGR",
+                "input_strides": [4160, 2080, 2080],
+                "file_format": "RGB",
+                "reference_file": "ref_4056x3040_12168s_rgb888.rgb",
+                "skip_convert": True,
             },
             # Add more test cases here as needed
         ]
@@ -89,7 +144,64 @@ class ConvertTester:
         }
         return format_map.get(pisp_format, pisp_format)
 
-    def run_gstreamer(self, input_file, output_file, input_format, output_format):
+    def _plane_geometry(self, fmt):
+        """Per-plane (rows, row_bytes, stride) for a parsed format dict."""
+        w, h, s = fmt["width"], fmt["height"], fmt["stride"]
+        name = fmt["format"]
+        if name in ("YUV420P", "YVU420P"):
+            return [(h, w, s), (h // 2, w // 2, s // 2), (h // 2, w // 2, s // 2)]
+        if name == "YUV422P":
+            return [(h, w, s), (h, w // 2, s // 2), (h, w // 2, s // 2)]
+        if name == "YUV444P":
+            return [(h, w, s), (h, w, s), (h, w, s)]
+        if name in ("YUYV", "UYVY"):
+            return [(h, w * 2, s)]
+        if name == "RGB888":
+            return [(h, w * 3, s)]
+        raise ValueError(f"Unsupported format for strided input: {name}")
+
+    def _strided_input_path(self, input_file):
+        """Output-dir path for the strided rewrite of an input file."""
+        base = os.path.basename(input_file).removeprefix("conv_")
+        return os.path.join(self.output_dir or ".", "conv_strided_" + base)
+
+    def _make_strided_input(self, src_path, in_fmt, strides, dst_path):
+        """Rewrite src_path with the given per-plane strides, zero-padding each
+        row (including a final row the source file may have left unpadded).
+        Returns the plane offsets of the new file."""
+        planes = self._plane_geometry(in_fmt)
+        if len(strides) != len(planes):
+            raise ValueError("gst_input_strides needs one stride per plane")
+
+        with open(src_path, "rb") as f:
+            data = f.read()
+
+        out = bytearray()
+        offsets = []
+        pos = 0
+        for (rows, row_bytes, src_stride), dst_stride in zip(planes, strides):
+            if dst_stride < row_bytes:
+                raise ValueError(
+                    f"Stride {dst_stride} smaller than row size {row_bytes}"
+                )
+            offsets.append(len(out))
+            for _ in range(rows):
+                row = data[pos : pos + row_bytes]
+                out += row + b"\x00" * (dst_stride - len(row))
+                pos += src_stride
+        with open(dst_path, "wb") as f:
+            f.write(out)
+        return offsets
+
+    def run_gstreamer(
+        self,
+        input_file,
+        output_file,
+        input_format,
+        output_format,
+        input_strides=None,
+        file_format=None,
+    ):
         """Run GStreamer pipeline with pispconvert."""
         # Use input directory if specified
         if self.input_dir:
@@ -106,8 +218,20 @@ class ConvertTester:
         # Convert to GStreamer format names
         gst_in_format = self._pisp_to_gst_format(in_fmt["format"])
         gst_out_format = self._pisp_to_gst_format(out_fmt["format"])
-        # pispconvert swaps R/B for RGB, use BGR file output to match convert reference
-        gst_file_format = "BGR" if gst_out_format == "RGB" else gst_out_format
+
+        # Rewrite the input with explicit strides and tell rawvideoparse about
+        # them, so pispconvert receives buffers with non-default GstVideoMeta
+        parse_props = []
+        if input_strides:
+            strided_file = self._strided_input_path(input_file)
+            offsets = self._make_strided_input(
+                input_file, in_fmt, input_strides, strided_file
+            )
+            input_file = strided_file
+            parse_props = [
+                f"plane-strides=<{','.join(str(s) for s in input_strides)}>",
+                f"plane-offsets=<{','.join(str(o) for o in offsets)}>",
+            ]
 
         # Build GStreamer pipeline
         pipeline = [
@@ -120,16 +244,31 @@ class ConvertTester:
             f"height={in_fmt['height']}",
             f"format={gst_in_format.lower()}",
             "framerate=30/1",
-            "!",
-            "video/x-raw,colorimetry=1:4:0:0",
+            *parse_props,
+        ]
+
+        # BT.601 colorimetry is only valid for YUV inputs; RGB keeps the
+        # rawvideoparse default (identity matrix)
+        if not in_fmt["format"].startswith("RGB"):
+            pipeline += ["!", "video/x-raw,colorimetry=1:4:0:0"]
+
+        pipeline += [
             "!",
             "pispconvert",
             "!",
             f"video/x-raw,format={gst_out_format},width={out_fmt['width']},height={out_fmt['height']},colorimetry=1:4:0:0",
-            "!",
-            "videoconvert",
-            "!",
-            f"video/x-raw,format={gst_file_format},width={out_fmt['width']},height={out_fmt['height']}",
+        ]
+
+        # Repack to the requested file format so a common reference can be used
+        if file_format and file_format != gst_out_format:
+            pipeline += [
+                "!",
+                "videoconvert",
+                "!",
+                f"video/x-raw,format={file_format},width={out_fmt['width']},height={out_fmt['height']}",
+            ]
+
+        pipeline += [
             "!",
             "filesink",
             f"location={output_file}",
@@ -156,7 +295,9 @@ class ConvertTester:
             print(f"stderr: {e.stderr}")
             return False
 
-    def run_convert(self, input_file, output_file, input_format, output_format):
+    def run_convert(
+        self, input_file, output_file, input_format, output_format, input_strides=None
+    ):
         """Run the convert utility with the specified parameters."""
         # Use input directory if specified
         if self.input_dir:
@@ -165,6 +306,18 @@ class ConvertTester:
         # Use output directory if specified
         if self.output_dir:
             output_file = os.path.join(self.output_dir, output_file)
+
+        # Rewrite the input with explicit strides and adjust the format
+        # string accordingly (the caller has checked expressibility)
+        if input_strides:
+            in_fmt = self._parse_format(input_format)
+            strided_file = self._strided_input_path(input_file)
+            self._make_strided_input(input_file, in_fmt, input_strides, strided_file)
+            input_file = strided_file
+            input_format = (
+                f"{in_fmt['width']}:{in_fmt['height']}:"
+                f"{input_strides[0]}:{in_fmt['format']}"
+            )
 
         cmd = [
             self.convert_binary,
@@ -247,6 +400,23 @@ class ConvertTester:
             print("SKIPPED: Test case marked as skip_gst=True")
             return None  # Return None to indicate skipped
 
+        # Skip convert test if marked to skip
+        if not self.use_gstreamer and test_case.get("skip_convert", False):
+            print("SKIPPED: Test case marked as skip_convert=True")
+            return None  # Return None to indicate skipped
+
+        input_strides = test_case.get("input_strides")
+
+        # The convert utility derives chroma strides from the luma stride, so
+        # skip strides its format string cannot express
+        if not self.use_gstreamer and input_strides:
+            in_fmt = self._parse_format(test_case["input_format"])
+            in_fmt["stride"] = input_strides[0]
+            expected = [plane[2] for plane in self._plane_geometry(in_fmt)]
+            if input_strides != expected:
+                print("SKIPPED: strides not expressible by the convert utility")
+                return None
+
         # Run the convert utility or GStreamer pipeline
         if self.use_gstreamer:
             success = self.run_gstreamer(
@@ -254,6 +424,8 @@ class ConvertTester:
                 test_case["output_file"],
                 test_case["input_format"],
                 test_case["output_format"],
+                input_strides,
+                test_case.get("file_format"),
             )
         else:
             success = self.run_convert(
@@ -261,6 +433,7 @@ class ConvertTester:
                 test_case["output_file"],
                 test_case["input_format"],
                 test_case["output_format"],
+                input_strides,
             )
 
         if not success:
