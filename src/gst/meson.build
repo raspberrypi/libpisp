@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: CC0-1.0
+# SPDX-License-Identifier: BSD-2-Clause
 # Copyright (C) 2026, Raspberry Pi Ltd
 
 gst_dep = dependency('gstreamer-1.0', version : '>= 1.14', required : get_option('gstreamer'))
