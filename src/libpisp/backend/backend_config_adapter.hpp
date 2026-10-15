@@ -195,11 +195,13 @@ struct BeDedistortionConfig
 {
 	uint16_t grid_step_x = 0;
 	uint16_t grid_step_y = 0;
-	// TODO: make this a std::array
-	int16_t lut[PISP_BE_DDX_GRID_SIZE + 1][PISP_BE_DDX_GRID_SIZE + 1]{};
-    uint16_t offset_x = 0; // Non-register field
-    uint16_t offset_y = 0; // Non-register field
+	std::array<std::array<int16_t, PISP_BE_DDX_GRID_SIZE + 1>, PISP_BE_DDX_GRID_SIZE + 1> lut {};
+	uint16_t offset_x = 0; // Non-register field
+	uint16_t offset_y = 0; // Non-register field
 };
+
+// The LUT is copied to/from the HW config as raw bytes.
+static_assert(sizeof(BeDedistortionConfig::lut) == sizeof(pisp_be_dedistort_config::lut));
 
 // Identical to the current HW structures
 using ImageFormatConfig = struct pisp_image_format_config;
