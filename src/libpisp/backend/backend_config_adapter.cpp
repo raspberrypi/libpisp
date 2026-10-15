@@ -867,7 +867,7 @@ BeTdnConfig BackendConfigAdapter::get_tdn() const
 {
 	return visit(overloaded {
 		[](pisp_be_config *cfg) -> BeTdnConfig {
-			BeTdnConfig tdn;
+			BeTdnConfig tdn {};
 			tdn.black_level = cfg->tdn.black_level;
 			tdn.ratio = cfg->tdn.ratio;
 			tdn.noise_constant = cfg->tdn.noise_constant;
@@ -1056,7 +1056,7 @@ void BackendConfigAdapter::set_gamma(unsigned int i, const BeGammaConfig &gamma)
 		[i, &gamma](pisp_be_config2 *cfg) {
 			for (unsigned int j = 0; j < PISP_BE_GAMMA2_LUT_SIZE; j++)
 				cfg->gamma[i].lut[j] = gamma.lut[j] & 0xffff;
-			cfg->gamma[i].pad = cfg->gamma[1].pad = 0;
+			cfg->gamma[i].pad = 0;
 		}
 	});
 }
@@ -1093,7 +1093,7 @@ void BackendConfigAdapter::set_resample(unsigned int i, const BeResampleConfig &
 
 		[&resample, i](pisp_be_config2 *cfg) {
 			auto const &coef_h = resample.coef_h ? resample.coef_h : resample.coef;
-			auto const &coef_v = resample.coef_v ? resample.coef_v : *resample.coef;
+			auto const &coef_v = resample.coef_v ? resample.coef_v : resample.coef;
 
 			cfg->resample[i].scale_factor_h = resample.scale_factor_h;
 			cfg->resample[i].scale_factor_v = resample.scale_factor_v;
