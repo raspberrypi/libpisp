@@ -41,10 +41,10 @@ public:
 			HighPriority = 2 	// Not currently implemented
 		};
 
-		SoftwareConfig(unsigned int max_stripe_height = 0, unsigned int max_tile_width = 0, unsigned int flags = 0,
-			   std::string defaults_file = {})
-			: max_stripe_height(max_stripe_height), max_tile_width(max_tile_width), flags(flags),
-			  defaults_file(defaults_file)
+		SoftwareConfig(unsigned int max_stripe_height_ = 0, unsigned int max_tile_width_ = 0, unsigned int flags_ = 0,
+			   std::string defaults_file_ = {})
+			: max_stripe_height(max_stripe_height_), max_tile_width(max_tile_width_), flags(flags_),
+			  defaults_file(defaults_file_)
 		{
 		}
 
