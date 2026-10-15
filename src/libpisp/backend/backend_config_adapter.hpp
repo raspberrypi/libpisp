@@ -292,18 +292,15 @@ struct BeTile
 class BackendConfigAdapter
 {
 public:
-	using HwConfigVariant = std::variant<pisp_be_config *,  pisp_be_config2 *>;
-	using HwTileVariant = std::variant<pisp_tile *,  pisp_tile2 *>;
-
-	BackendConfigAdapter(HwConfigVariant config, HwTileVariant tile, BeNonRegConfig *non_reg)
-		: config_(config), tile_(tile), non_reg_(non_reg)
+	// The constructor overloads only allow matching config and tile versions to be paired.
+	BackendConfigAdapter(pisp_be_config *config, pisp_tile *tiles, BeNonRegConfig *non_reg)
+		: hw_(HwV1 { config, tiles }), non_reg_(non_reg)
 	{
 	}
-	
-	template <typename F>
-	auto visit(F &&f) const
+
+	BackendConfigAdapter(pisp_be_config2 *config, pisp_tile2 *tiles, BeNonRegConfig *non_reg)
+		: hw_(HwV2 { config, tiles }), non_reg_(non_reg)
 	{
-		return std::visit(std::forward<F>(f), config_);
 	}
 
 	void set_tile(unsigned int i, const BeTile &tile);
@@ -439,13 +436,35 @@ public:
 	BeCompressConfig get_output_compress(unsigned int i) const;
 
 private:
-	uint32_t rgb_enables_to_hw(RgbEnables rgb_enables) const;
-	RgbEnables hw_to_rgb_enables(uint32_t hw_enables) const;
-	uint32_t bayer_enables_to_hw(BayerEnables bayer_enables) const;
-	BayerEnables hw_to_bayer_enables(uint32_t hw_enables) const;
+	template <typename Config, typename Tile>
+	struct Hw
+	{
+		Config *cfg;
+		Tile *tiles;
+	};
 
-	HwConfigVariant config_;
-	HwTileVariant tile_;
+	using HwV1 = Hw<pisp_be_config, pisp_tile>;
+	using HwV2 = Hw<pisp_be_config2, pisp_tile2>;
+
+	// True if Cfg is (a pointer to) the v1 HW config, for compile-time selection of version specific code.
+	template <typename Cfg>
+	static constexpr bool is_v1 = std::is_same_v<std::remove_cvref_t<std::remove_pointer_t<Cfg>>, pisp_be_config>;
+
+	// Call f with a pointer to the version specific HW config.
+	template <typename F>
+	auto visit(F &&f) const
+	{
+		return std::visit([&f](auto hw) { return f(hw.cfg); }, hw_);
+	}
+
+	// Call f with a pointer to the version specific HW tile array.
+	template <typename F>
+	auto visit_tiles(F &&f) const
+	{
+		return std::visit([&f](auto hw) { return f(hw.tiles); }, hw_);
+	}
+
+	std::variant<HwV1, HwV2> hw_;
 	BeNonRegConfig *non_reg_;
 };
 

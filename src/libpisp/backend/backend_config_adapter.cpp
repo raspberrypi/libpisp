@@ -5,382 +5,226 @@
 
 #include "backend_config_adapter.hpp"
 
+#include <array>
 #include <cstring>
-#include <map>
-#include <stdexcept>
 
 using namespace libpisp;
 
 namespace
 {
 
+template <EnumType E>
 struct EnableMapping
 {
+	E enable;
 	uint32_t v1;
 	uint32_t v2;
 };
 
-const std::map<RgbEnable, EnableMapping> rgb_enable_map =
+constexpr auto rgb_enable_map = std::to_array<EnableMapping<RgbEnable>>(
 {
-	{ RgbEnable::Input,			{ PISP_BE_RGB_ENABLE_INPUT,			PISP_BE_RGB_ENABLE2_INPUT } },
-	{ RgbEnable::Dedistort,		{ 0,								PISP_BE_RGB_ENABLE2_DEDISTORT } },
-	{ RgbEnable::Ccm,			{ PISP_BE_RGB_ENABLE_CCM,			PISP_BE_RGB_ENABLE2_CCM } },
-	{ RgbEnable::SatControl,	{ PISP_BE_RGB_ENABLE_SAT_CONTROL,	PISP_BE_RGB_ENABLE2_SAT_CONTROL } },
-	{ RgbEnable::Ycbcr,			{ PISP_BE_RGB_ENABLE_YCBCR,			PISP_BE_RGB_ENABLE2_YCBCR } },
-	{ RgbEnable::FalseColour,	{ PISP_BE_RGB_ENABLE_FALSE_COLOUR,	PISP_BE_RGB_ENABLE2_FALSE_COLOUR } },
-	{ RgbEnable::Sharpen,		{ PISP_BE_RGB_ENABLE_SHARPEN,		PISP_BE_RGB_ENABLE2_SHARPEN } },
-	{ RgbEnable::PrefColours,      	{ 0,		PISP_BE_RGB_ENABLE2_PREF_COLOURS } },
-	{ RgbEnable::YcbcrInverse,	{ PISP_BE_RGB_ENABLE_YCBCR_INVERSE,	PISP_BE_RGB_ENABLE2_YCBCR_INVERSE } },
-	{ RgbEnable::PreCsc0,		{ 0,								PISP_BE_RGB_ENABLE2_PRE_CSC0 } },
-	{ RgbEnable::PreCsc1,		{ 0,								PISP_BE_RGB_ENABLE2_PRE_CSC1 } },
-	{ RgbEnable::Gamma0,		{ PISP_BE_RGB_ENABLE_GAMMA,			PISP_BE_RGB_ENABLE2_GAMMA0 } },
-	{ RgbEnable::Gamma1,		{ 0,								PISP_BE_RGB_ENABLE2_GAMMA1 } },
-	{ RgbEnable::PostCsc0,		{ PISP_BE_RGB_ENABLE_CSC0,			PISP_BE_RGB_ENABLE2_POST_CSC0 } },
-	{ RgbEnable::PostCsc1,		{ PISP_BE_RGB_ENABLE_CSC1,			PISP_BE_RGB_ENABLE2_POST_CSC1 } },
-	{ RgbEnable::Downscale0,	{ PISP_BE_RGB_ENABLE_DOWNSCALE0,	PISP_BE_RGB_ENABLE2_DOWNSCALE0 } },
-	{ RgbEnable::Downscale1,	{ PISP_BE_RGB_ENABLE_DOWNSCALE1,	PISP_BE_RGB_ENABLE2_DOWNSCALE1 } },
-	{ RgbEnable::Resample0,		{ PISP_BE_RGB_ENABLE_RESAMPLE0,		PISP_BE_RGB_ENABLE2_RESAMPLE0 } },
-	{ RgbEnable::Resample1,		{ PISP_BE_RGB_ENABLE_RESAMPLE1,		PISP_BE_RGB_ENABLE2_RESAMPLE1 } },
-	{ RgbEnable::Output0,		{ PISP_BE_RGB_ENABLE_OUTPUT0,		PISP_BE_RGB_ENABLE2_OUTPUT0 } },
-	{ RgbEnable::Output1,		{ PISP_BE_RGB_ENABLE_OUTPUT1,		PISP_BE_RGB_ENABLE2_OUTPUT1 } },
-	{ RgbEnable::Compress0,		{ 0,								PISP_BE_RGB_ENABLE2_COMPRESS0 } },
-	{ RgbEnable::Compress1,		{ 0,								PISP_BE_RGB_ENABLE2_COMPRESS1 } },
-};
+	{ RgbEnable::Input,			PISP_BE_RGB_ENABLE_INPUT,			PISP_BE_RGB_ENABLE2_INPUT },
+	{ RgbEnable::Dedistort,		0,									PISP_BE_RGB_ENABLE2_DEDISTORT },
+	{ RgbEnable::Ccm,			PISP_BE_RGB_ENABLE_CCM,				PISP_BE_RGB_ENABLE2_CCM },
+	{ RgbEnable::SatControl,	PISP_BE_RGB_ENABLE_SAT_CONTROL,		PISP_BE_RGB_ENABLE2_SAT_CONTROL },
+	{ RgbEnable::Ycbcr,			PISP_BE_RGB_ENABLE_YCBCR,			PISP_BE_RGB_ENABLE2_YCBCR },
+	{ RgbEnable::FalseColour,	PISP_BE_RGB_ENABLE_FALSE_COLOUR,	PISP_BE_RGB_ENABLE2_FALSE_COLOUR },
+	{ RgbEnable::Sharpen,		PISP_BE_RGB_ENABLE_SHARPEN,			PISP_BE_RGB_ENABLE2_SHARPEN },
+	{ RgbEnable::PrefColours,	0,									PISP_BE_RGB_ENABLE2_PREF_COLOURS },
+	{ RgbEnable::YcbcrInverse,	PISP_BE_RGB_ENABLE_YCBCR_INVERSE,	PISP_BE_RGB_ENABLE2_YCBCR_INVERSE },
+	{ RgbEnable::PreCsc0,		0,									PISP_BE_RGB_ENABLE2_PRE_CSC0 },
+	{ RgbEnable::PreCsc1,		0,									PISP_BE_RGB_ENABLE2_PRE_CSC1 },
+	{ RgbEnable::Gamma0,		PISP_BE_RGB_ENABLE_GAMMA,			PISP_BE_RGB_ENABLE2_GAMMA0 },
+	{ RgbEnable::Gamma1,		0,									PISP_BE_RGB_ENABLE2_GAMMA1 },
+	{ RgbEnable::PostCsc0,		PISP_BE_RGB_ENABLE_CSC0,			PISP_BE_RGB_ENABLE2_POST_CSC0 },
+	{ RgbEnable::PostCsc1,		PISP_BE_RGB_ENABLE_CSC1,			PISP_BE_RGB_ENABLE2_POST_CSC1 },
+	{ RgbEnable::Downscale0,	PISP_BE_RGB_ENABLE_DOWNSCALE0,		PISP_BE_RGB_ENABLE2_DOWNSCALE0 },
+	{ RgbEnable::Downscale1,	PISP_BE_RGB_ENABLE_DOWNSCALE1,		PISP_BE_RGB_ENABLE2_DOWNSCALE1 },
+	{ RgbEnable::Resample0,		PISP_BE_RGB_ENABLE_RESAMPLE0,		PISP_BE_RGB_ENABLE2_RESAMPLE0 },
+	{ RgbEnable::Resample1,		PISP_BE_RGB_ENABLE_RESAMPLE1,		PISP_BE_RGB_ENABLE2_RESAMPLE1 },
+	{ RgbEnable::Output0,		PISP_BE_RGB_ENABLE_OUTPUT0,			PISP_BE_RGB_ENABLE2_OUTPUT0 },
+	{ RgbEnable::Output1,		PISP_BE_RGB_ENABLE_OUTPUT1,			PISP_BE_RGB_ENABLE2_OUTPUT1 },
+	{ RgbEnable::Compress0,		0,									PISP_BE_RGB_ENABLE2_COMPRESS0 },
+	{ RgbEnable::Compress1,		0,									PISP_BE_RGB_ENABLE2_COMPRESS1 },
+});
 
-const std::map<BayerEnable, EnableMapping> bayer_enable_map =
+constexpr auto bayer_enable_map = std::to_array<EnableMapping<BayerEnable>>(
 {
-	{ BayerEnable::Input,				{ PISP_BE_BAYER_ENABLE_INPUT,				PISP_BE_BAYER_ENABLE_INPUT } },
-	{ BayerEnable::Decompress,			{ PISP_BE_BAYER_ENABLE_DECOMPRESS,			PISP_BE_BAYER_ENABLE_DECOMPRESS } },
-	{ BayerEnable::Dpc,					{ PISP_BE_BAYER_ENABLE_DPC,					PISP_BE_BAYER_ENABLE_DPC } },
-	{ BayerEnable::Geq,					{ PISP_BE_BAYER_ENABLE_GEQ,					PISP_BE_BAYER_ENABLE_GEQ } },
-	{ BayerEnable::TdnInput,			{ PISP_BE_BAYER_ENABLE_TDN_INPUT,			PISP_BE_BAYER_ENABLE_TDN_INPUT } },
-	{ BayerEnable::TdnDecompress,		{ PISP_BE_BAYER_ENABLE_TDN_DECOMPRESS,		PISP_BE_BAYER_ENABLE_TDN_DECOMPRESS } },
-	{ BayerEnable::Tdn,					{ PISP_BE_BAYER_ENABLE_TDN,					PISP_BE_BAYER_ENABLE_TDN } },
-	{ BayerEnable::TdnCompress,			{ PISP_BE_BAYER_ENABLE_TDN_COMPRESS,		PISP_BE_BAYER_ENABLE_TDN_COMPRESS } },
-	{ BayerEnable::TdnOutput,			{ PISP_BE_BAYER_ENABLE_TDN_OUTPUT,			PISP_BE_BAYER_ENABLE_TDN_OUTPUT } },
-	{ BayerEnable::Sdn,					{ PISP_BE_BAYER_ENABLE_SDN,					PISP_BE_BAYER_ENABLE_SDN } },
-	{ BayerEnable::Blc,					{ PISP_BE_BAYER_ENABLE_BLC,					PISP_BE_BAYER_ENABLE_BLC } },
-	{ BayerEnable::StitchInput,			{ PISP_BE_BAYER_ENABLE_STITCH_INPUT,		PISP_BE_BAYER_ENABLE_STITCH_INPUT } },
-	{ BayerEnable::StitchDecompress,	{ PISP_BE_BAYER_ENABLE_STITCH_DECOMPRESS,	PISP_BE_BAYER_ENABLE_STITCH_DECOMPRESS } },
-	{ BayerEnable::Stitch,				{ PISP_BE_BAYER_ENABLE_STITCH,				PISP_BE_BAYER_ENABLE_STITCH } },
-	{ BayerEnable::StitchCompress,		{ PISP_BE_BAYER_ENABLE_STITCH_COMPRESS,		PISP_BE_BAYER_ENABLE_STITCH_COMPRESS } },
-	{ BayerEnable::StitchOutput,		{ PISP_BE_BAYER_ENABLE_STITCH_OUTPUT,		PISP_BE_BAYER_ENABLE_STITCH_OUTPUT } },
-	{ BayerEnable::Wbg,					{ PISP_BE_BAYER_ENABLE_WBG,					PISP_BE_BAYER_ENABLE_WBG } },
-	{ BayerEnable::Cdn,					{ PISP_BE_BAYER_ENABLE_CDN,					PISP_BE_BAYER_ENABLE_CDN } },
-	{ BayerEnable::Lsc,					{ PISP_BE_BAYER_ENABLE_LSC,					PISP_BE_BAYER_ENABLE_LSC } },
-	{ BayerEnable::Tonemap,				{ PISP_BE_BAYER_ENABLE_TONEMAP,				0, } },
-	{ BayerEnable::Tonemap2,			{ 0,										PISP_BE_BAYER_ENABLE_TONEMAP } },
-	{ BayerEnable::Cac,					{ PISP_BE_BAYER_ENABLE_CAC,					PISP_BE_BAYER_ENABLE_CAC } },
-	{ BayerEnable::Debin,				{ PISP_BE_BAYER_ENABLE_DEBIN,				PISP_BE_BAYER_ENABLE_DEBIN } },
-	{ BayerEnable::Demosaic,			{ PISP_BE_BAYER_ENABLE_DEMOSAIC,			PISP_BE_BAYER_ENABLE_DEMOSAIC } },
-	{ BayerEnable::TonemapInput,		{ 0,										PISP_BE_BAYER_ENABLE_TONEMAP_INPUT } },
-	{ BayerEnable::Transpose,			{ PISP_BE_BAYER_ENABLE_TRANSPOSE,			PISP_BE_BAYER_ENABLE_TRANSPOSE } },
-};
+	{ BayerEnable::Input,				PISP_BE_BAYER_ENABLE_INPUT,				PISP_BE_BAYER_ENABLE_INPUT },
+	{ BayerEnable::Decompress,			PISP_BE_BAYER_ENABLE_DECOMPRESS,		PISP_BE_BAYER_ENABLE_DECOMPRESS },
+	{ BayerEnable::Dpc,					PISP_BE_BAYER_ENABLE_DPC,				PISP_BE_BAYER_ENABLE_DPC },
+	{ BayerEnable::Geq,					PISP_BE_BAYER_ENABLE_GEQ,				PISP_BE_BAYER_ENABLE_GEQ },
+	{ BayerEnable::TdnInput,			PISP_BE_BAYER_ENABLE_TDN_INPUT,			PISP_BE_BAYER_ENABLE_TDN_INPUT },
+	{ BayerEnable::TdnDecompress,		PISP_BE_BAYER_ENABLE_TDN_DECOMPRESS,	PISP_BE_BAYER_ENABLE_TDN_DECOMPRESS },
+	{ BayerEnable::Tdn,					PISP_BE_BAYER_ENABLE_TDN,				PISP_BE_BAYER_ENABLE_TDN },
+	{ BayerEnable::TdnCompress,			PISP_BE_BAYER_ENABLE_TDN_COMPRESS,		PISP_BE_BAYER_ENABLE_TDN_COMPRESS },
+	{ BayerEnable::TdnOutput,			PISP_BE_BAYER_ENABLE_TDN_OUTPUT,		PISP_BE_BAYER_ENABLE_TDN_OUTPUT },
+	{ BayerEnable::Sdn,					PISP_BE_BAYER_ENABLE_SDN,				PISP_BE_BAYER_ENABLE_SDN },
+	{ BayerEnable::Blc,					PISP_BE_BAYER_ENABLE_BLC,				PISP_BE_BAYER_ENABLE_BLC },
+	{ BayerEnable::StitchInput,			PISP_BE_BAYER_ENABLE_STITCH_INPUT,		PISP_BE_BAYER_ENABLE_STITCH_INPUT },
+	{ BayerEnable::StitchDecompress,	PISP_BE_BAYER_ENABLE_STITCH_DECOMPRESS,	PISP_BE_BAYER_ENABLE_STITCH_DECOMPRESS },
+	{ BayerEnable::Stitch,				PISP_BE_BAYER_ENABLE_STITCH,			PISP_BE_BAYER_ENABLE_STITCH },
+	{ BayerEnable::StitchCompress,		PISP_BE_BAYER_ENABLE_STITCH_COMPRESS,	PISP_BE_BAYER_ENABLE_STITCH_COMPRESS },
+	{ BayerEnable::StitchOutput,		PISP_BE_BAYER_ENABLE_STITCH_OUTPUT,		PISP_BE_BAYER_ENABLE_STITCH_OUTPUT },
+	{ BayerEnable::Wbg,					PISP_BE_BAYER_ENABLE_WBG,				PISP_BE_BAYER_ENABLE_WBG },
+	{ BayerEnable::Cdn,					PISP_BE_BAYER_ENABLE_CDN,				PISP_BE_BAYER_ENABLE_CDN },
+	{ BayerEnable::Lsc,					PISP_BE_BAYER_ENABLE_LSC,				PISP_BE_BAYER_ENABLE_LSC },
+	{ BayerEnable::Tonemap,				PISP_BE_BAYER_ENABLE_TONEMAP,			0 },
+	{ BayerEnable::Tonemap2,			0,										PISP_BE_BAYER_ENABLE_TONEMAP },
+	{ BayerEnable::Cac,					PISP_BE_BAYER_ENABLE_CAC,				PISP_BE_BAYER_ENABLE_CAC },
+	{ BayerEnable::Debin,				PISP_BE_BAYER_ENABLE_DEBIN,				PISP_BE_BAYER_ENABLE_DEBIN },
+	{ BayerEnable::Demosaic,			PISP_BE_BAYER_ENABLE_DEMOSAIC,			PISP_BE_BAYER_ENABLE_DEMOSAIC },
+	{ BayerEnable::TonemapInput,		0,										PISP_BE_BAYER_ENABLE_TONEMAP_INPUT },
+	{ BayerEnable::Transpose,			PISP_BE_BAYER_ENABLE_TRANSPOSE,			PISP_BE_BAYER_ENABLE_TRANSPOSE },
+});
 
-// From https://en.cppreference.com/w/cpp/utility/variant/visit2.html
-template<class... Ts>
-struct overloaded : Ts... { using Ts::operator()...; };
+// A zero HW bit in the selected column means the block does not exist on that version.
+template <bool V1, EnumType E, std::size_t N>
+uint32_t enables_to_hw(Bitfield<E> enables, const std::array<EnableMapping<E>, N> &map)
+{
+	uint32_t hw_enables = 0;
+
+	for (auto const &m : map)
+		if (enables & m.enable)
+			hw_enables |= V1 ? m.v1 : m.v2;
+
+	return hw_enables;
+}
+
+template <bool V1, EnumType E, std::size_t N>
+Bitfield<E> hw_to_enables(uint32_t hw_enables, const std::array<EnableMapping<E>, N> &map)
+{
+	Bitfield<E> enables = E::None;
+
+	for (auto const &m : map)
+		if (hw_enables & (V1 ? m.v1 : m.v2))
+			enables |= m.enable;
+
+	return enables;
+}
+
+// Untyped pointers to array fields, so that BeTile (std::array) and the packed HW tiles (C arrays) can be
+// passed to memcpy interchangeably without taking typed pointers to packed members.
+template <typename T, std::size_t N>
+void *raw(std::array<T, N> &a)
+{
+	return a.data();
+}
+
+template <typename T, std::size_t N>
+const void *raw(const std::array<T, N> &a)
+{
+	return a.data();
+}
+
+void *raw(void *p)
+{
+	return p;
+}
+
+const void *raw(const void *p)
+{
+	return p;
+}
+
+// Copy tile fields between a BeTile and a HW tile, in either direction.
+template <typename Dst, typename Src>
+void copy_tile(Dst &d, const Src &s)
+{
+	using HwTile = std::conditional_t<std::is_same_v<Dst, BeTile>, Src, Dst>;
+	static_assert(std::is_same_v<HwTile, pisp_tile> || std::is_same_v<HwTile, pisp_tile2>);
+
+	// Common fields
+	d.input_addr_offset = s.input_addr_offset;
+	d.input_addr_offset2 = s.input_addr_offset2;
+	d.input_offset_x = s.input_offset_x;
+	d.input_offset_y = s.input_offset_y;
+	d.input_width = s.input_width;
+	d.input_height = s.input_height;
+	d.tdn_input_addr_offset = s.tdn_input_addr_offset;
+	d.tdn_output_addr_offset = s.tdn_output_addr_offset;
+	d.stitch_input_addr_offset = s.stitch_input_addr_offset;
+	d.stitch_output_addr_offset = s.stitch_output_addr_offset;
+	d.lsc_grid_offset_x = s.lsc_grid_offset_x;
+	d.lsc_grid_offset_y = s.lsc_grid_offset_y;
+	d.cac_grid_offset_x = s.cac_grid_offset_x;
+	d.cac_grid_offset_y = s.cac_grid_offset_y;
+	std::memcpy(raw(d.crop_x_start), raw(s.crop_x_start), sizeof(BeTile::crop_x_start));
+	std::memcpy(raw(d.crop_y_start), raw(s.crop_y_start), sizeof(BeTile::crop_y_start));
+	std::memcpy(raw(d.resample_in_width), raw(s.resample_in_width), sizeof(BeTile::resample_in_width));
+	std::memcpy(raw(d.resample_in_height), raw(s.resample_in_height), sizeof(BeTile::resample_in_height));
+	std::memcpy(raw(d.output_offset_x), raw(s.output_offset_x), sizeof(BeTile::output_offset_x));
+	std::memcpy(raw(d.output_offset_y), raw(s.output_offset_y), sizeof(BeTile::output_offset_y));
+	std::memcpy(raw(d.output_width), raw(s.output_width), sizeof(BeTile::output_width));
+	std::memcpy(raw(d.output_height), raw(s.output_height), sizeof(BeTile::output_height));
+	std::memcpy(raw(d.output_addr_offset), raw(s.output_addr_offset), sizeof(BeTile::output_addr_offset));
+	std::memcpy(raw(d.output_addr_offset2), raw(s.output_addr_offset2), sizeof(BeTile::output_addr_offset2));
+
+	if constexpr (std::is_same_v<HwTile, pisp_tile>)
+	{
+		// v1 specific fields
+		d.edge = s.edge;
+		std::memcpy(raw(d.crop_x_end), raw(s.crop_x_end), sizeof(BeTile::crop_x_end));
+		std::memcpy(raw(d.crop_y_end), raw(s.crop_y_end), sizeof(BeTile::crop_y_end));
+		std::memcpy(raw(d.downscale_phase_x), raw(s.downscale_phase_x), sizeof(BeTile::downscale_phase_x));
+		std::memcpy(raw(d.downscale_phase_y), raw(s.downscale_phase_y), sizeof(BeTile::downscale_phase_y));
+		std::memcpy(raw(d.resample_phase_x), raw(s.resample_phase_x), sizeof(BeTile::resample_phase_x));
+		std::memcpy(raw(d.resample_phase_y), raw(s.resample_phase_y), sizeof(BeTile::resample_phase_y));
+	}
+	else
+	{
+		// v2 specific fields
+		d.tonemap_grid_offset_x = s.tonemap_grid_offset_x;
+		d.tonemap_grid_offset_y = s.tonemap_grid_offset_y;
+		d.tonemap_lores_offset_x = s.tonemap_lores_offset_x;
+		d.tonemap_lores_offset_y = s.tonemap_lores_offset_y;
+		d.dedistort_grid_offset_x = s.dedistort_grid_offset_x;
+		d.dedistort_grid_offset_y = s.dedistort_grid_offset_y;
+		d.dedistorted_offset_x = s.dedistorted_offset_x;
+		d.dedistorted_width = s.dedistorted_width;
+		std::memcpy(raw(d.crop_width), raw(s.crop_width), sizeof(BeTile::crop_width));
+		std::memcpy(raw(d.crop_height), raw(s.crop_height), sizeof(BeTile::crop_height));
+		std::memcpy(raw(d.resample_start_context_x), raw(s.resample_start_context_x),
+					sizeof(BeTile::resample_start_context_x));
+		std::memcpy(raw(d.resample_start_context_y), raw(s.resample_start_context_y),
+					sizeof(BeTile::resample_start_context_y));
+
+		// v2 has per-output downscale/resample phases, BeTile has per-component, so only the first
+		// PISP_BACK_END_NUM_OUTPUTS entries are used.
+		for (unsigned int j = 0; j < PISP_BACK_END_NUM_OUTPUTS; j++)
+		{
+			d.downscale_phase_x[j] = s.downscale_phase_x[j];
+			d.downscale_phase_y[j] = s.downscale_phase_y[j];
+			d.resample_phase_x[j] = s.resample_phase_x[j];
+			d.resample_phase_y[j] = s.resample_phase_y[j];
+		}
+	}
+}
 
 } // namespace
 
-uint32_t BackendConfigAdapter::rgb_enables_to_hw(RgbEnables rgb_enables) const
-{
-	uint32_t hw_enables = 0;
-
-	visit(
-		overloaded {
-			[&](pisp_be_config *)
-			{
-				for (auto &[enable, map] : rgb_enable_map)
-					if ((rgb_enables & enable) && map.v1)
-						hw_enables |= map.v1;
-			},
-
-			[&](pisp_be_config2 *)
-			{
-				for (auto &[enable, map] : rgb_enable_map)
-					if ((rgb_enables & enable) && map.v2)
-						hw_enables |= map.v2;
-			}
-		}
-	);
-
-	return hw_enables;
-}
-
-uint32_t BackendConfigAdapter::bayer_enables_to_hw(BayerEnables bayer_enables) const
-{
-	uint32_t hw_enables = 0;
-
-	visit(
-		overloaded {
-			[&](pisp_be_config *)
-			{
-				for (auto &[enable, map] : bayer_enable_map)
-					if ((bayer_enables & enable) && map.v1)
-						hw_enables |= map.v1;
-			},
-
-			[&](pisp_be_config2 *)
-			{
-				for (auto &[enable, map] : bayer_enable_map)
-					if ((bayer_enables & enable) && map.v2)
-						hw_enables |= map.v2;
-			}
-		}
-	);
-
-	return hw_enables;
-}
-
-RgbEnables BackendConfigAdapter::hw_to_rgb_enables(uint32_t hw_enables) const
-{
-	RgbEnables enables = RgbEnable::None;
-
-	visit(
-		overloaded {
-			[&](pisp_be_config *)
-			{
-				for (auto &[enable, map] : rgb_enable_map)
-					if ((hw_enables & map.v1) && map.v1)
-						enables |= enable;
-			},
-
-			[&](pisp_be_config2 *)
-			{
-				for (auto &[enable, map] : rgb_enable_map)
-					if ((hw_enables & map.v2) && map.v2)
-						enables |= enable;
-			}
-		}
-	);
-
-	return enables;
-}
-
-BayerEnables BackendConfigAdapter::hw_to_bayer_enables(uint32_t hw_enables) const
-{
-	BayerEnables enables = BayerEnable::None;
-
-	visit(
-		overloaded {
-			[&](pisp_be_config *)
-			{
-				for (auto &[enable, map] : bayer_enable_map)
-					if ((hw_enables & map.v1) && map.v1)
-						enables |= enable;
-			},
-
-			[&](pisp_be_config2 *)
-			{
-				for (auto &[enable, map] : bayer_enable_map)
-					if ((hw_enables & map.v2) && map.v2)
-						enables |= enable;
-			}
-		}
-	);
-
-	return enables;
-}
-
 void BackendConfigAdapter::set_tile(unsigned int i, const BeTile &tile)
 {
-	std::visit(overloaded {
-		[&tile, i](pisp_tile *tiles) {
-			// Common fields
-			tiles[i].input_addr_offset = tile.input_addr_offset;
-			tiles[i].input_addr_offset2 = tile.input_addr_offset2;
-			tiles[i].input_offset_x = tile.input_offset_x;
-			tiles[i].input_offset_y = tile.input_offset_y;
-			tiles[i].input_width = tile.input_width;
-			tiles[i].input_height = tile.input_height;
-			tiles[i].tdn_input_addr_offset = tile.tdn_input_addr_offset;
-			tiles[i].tdn_output_addr_offset = tile.tdn_output_addr_offset;
-			tiles[i].stitch_input_addr_offset = tile.stitch_input_addr_offset;
-			tiles[i].stitch_output_addr_offset = tile.stitch_output_addr_offset;
-			tiles[i].lsc_grid_offset_x = tile.lsc_grid_offset_x;
-			tiles[i].lsc_grid_offset_y = tile.lsc_grid_offset_y;
-			tiles[i].cac_grid_offset_x = tile.cac_grid_offset_x;
-			tiles[i].cac_grid_offset_y = tile.cac_grid_offset_y;
-			std::memcpy(tiles[i].crop_x_start, tile.crop_x_start.data(), sizeof(tile.crop_x_start));
-			std::memcpy(tiles[i].crop_x_end, tile.crop_x_end.data(), sizeof(tile.crop_x_end));
-			std::memcpy(tiles[i].crop_y_start, tile.crop_y_start.data(), sizeof(tile.crop_y_start));
-			std::memcpy(tiles[i].crop_y_end, tile.crop_y_end.data(), sizeof(tile.crop_y_end));
-			std::memcpy(tiles[i].resample_in_width, tile.resample_in_width.data(), sizeof(tile.resample_in_width));
-			std::memcpy(tiles[i].resample_in_height, tile.resample_in_height.data(), sizeof(tile.resample_in_height));
-			std::memcpy(tiles[i].output_offset_x, tile.output_offset_x.data(), sizeof(tile.output_offset_x));
-			std::memcpy(tiles[i].output_offset_y, tile.output_offset_y.data(), sizeof(tile.output_offset_y));
-			std::memcpy(tiles[i].output_width, tile.output_width.data(), sizeof(tile.output_width));
-			std::memcpy(tiles[i].output_height, tile.output_height.data(), sizeof(tile.output_height));
-			std::memcpy(tiles[i].output_addr_offset, tile.output_addr_offset.data(), sizeof(tile.output_addr_offset));
-			std::memcpy(tiles[i].output_addr_offset2, tile.output_addr_offset2.data(), sizeof(tile.output_addr_offset2));
-			
-			// v1 specific fields
-			tiles[i].edge = tile.edge;
-			std::memcpy(tiles[i].downscale_phase_x, tile.downscale_phase_x.data(), sizeof(tile.downscale_phase_x));
-			std::memcpy(tiles[i].downscale_phase_y, tile.downscale_phase_y.data(), sizeof(tile.downscale_phase_y));
-			std::memcpy(tiles[i].resample_phase_x, tile.resample_phase_x.data(), sizeof(tile.resample_phase_x));
-			std::memcpy(tiles[i].resample_phase_y, tile.resample_phase_y.data(), sizeof(tile.resample_phase_y));
-		},
-		[&tile, i](pisp_tile2 *tiles) {
-			// Common fields
-			tiles[i].input_addr_offset = tile.input_addr_offset;
-			tiles[i].input_addr_offset2 = tile.input_addr_offset2;
-			tiles[i].input_offset_x = tile.input_offset_x;
-			tiles[i].input_offset_y = tile.input_offset_y;
-			tiles[i].input_width = tile.input_width;
-			tiles[i].input_height = tile.input_height;
-			tiles[i].tdn_input_addr_offset = tile.tdn_input_addr_offset;
-			tiles[i].tdn_output_addr_offset = tile.tdn_output_addr_offset;
-			tiles[i].stitch_input_addr_offset = tile.stitch_input_addr_offset;
-			tiles[i].stitch_output_addr_offset = tile.stitch_output_addr_offset;
-			tiles[i].lsc_grid_offset_x = tile.lsc_grid_offset_x;
-			tiles[i].lsc_grid_offset_y = tile.lsc_grid_offset_y;
-			tiles[i].cac_grid_offset_x = tile.cac_grid_offset_x;
-			tiles[i].cac_grid_offset_y = tile.cac_grid_offset_y;
-			std::memcpy(tiles[i].crop_x_start, tile.crop_x_start.data(), sizeof(tile.crop_x_start));
-			std::memcpy(tiles[i].crop_width, tile.crop_width.data(), sizeof(tile.crop_width));
-			std::memcpy(tiles[i].crop_y_start, tile.crop_y_start.data(), sizeof(tile.crop_y_start));
-			std::memcpy(tiles[i].crop_height, tile.crop_height.data(), sizeof(tile.crop_height));
-			std::memcpy(tiles[i].resample_in_width, tile.resample_in_width.data(), sizeof(tile.resample_in_width));
-			std::memcpy(tiles[i].resample_in_height, tile.resample_in_height.data(), sizeof(tile.resample_in_height));
-			std::memcpy(tiles[i].output_offset_x, tile.output_offset_x.data(), sizeof(tile.output_offset_x));
-			std::memcpy(tiles[i].output_offset_y, tile.output_offset_y.data(), sizeof(tile.output_offset_y));
-			std::memcpy(tiles[i].output_width, tile.output_width.data(), sizeof(tile.output_width));
-			std::memcpy(tiles[i].output_height, tile.output_height.data(), sizeof(tile.output_height));
-			std::memcpy(tiles[i].output_addr_offset, tile.output_addr_offset.data(), sizeof(tile.output_addr_offset));
-			std::memcpy(tiles[i].output_addr_offset2, tile.output_addr_offset2.data(), sizeof(tile.output_addr_offset2));
-			
-			// v2 specific fields
-			tiles[i].tonemap_grid_offset_x = tile.tonemap_grid_offset_x;
-			tiles[i].tonemap_grid_offset_y = tile.tonemap_grid_offset_y;
-			tiles[i].tonemap_lores_offset_x = tile.tonemap_lores_offset_x;
-			tiles[i].tonemap_lores_offset_y = tile.tonemap_lores_offset_y;
-			tiles[i].dedistort_grid_offset_x = tile.dedistort_grid_offset_x;
-			tiles[i].dedistort_grid_offset_y = tile.dedistort_grid_offset_y;
-			tiles[i].dedistorted_offset_x = tile.dedistorted_offset_x;
-			tiles[i].dedistorted_width = tile.dedistorted_width;
-			std::memcpy(tiles[i].resample_start_context_x, tile.resample_start_context_x.data(), sizeof(tile.resample_start_context_x));
-			std::memcpy(tiles[i].resample_start_context_y, tile.resample_start_context_y.data(), sizeof(tile.resample_start_context_y));			
-
-			// v2 has per-output downscale/resample phases, v1/BeTile has per-component
-			// TODO Remove the loop?
-			for (unsigned int j = 0; j < PISP_BACK_END_NUM_OUTPUTS; j++)
-			{
-				tiles[i].downscale_phase_x[j] = tile.downscale_phase_x[j];
-				tiles[i].downscale_phase_y[j] = tile.downscale_phase_y[j];
-				tiles[i].resample_phase_x[j] = tile.resample_phase_x[j];
-				tiles[i].resample_phase_y[j] = tile.resample_phase_y[j];
-			}
-		}
-	}, tile_);
+	visit_tiles([&tile, i](auto *tiles) { copy_tile(tiles[i], tile); });
 }
-
 
 BeTile BackendConfigAdapter::get_tile(unsigned int i) const
 {
-	BeTile tile{};
+	BeTile tile {};
 
-	std::visit(overloaded {
-		[&tile, i](pisp_tile *tiles) {
-			// Common fields
-			tile.input_addr_offset = tiles[i].input_addr_offset;
-			tile.input_addr_offset2 = tiles[i].input_addr_offset2;
-			tile.input_offset_x = tiles[i].input_offset_x;
-			tile.input_offset_y = tiles[i].input_offset_y;
-			tile.input_width = tiles[i].input_width;
-			tile.input_height = tiles[i].input_height;
-			tile.tdn_input_addr_offset = tiles[i].tdn_input_addr_offset;
-			tile.tdn_output_addr_offset = tiles[i].tdn_output_addr_offset;
-			tile.stitch_input_addr_offset = tiles[i].stitch_input_addr_offset;
-			tile.stitch_output_addr_offset = tiles[i].stitch_output_addr_offset;
-			tile.lsc_grid_offset_x = tiles[i].lsc_grid_offset_x;
-			tile.lsc_grid_offset_y = tiles[i].lsc_grid_offset_y;
-			tile.cac_grid_offset_x = tiles[i].cac_grid_offset_x;
-			tile.cac_grid_offset_y = tiles[i].cac_grid_offset_y;
-			std::memcpy(tile.crop_x_start.data(), tiles[i].crop_x_start, sizeof(tile.crop_x_start));
-			std::memcpy(tile.crop_x_end.data(), tiles[i].crop_x_end, sizeof(tile.crop_x_end));
-			std::memcpy(tile.crop_y_start.data(), tiles[i].crop_y_start, sizeof(tile.crop_y_start));
-			std::memcpy(tile.crop_y_end.data(), tiles[i].crop_y_end, sizeof(tile.crop_y_end));
-			std::memcpy(tile.resample_in_width.data(), tiles[i].resample_in_width, sizeof(tile.resample_in_width));
-			std::memcpy(tile.resample_in_height.data(), tiles[i].resample_in_height, sizeof(tile.resample_in_height));
-			std::memcpy(tile.output_offset_x.data(), tiles[i].output_offset_x, sizeof(tile.output_offset_x));
-			std::memcpy(tile.output_offset_y.data(), tiles[i].output_offset_y, sizeof(tile.output_offset_y));
-			std::memcpy(tile.output_width.data(), tiles[i].output_width, sizeof(tile.output_width));
-			std::memcpy(tile.output_height.data(), tiles[i].output_height, sizeof(tile.output_height));
-			std::memcpy(tile.output_addr_offset.data(), tiles[i].output_addr_offset, sizeof(tile.output_addr_offset));
-			std::memcpy(tile.output_addr_offset2.data(), tiles[i].output_addr_offset2, sizeof(tile.output_addr_offset2));
-			
-			// v1 specific fields
-			tile.edge = tiles[i].edge;
-			std::memcpy(tile.downscale_phase_x.data(), tiles[i].downscale_phase_x, sizeof(tile.downscale_phase_x));
-			std::memcpy(tile.downscale_phase_y.data(), tiles[i].downscale_phase_y, sizeof(tile.downscale_phase_y));
-			std::memcpy(tile.resample_phase_x.data(), tiles[i].resample_phase_x, sizeof(tile.resample_phase_x));
-			std::memcpy(tile.resample_phase_y.data(), tiles[i].resample_phase_y, sizeof(tile.resample_phase_y));
-		},
-		[&tile, i](pisp_tile2 *tiles) {
-			// Common fields
-			tile.input_addr_offset = tiles[i].input_addr_offset;
-			tile.input_addr_offset2 = tiles[i].input_addr_offset2;
-			tile.input_offset_x = tiles[i].input_offset_x;
-			tile.input_offset_y = tiles[i].input_offset_y;
-			tile.input_width = tiles[i].input_width;
-			tile.input_height = tiles[i].input_height;
-			tile.tdn_input_addr_offset = tiles[i].tdn_input_addr_offset;
-			tile.tdn_output_addr_offset = tiles[i].tdn_output_addr_offset;
-			tile.stitch_input_addr_offset = tiles[i].stitch_input_addr_offset;
-			tile.stitch_output_addr_offset = tiles[i].stitch_output_addr_offset;
-			tile.lsc_grid_offset_x = tiles[i].lsc_grid_offset_x;
-			tile.lsc_grid_offset_y = tiles[i].lsc_grid_offset_y;
-			tile.cac_grid_offset_x = tiles[i].cac_grid_offset_x;
-			tile.cac_grid_offset_y = tiles[i].cac_grid_offset_y;
-			std::memcpy(tile.crop_x_start.data(), tiles[i].crop_x_start, sizeof(tile.crop_x_start));
-			std::memcpy(tile.crop_width.data(), tiles[i].crop_width, sizeof(tile.crop_width));
-			std::memcpy(tile.crop_y_start.data(), tiles[i].crop_y_start, sizeof(tile.crop_y_start));
-			std::memcpy(tile.crop_height.data(), tiles[i].crop_height, sizeof(tile.crop_height));
-			std::memcpy(tile.resample_in_width.data(), tiles[i].resample_in_width, sizeof(tile.resample_in_width));
-			std::memcpy(tile.resample_in_height.data(), tiles[i].resample_in_height, sizeof(tile.resample_in_height));
-			std::memcpy(tile.output_offset_x.data(), tiles[i].output_offset_x, sizeof(tile.output_offset_x));
-			std::memcpy(tile.output_offset_y.data(), tiles[i].output_offset_y, sizeof(tile.output_offset_y));
-			std::memcpy(tile.output_width.data(), tiles[i].output_width, sizeof(tile.output_width));
-			std::memcpy(tile.output_height.data(), tiles[i].output_height, sizeof(tile.output_height));
-			std::memcpy(tile.output_addr_offset.data(), tiles[i].output_addr_offset, sizeof(tile.output_addr_offset));
-			std::memcpy(tile.output_addr_offset2.data(), tiles[i].output_addr_offset2, sizeof(tile.output_addr_offset2));
-			
-			// v2 specific fields
-			tile.tonemap_grid_offset_x = tiles[i].tonemap_grid_offset_x;
-			tile.tonemap_grid_offset_y = tiles[i].tonemap_grid_offset_y;
-			tile.tonemap_lores_offset_x = tiles[i].tonemap_lores_offset_x;
-			tile.tonemap_lores_offset_y = tiles[i].tonemap_lores_offset_y;
-			tile.dedistort_grid_offset_x = tiles[i].dedistort_grid_offset_x;
-			tile.dedistort_grid_offset_y = tiles[i].dedistort_grid_offset_y;
-			tile.dedistorted_offset_x = tiles[i].dedistorted_offset_x;
-			tile.dedistorted_width = tiles[i].dedistorted_width;
-
-			std::memcpy(tile.resample_start_context_x.data(), tiles[i].resample_start_context_x, sizeof(tile.resample_start_context_x));
-			std::memcpy(tile.resample_start_context_y.data(), tiles[i].resample_start_context_y, sizeof(tile.resample_start_context_y));			
-
-			// v2 has per-output downscale/resample phases, v1/BeTile has per-component
-			for (unsigned int j = 0; j < PISP_BACK_END_NUM_OUTPUTS; j++) {
-				// TODO Remove the loop?
-				tile.downscale_phase_x[j] = tiles[i].downscale_phase_x[j];
-				tile.downscale_phase_y[j] = tiles[i].downscale_phase_y[j];
-				tile.resample_phase_x[j] = tiles[i].resample_phase_x[j];
-				tile.resample_phase_y[j] = tiles[i].resample_phase_y[j];
-			}
-		}
-	}, tile_);
+	visit_tiles([&tile, i](auto *tiles) { copy_tile(tile, tiles[i]); });
 
 	return tile;
 }
 
 void BackendConfigAdapter::set_global(const BeGlobal &global)
 {
-	visit([&global, this](auto *cfg) {
-		cfg->global.bayer_enables = bayer_enables_to_hw(global.bayer_enables);
-		cfg->global.rgb_enables = rgb_enables_to_hw(global.rgb_enables);
+	visit([&global](auto *cfg) {
+		constexpr bool v1 = is_v1<decltype(cfg)>;
+		cfg->global.bayer_enables = enables_to_hw<v1>(global.bayer_enables, bayer_enable_map);
+		cfg->global.rgb_enables = enables_to_hw<v1>(global.rgb_enables, rgb_enable_map);
 		cfg->global.bayer_order = global.bayer_order;
-		cfg->global.quad_bayer = holds_alternative<pisp_be_config2 *>(config_) && global.quad_bayer;
+		cfg->global.quad_bayer = !v1 && global.quad_bayer;
 		cfg->global.pad[0] = cfg->global.pad[1] = 0;
 	});
 }
@@ -389,11 +233,12 @@ BeGlobal BackendConfigAdapter::get_global() const
 {
 	BeGlobal global;
 
-	visit([&global, this](auto *cfg) {
-		global.bayer_enables = hw_to_bayer_enables(cfg->global.bayer_enables);
-		global.rgb_enables = hw_to_rgb_enables(cfg->global.rgb_enables);
+	visit([&global](auto *cfg) {
+		constexpr bool v1 = is_v1<decltype(cfg)>;
+		global.bayer_enables = hw_to_enables<v1>(cfg->global.bayer_enables, bayer_enable_map);
+		global.rgb_enables = hw_to_enables<v1>(cfg->global.rgb_enables, rgb_enable_map);
 		global.bayer_order = cfg->global.bayer_order;
-		global.quad_bayer = holds_alternative<pisp_be_config2 *>(config_) && cfg->global.quad_bayer;
+		global.quad_bayer = !v1 && cfg->global.quad_bayer;
 	});
 
 	return global;
@@ -706,27 +551,24 @@ BeShFcCombineConfig BackendConfigAdapter::get_sh_fc_combine() const
 	return visit([](auto *cfg) -> BeShFcCombineConfig { return cfg->sh_fc_combine; });
 }
 
+// Blocks that only exist on one HW version are detected by the presence of the corresponding config field.
+// Setting an absent block is a no-op, and getting one returns a default constructed config.
+
 void BackendConfigAdapter::set_pref_colours(const BePrefColoursConfig &pref_colours)
 {
-	visit(overloaded {
-		[]([[maybe_unused]] pisp_be_config *cfg) {
-			// Throw error?
-		},
-		[&pref_colours](pisp_be_config2 *cfg) {
+	visit([&pref_colours](auto *cfg) {
+		if constexpr (requires { cfg->pref_colours; })
 			cfg->pref_colours = pref_colours;
-		}
 	});
 }
 
 BePrefColoursConfig BackendConfigAdapter::get_pref_colours() const
 {
-	return visit(overloaded {
-		[]([[maybe_unused]] pisp_be_config *cfg) -> BePrefColoursConfig {
-			// Throw error?
+	return visit([](auto *cfg) -> BePrefColoursConfig {
+		if constexpr (requires { cfg->pref_colours; })
+			return cfg->pref_colours;
+		else
 			return {};
-		},
-
-		[](pisp_be_config2 *cfg) -> BePrefColoursConfig { return cfg->pref_colours; }
 	});
 }
 
@@ -745,11 +587,9 @@ BeCcmConfig BackendConfigAdapter::get_ycbcr_inverse() const
 
 void BackendConfigAdapter::set_pre_csc(unsigned int i, const BeCcmConfig &csc)
 {
-	visit(overloaded {
-		[]([[maybe_unused]] pisp_be_config *cfg) {
-			// Throw error? 
-		},
-		[&csc, i](pisp_be_config2 *cfg) {
+	visit([&csc, i](auto *cfg) {
+		if constexpr (requires { cfg->pre_csc; })
+		{
 			cfg->pre_csc[i] = csc;
 			cfg->pre_csc[i].pad[0] = cfg->pre_csc[i].pad[1] = 0;
 		}
@@ -758,24 +598,24 @@ void BackendConfigAdapter::set_pre_csc(unsigned int i, const BeCcmConfig &csc)
 
 BeCcmConfig BackendConfigAdapter::get_pre_csc(unsigned int i) const
 {
-	return visit(overloaded {
-		[]([[maybe_unused]] pisp_be_config *cfg) -> BeCcmConfig {
-			// Throw error? 
+	return visit([i](auto *cfg) -> BeCcmConfig {
+		if constexpr (requires { cfg->pre_csc; })
+			return cfg->pre_csc[i];
+		else
 			return {};
-		},
-
-		[i](pisp_be_config2 *cfg) -> BeCcmConfig { return cfg->pre_csc[i]; }
 	});
 }
 
 void BackendConfigAdapter::set_post_csc(unsigned int i, const BeCcmConfig &csc)
 {
-	visit(overloaded {
-		[&csc, i](pisp_be_config *cfg) {
+	visit([&csc, i](auto *cfg) {
+		if constexpr (is_v1<decltype(cfg)>)
+		{
 			cfg->csc[i] = csc;
 			cfg->csc[i].pad[0] = cfg->csc[i].pad[1] = 0;
-		},
-		[&csc, i](pisp_be_config2 *cfg) {
+		}
+		else
+		{
 			cfg->post_csc[i] = csc;
 			cfg->post_csc[i].pad[0] = cfg->post_csc[i].pad[1] = 0;
 		}
@@ -784,9 +624,11 @@ void BackendConfigAdapter::set_post_csc(unsigned int i, const BeCcmConfig &csc)
 
 BeCcmConfig BackendConfigAdapter::get_post_csc(unsigned int i) const
 {
-	return visit(overloaded {
-		[i](pisp_be_config *cfg) -> BeCcmConfig { return cfg->csc[i]; },
-		[i](pisp_be_config2 *cfg) -> BeCcmConfig { return cfg->post_csc[i]; }
+	return visit([i](auto *cfg) -> BeCcmConfig {
+		if constexpr (is_v1<decltype(cfg)>)
+			return cfg->csc[i];
+		else
+			return cfg->post_csc[i];
 	});
 }
 
@@ -810,8 +652,9 @@ BeDownscaleConfig BackendConfigAdapter::get_downscale(unsigned int i) const
 
 void BackendConfigAdapter::set_output_format(unsigned int i, const BeOutputFormatConfig &output_format)
 {
-	visit(overloaded {
-		[&output_format, i](pisp_be_config *cfg) {
+	visit([&output_format, i](auto *cfg) {
+		if constexpr (is_v1<decltype(cfg)>)
+		{
 			cfg->output_format[i].image = output_format.image;
 			cfg->output_format[i].transform = output_format.transform;
 			cfg->output_format[i].lo = output_format.lo;
@@ -819,17 +662,17 @@ void BackendConfigAdapter::set_output_format(unsigned int i, const BeOutputForma
 			cfg->output_format[i].hi = output_format.hi;
 			cfg->output_format[i].hi2 = output_format.hi2;
 			cfg->output_format[i].pad[0] = cfg->output_format[i].pad[1] = cfg->output_format[i].pad[2] = 0;
-		},
-		[&output_format, i](pisp_be_config2 *cfg) {
-			cfg->output_format[i] = output_format;
 		}
+		else
+			cfg->output_format[i] = output_format;
 	});
 }
 
 BeOutputFormatConfig BackendConfigAdapter::get_output_format(unsigned int i) const
 {
-	return visit(overloaded {
-		[i](pisp_be_config *cfg) -> BeOutputFormatConfig {
+	return visit([i](auto *cfg) -> BeOutputFormatConfig {
+		if constexpr (is_v1<decltype(cfg)>)
+		{
 			BeOutputFormatConfig output_format {};
 			output_format.image = cfg->output_format[i].image;
 			output_format.transform = cfg->output_format[i].transform;
@@ -838,35 +681,35 @@ BeOutputFormatConfig BackendConfigAdapter::get_output_format(unsigned int i) con
 			output_format.hi = cfg->output_format[i].hi;
 			output_format.hi2 = cfg->output_format[i].hi2;
 			return output_format;
-		},
-		[i](pisp_be_config2 *cfg) -> BeOutputFormatConfig { return cfg->output_format[i]; }
+		}
+		else
+			return cfg->output_format[i];
 	});
 }
 
-// Variant-specific implementations
 void BackendConfigAdapter::set_tdn(const BeTdnConfig &tdn)
 {
-	visit(overloaded {
-		[&tdn](pisp_be_config *cfg) {
+	visit([&tdn](auto *cfg) {
+		if constexpr (is_v1<decltype(cfg)>)
+		{
 			cfg->tdn.black_level = tdn.black_level;
 			cfg->tdn.ratio = tdn.ratio;
 			cfg->tdn.noise_constant = tdn.noise_constant;
 			cfg->tdn.noise_slope = tdn.noise_slope;
 			cfg->tdn.threshold = tdn.threshold;
 			cfg->tdn.reset = tdn.reset;
-			cfg->tdn.pad = 0;
-		},
-		[&tdn](pisp_be_config2 *cfg) {
-			cfg->tdn = tdn;
-			cfg->tdn.pad = 0;
 		}
+		else
+			cfg->tdn = tdn;
+		cfg->tdn.pad = 0;
 	});
 }
 
 BeTdnConfig BackendConfigAdapter::get_tdn() const
 {
-	return visit(overloaded {
-		[](pisp_be_config *cfg) -> BeTdnConfig {
+	return visit([](auto *cfg) -> BeTdnConfig {
+		if constexpr (is_v1<decltype(cfg)>)
+		{
 			BeTdnConfig tdn {};
 			tdn.black_level = cfg->tdn.black_level;
 			tdn.ratio = cfg->tdn.ratio;
@@ -875,25 +718,25 @@ BeTdnConfig BackendConfigAdapter::get_tdn() const
 			tdn.threshold = cfg->tdn.threshold;
 			tdn.reset = cfg->tdn.reset;
 			return tdn;
-		},
-		[](pisp_be_config2 *cfg) -> BeTdnConfig {
-			return cfg->tdn;
 		}
+		else
+			return cfg->tdn;
 	});
 }
 
 void BackendConfigAdapter::set_stitch(const BeStitchConfig &stitch)
 {
-	visit(overloaded {
-		[&stitch](pisp_be_config *cfg) {
+	visit([&stitch](auto *cfg) {
+		if constexpr (is_v1<decltype(cfg)>)
+		{
 			cfg->stitch.threshold_lo = stitch.threshold_lo;
 			cfg->stitch.threshold_diff_power = stitch.threshold_diff_power;
 			cfg->stitch.exposure_ratio = stitch.exposure_ratio;
 			cfg->stitch.motion_threshold_256 = stitch.motion_threshold_256;
 			cfg->stitch.motion_threshold_recip = stitch.motion_threshold_recip;
-			cfg->stitch.pad = 0;
-		},
-		[&stitch](pisp_be_config2 *cfg) {
+		}
+		else
+		{
 			cfg->stitch.black_level = stitch.black_level;
 			cfg->stitch.ratio = stitch.ratio;
 			cfg->stitch.noise_constant = stitch.noise_constant;
@@ -903,25 +746,25 @@ void BackendConfigAdapter::set_stitch(const BeStitchConfig &stitch)
 			cfg->stitch.swap_inputs = stitch.swap_inputs;
 			cfg->stitch.saturation_threshold = stitch.saturation_threshold;
 			cfg->stitch.threshold = stitch.threshold;
-			cfg->stitch.pad = 0;
 		}
+		cfg->stitch.pad = 0;
 	});
 }
 
 BeStitchConfig BackendConfigAdapter::get_stitch() const
 {
-	return visit(overloaded {
-		[](pisp_be_config *cfg) -> BeStitchConfig {
-			BeStitchConfig stitch;
+	return visit([](auto *cfg) -> BeStitchConfig {
+		BeStitchConfig stitch;
+		if constexpr (is_v1<decltype(cfg)>)
+		{
 			stitch.threshold_lo = cfg->stitch.threshold_lo;
 			stitch.threshold_diff_power = cfg->stitch.threshold_diff_power;
 			stitch.exposure_ratio = cfg->stitch.exposure_ratio;
 			stitch.motion_threshold_256 = cfg->stitch.motion_threshold_256;
 			stitch.motion_threshold_recip = cfg->stitch.motion_threshold_recip;
-			return stitch;
-		},
-		[](pisp_be_config2 *cfg) -> BeStitchConfig {
-			BeStitchConfig stitch;
+		}
+		else
+		{
 			stitch.black_level = cfg->stitch.black_level;
 			stitch.ratio = cfg->stitch.ratio;
 			stitch.noise_constant = cfg->stitch.noise_constant;
@@ -931,43 +774,34 @@ BeStitchConfig BackendConfigAdapter::get_stitch() const
 			stitch.apply_threshold = cfg->stitch.apply_threshold;
 			stitch.swap_inputs = cfg->stitch.swap_inputs;
 			stitch.saturation_threshold = cfg->stitch.saturation_threshold;
-			return stitch;
 		}
+		return stitch;
 	});
 }
 
 void BackendConfigAdapter::set_tonemap(const BeTonemapConfig &tonemap)
 {
-	visit(overloaded {
-		[&tonemap](pisp_be_config *cfg) {
+	visit([&tonemap](auto *cfg) {
+		if constexpr (requires { cfg->tonemap; })
 			cfg->tonemap = tonemap;
-		},
-		[&tonemap]([[maybe_unused]] pisp_be_config2 *cfg) {
-			// Throw exception?
-		}
 	});
 }
 
 BeTonemapConfig BackendConfigAdapter::get_tonemap() const
 {
-	return visit(overloaded {
-		[](pisp_be_config *cfg) -> BeTonemapConfig {
+	return visit([](auto *cfg) -> BeTonemapConfig {
+		if constexpr (requires { cfg->tonemap; })
 			return cfg->tonemap;
-		},
-		[]([[maybe_unused]] pisp_be_config2 *cfg) -> BeTonemapConfig {
-			// Throw exception?
+		else
 			return {};
-		}
 	});
 }
 
 void BackendConfigAdapter::set_tonemap2(const BeTonemap2Config &tonemap)
 {
-	visit(overloaded {
-		[&tonemap]([[maybe_unused]] pisp_be_config *cfg) {
-			// Throw exception?
-		},
-		[&tonemap](pisp_be_config2 *cfg) {
+	visit([&tonemap](auto *cfg) {
+		if constexpr (requires { cfg->tonemap2; })
+		{
 			cfg->tonemap2 = tonemap;
 			cfg->tonemap2.pad0[0] = cfg->tonemap2.pad0[1] = 0;
 			cfg->tonemap2.pad1[0] = cfg->tonemap2.pad1[1] = 0;
@@ -979,51 +813,43 @@ void BackendConfigAdapter::set_tonemap2(const BeTonemap2Config &tonemap)
 
 BeTonemap2Config BackendConfigAdapter::get_tonemap2() const
 {
-	return visit(overloaded {
-		[]([[maybe_unused]] pisp_be_config *cfg) -> BeTonemap2Config {
-			// Throw exception?
-			return {};
-		},
-		[](pisp_be_config2 *cfg) -> BeTonemap2Config {
+	return visit([](auto *cfg) -> BeTonemap2Config {
+		if constexpr (requires { cfg->tonemap2; })
 			return cfg->tonemap2;
-		}
+		else
+			return {};
 	});
 }
 
 void BackendConfigAdapter::set_tonemap_format(ImageFormatConfig const &format)
 {
-	visit(overloaded {
-		[&format]([[maybe_unused]] pisp_be_config *cfg) {
-			// Throw exception?
-		},
-		[&format](pisp_be_config2 *cfg) {
+	visit([&format](auto *cfg) {
+		if constexpr (requires { cfg->tonemap_format; })
 			cfg->tonemap_format = format;
-		}
 	});
 }
 
 ImageFormatConfig BackendConfigAdapter::get_tonemap_format() const
 {
-	return visit(overloaded {
-		[]([[maybe_unused]] pisp_be_config *cfg) -> ImageFormatConfig {
-			// Throw exception?
-			return {};
-		},
-		[](pisp_be_config2 *cfg) -> ImageFormatConfig {
+	return visit([](auto *cfg) -> ImageFormatConfig {
+		if constexpr (requires { cfg->tonemap_format; })
 			return cfg->tonemap_format;
-		}
+		else
+			return {};
 	});
 }
 
 void BackendConfigAdapter::set_demosaic(const BeDemosaicConfig &demosaic)
 {
-	visit(overloaded {
-		[&demosaic](pisp_be_config *cfg) {
+	visit([&demosaic](auto *cfg) {
+		if constexpr (is_v1<decltype(cfg)>)
+		{
 			cfg->demosaic.sharper = demosaic.sharper;
 			cfg->demosaic.fc_mode = demosaic.fc_mode;
 			cfg->demosaic.pad[0] = cfg->demosaic.pad[1] = 0;
-		},
-		[&demosaic](pisp_be_config2 *cfg) {
+		}
+		else
+		{
 			cfg->demosaic = demosaic;
 			cfg->demosaic.pad0[0] = cfg->demosaic.pad0[1] = 0;
 			cfg->demosaic.pad1 = 0;
@@ -1033,27 +859,30 @@ void BackendConfigAdapter::set_demosaic(const BeDemosaicConfig &demosaic)
 
 BeDemosaicConfig BackendConfigAdapter::get_demosaic() const
 {
-	return visit(overloaded {
-		[](pisp_be_config *cfg) -> BeDemosaicConfig {
+	return visit([](auto *cfg) -> BeDemosaicConfig {
+		if constexpr (is_v1<decltype(cfg)>)
+		{
 			BeDemosaicConfig demosaic {};
 			demosaic.sharper = cfg->demosaic.sharper;
 			demosaic.fc_mode = cfg->demosaic.fc_mode;
 			return demosaic;
-		},
-		[](pisp_be_config2 *cfg) -> BeDemosaicConfig {
-			return cfg->demosaic;
 		}
+		else
+			return cfg->demosaic;
 	});
 }
 
+// v1 has a single gamma block, so the index is ignored.
 void BackendConfigAdapter::set_gamma(unsigned int i, const BeGammaConfig &gamma)
 {
-	visit(overloaded {
-		[&gamma](pisp_be_config *cfg) {
-			for (unsigned int i = 0; i < PISP_BE_GAMMA_LUT_SIZE; i++)
-				cfg->gamma.lut[i] = gamma.lut[i];
-		},
-		[i, &gamma](pisp_be_config2 *cfg) {
+	visit([&gamma, i](auto *cfg) {
+		if constexpr (is_v1<decltype(cfg)>)
+		{
+			for (unsigned int j = 0; j < PISP_BE_GAMMA_LUT_SIZE; j++)
+				cfg->gamma.lut[j] = gamma.lut[j];
+		}
+		else
+		{
 			for (unsigned int j = 0; j < PISP_BE_GAMMA2_LUT_SIZE; j++)
 				cfg->gamma[i].lut[j] = gamma.lut[j] & 0xffff;
 			cfg->gamma[i].pad = 0;
@@ -1063,40 +892,38 @@ void BackendConfigAdapter::set_gamma(unsigned int i, const BeGammaConfig &gamma)
 
 BeGammaConfig BackendConfigAdapter::get_gamma(unsigned int i) const
 {
-	BeGammaConfig gamma;
-
-	// TODO: Replace with std::copy?
-	return visit(overloaded {
-		[&gamma](pisp_be_config *cfg) -> BeGammaConfig {
+	return visit([i](auto *cfg) -> BeGammaConfig {
+		BeGammaConfig gamma;
+		if constexpr (is_v1<decltype(cfg)>)
+		{
 			for (unsigned int j = 0; j < PISP_BE_GAMMA_LUT_SIZE; j++)
 				gamma.lut[j] = cfg->gamma.lut[j];
-			return gamma;
-		},
-		[i, &gamma](pisp_be_config2 *cfg) -> BeGammaConfig {
+		}
+		else
+		{
 			for (unsigned int j = 0; j < PISP_BE_GAMMA2_LUT_SIZE; j++)
 				gamma.lut[j] = cfg->gamma[i].lut[j] & 0xffff;
-			return gamma;
 		}
+		return gamma;
 	});
 }
 
 void BackendConfigAdapter::set_resample(unsigned int i, const BeResampleConfig &resample)
 {
-	visit(overloaded {
-		[&resample, i](pisp_be_config *cfg) {
-			cfg->resample[i].scale_factor_h = resample.scale_factor_h;
-			cfg->resample[i].scale_factor_v = resample.scale_factor_v;
-			// TODO: Replace with std::copy?
+	visit([&resample, i](auto *cfg) {
+		cfg->resample[i].scale_factor_h = resample.scale_factor_h;
+		cfg->resample[i].scale_factor_v = resample.scale_factor_v;
+
+		if constexpr (is_v1<decltype(cfg)>)
+		{
 			if (resample.coef)
 				std::memcpy(cfg->resample[i].coef, resample.coef->data(), sizeof(cfg->resample[i].coef));
-		},
-
-		[&resample, i](pisp_be_config2 *cfg) {
+		}
+		else
+		{
+			// Separate H/V coefficients fall back to the common ones if not given.
 			auto const &coef_h = resample.coef_h ? resample.coef_h : resample.coef;
 			auto const &coef_v = resample.coef_v ? resample.coef_v : resample.coef;
-
-			cfg->resample[i].scale_factor_h = resample.scale_factor_h;
-			cfg->resample[i].scale_factor_v = resample.scale_factor_v;
 
 			if (coef_h)
 				std::memcpy(cfg->resample[i].coef_h, coef_h->data(), sizeof(cfg->resample[i].coef_h));
@@ -1127,12 +954,9 @@ BeCropConfig BackendConfigAdapter::get_crop(unsigned int i) const
 
 void BackendConfigAdapter::set_dedistort(const BeDedistortionConfig &dedistort)
 {
-	visit(overloaded {
-		[&dedistort]([[maybe_unused]]pisp_be_config *cfg) {
-			// Throw exception?
-		},
-
-		[&dedistort, this](pisp_be_config2 *cfg) {
+	visit([&dedistort, this](auto *cfg) {
+		if constexpr (requires { cfg->dedistort; })
+		{
 			cfg->dedistort.grid_step_x = dedistort.grid_step_x;
 			cfg->dedistort.grid_step_y = dedistort.grid_step_y;
 			cfg->dedistort.pad = 0;
@@ -1149,12 +973,9 @@ BeDedistortionConfig BackendConfigAdapter::get_dedistort() const
 
 void BackendConfigAdapter::set_output_compress(unsigned int i, const BeCompressConfig &compress)
 {
-	visit(overloaded {
-		[]([[maybe_unused]] pisp_be_config *cfg) {
-			// Throw exception?
-		},
-
-		[&compress, i](pisp_be_config2 *cfg) {
+	visit([&compress, i](auto *cfg) {
+		if constexpr (requires { cfg->compress; })
+		{
 			cfg->compress[i] = compress;
 			cfg->compress[i].pad = 0;
 		}
@@ -1163,14 +984,10 @@ void BackendConfigAdapter::set_output_compress(unsigned int i, const BeCompressC
 
 BeCompressConfig BackendConfigAdapter::get_output_compress(unsigned int i) const
 {
-	return visit(overloaded {
-		[]([[maybe_unused]] pisp_be_config *cfg) -> BeCompressConfig {
-			// Throw exception?
-			return {};
-		},
-
-		[i](pisp_be_config2 *cfg) {
+	return visit([i](auto *cfg) -> BeCompressConfig {
+		if constexpr (requires { cfg->compress; })
 			return cfg->compress[i];
-		}
+		else
+			return {};
 	});
 }
