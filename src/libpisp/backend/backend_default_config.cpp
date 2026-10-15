@@ -343,7 +343,7 @@ void BackEnd::initialise_sharpen(libpisp::BeSharpenConfig &sharpen, libpisp::BeS
 	shfc = default_shfc_;
 }
 
-void BackEnd::initialise_default_config(const std::string &filename)
+void BackEnd::initialise_default_config(const std::string &filename, bool set_defaults)
 {
 	std::string file(filename);
 
@@ -368,6 +368,15 @@ void BackEnd::initialise_default_config(const std::string &filename)
 	json root = json::parse(ifs);
 	ifs.close();
 
+	// The tables used by the initialise_*() functions are local to this BackEnd, so are always read.
+	read_ycbcr(ycbcr_map_, inverse_ycbcr_map_, root);
+	read_resample(resample_filter_map_, resample_select_list_, root);
+	read_sharpen(default_sharpen_, default_shfc_, root);
+
+	// The default block configs are only written by the BackEnd that initialises the config storage.
+	if (!set_defaults)
+		return;
+
 	memset(&pipe_->hw_config, 0, sizeof(pipe_->hw_config));
 
 	libpisp::BeDebinConfig debin;
@@ -386,10 +395,6 @@ void BackEnd::initialise_default_config(const std::string &filename)
 	initialise_gamma(gamma, root, variant_ <= BCM2712_D0 ? true : false);
 	set_gamma(0, gamma);
 	set_gamma(1, gamma);
-
-	read_ycbcr(ycbcr_map_, inverse_ycbcr_map_, root);
-	read_resample(resample_filter_map_, resample_select_list_, root);
-	read_sharpen(default_sharpen_, default_shfc_, root);
 
 	libpisp::BeSharpenConfig sharpen;
 	libpisp::BeShFcCombineConfig shfc;

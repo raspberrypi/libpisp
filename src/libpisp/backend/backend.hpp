@@ -250,6 +250,10 @@ private:
 	// The layout of the config storage: the pipeline state and the process-shared mutex guarding it. The mutex
 	// must never be copied, so it is kept outside of PipelineConfig and copying the storage as a whole is
 	// disallowed.
+	//
+	// External storage may be shared by several BackEnds, e.g. in different processes. The first BackEnd
+	// constructed on it initialises it and sets init_, and must finish doing so before any others are
+	// constructed. Those then attach to the existing state, and must be destroyed before the first one.
 	struct PipelineStorage
 	{
 		PipelineStorage() = default;
@@ -258,6 +262,7 @@ private:
 
 		PipelineConfig config;
 		pthread_mutex_t mutex;
+		bool init_ = false;
 	};
 
 	static_assert(std::is_standard_layout_v<PipelineStorage>, "PipelineStorage must be a standard layout type");
@@ -285,12 +290,13 @@ private:
 	uint16_t post_transpose_width();
 	uint16_t post_transpose_height();
 
-	void initialise_default_config(const std::string &filename);
+	void initialise_default_config(const std::string &filename, bool set_defaults);
 	const std::string &select_resample_filter(double downscale) const;
 
 	SoftwareConfig sw_;
 	PipelineStorage *storage_;
 	PipelineConfig *pipe_; // &storage_->config
+	bool owns_storage_; // This BackEnd initialised storage_, so is responsible for tearing it down.
 	const PiSPVariant variant_;
 
 	// Internal storage use

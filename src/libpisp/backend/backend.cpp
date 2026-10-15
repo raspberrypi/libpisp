@@ -9,6 +9,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <new>
 
 #include "common/logging.hpp"
 #include "common/pisp_common.h"
@@ -24,10 +25,17 @@ BackEnd::BackEnd(SoftwareConfig const &non_reg_config, PiSPVariant const &varian
 		PISP_LOG(fatal, "Configured max tile width " << sw_.max_tile_width << " exceeds " << max_tile_width);
 
 	if (config_storage.data() && config_storage.size() >= sizeof(PipelineStorage))
+	{
 		storage_ = reinterpret_cast<PipelineStorage *>(config_storage.data());
+		// Construct the storage in place unless another BackEnd has already initialised it.
+		if (!storage_->init_)
+			storage_ = new (config_storage.data()) PipelineStorage;
+	}
 	else
 		storage_ = &internal_storage_;
+
 	pipe_ = &storage_->config;
+	owns_storage_ = !storage_->init_;
 
 	if (variant < BERYL)
 		config_ = std::make_unique<BackendConfigAdapter>(&pipe_->hw_config, pipe_->tiles.data(), &pipe_->sw_params);
@@ -35,20 +43,30 @@ BackEnd::BackEnd(SoftwareConfig const &non_reg_config, PiSPVariant const &varian
 		config_ =
 			std::make_unique<BackendConfigAdapter>(&pipe_->hw_config_v2, pipe_->tiles2.data(), &pipe_->sw_params);
 
-	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
-	pthread_mutexattr_setrobust(&attr, PTHREAD_MUTEX_ROBUST);
-	pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
-	pthread_mutex_init(&storage_->mutex, &attr);
-	pthread_mutexattr_destroy(&attr);
+	if (owns_storage_)
+	{
+		pthread_mutexattr_t attr;
+		pthread_mutexattr_init(&attr);
+		pthread_mutexattr_setrobust(&attr, PTHREAD_MUTEX_ROBUST);
+		pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+		pthread_mutex_init(&storage_->mutex, &attr);
+		pthread_mutexattr_destroy(&attr);
+	}
 
 	const char *env = std::getenv("LIBPISP_BE_CONFIG_FILE");
-	initialise_default_config(env ? std::string(env) : non_reg_config.defaults_file);
+	initialise_default_config(env ? std::string(env) : non_reg_config.defaults_file, owns_storage_);
+
+	// Only now is the storage ready to be attached to.
+	storage_->init_ = true;
 }
 
 BackEnd::~BackEnd()
 {
-	pthread_mutex_destroy(&storage_->mutex);
+	if (owns_storage_)
+	{
+		pthread_mutex_destroy(&storage_->mutex);
+		storage_->init_ = false;
+	}
 }
 
 void BackEnd::set_blc(BlaConfig const &blc)
