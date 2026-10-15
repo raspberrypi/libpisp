@@ -1134,14 +1134,17 @@ void BackEnd::retile_pipeline(TilingConfig const &tiling_config)
 
 void BackEnd::finalise_tiling()
 {
+	// None of these change while the tiles are updated, so fetch them once.
+	const BeLscConfig &lsc = config_->get_lsc();
+	const BeCacConfig &cac = config_->get_cac();
+	const BeDedistortionConfig &dd = config_->get_dedistort();
+	const BeTonemap2Config tonemap2 = config_->get_tonemap2();
+	const BeGlobal global = config_->get_global();
+	const BayerEnables bayer_enables = global.bayer_enables;
+
 	// Update tile parameters (offsets/strides) from on the BE pipeline configuration.
 	for (unsigned int tile_num = 0; tile_num < pipe_->num_tiles_x * pipe_->num_tiles_y; tile_num++)
 	{
-		const BeLscConfig &lsc = config_->get_lsc();
-		const BeCacConfig &cac = config_->get_cac();
-		const BeTonemap2Config &tonemap2 = config_->get_tonemap2();
-		const BayerEnables bayer_enables = config_->get_global().bayer_enables;
-
 		BeTile t = config_->get_tile(tile_num);
 
 		calculate_input_addr_offset((bayer_enables & BayerEnable::Transpose) ? t.input_offset_y : t.input_offset_x,
@@ -1160,19 +1163,18 @@ void BackEnd::finalise_tiling()
 
 		if (bayer_enables & BayerEnable::Lsc)
 		{
-			t.lsc_grid_offset_x = (t.input_offset_x + config_->get_lsc().offset_x) * lsc.grid_step_x;
-			t.lsc_grid_offset_y = (t.input_offset_y + config_->get_lsc().offset_y) * lsc.grid_step_y;
+			t.lsc_grid_offset_x = (t.input_offset_x + lsc.offset_x) * lsc.grid_step_x;
+			t.lsc_grid_offset_y = (t.input_offset_y + lsc.offset_y) * lsc.grid_step_y;
 		}
 
 		if (bayer_enables & BayerEnable::Cac)
 		{
-			t.cac_grid_offset_x = (t.input_offset_x + config_->get_cac().offset_x) * cac.grid_step_x;
-			t.cac_grid_offset_y = (t.input_offset_y + config_->get_cac().offset_y) * cac.grid_step_y;
+			t.cac_grid_offset_x = (t.input_offset_x + cac.offset_x) * cac.grid_step_x;
+			t.cac_grid_offset_y = (t.input_offset_y + cac.offset_y) * cac.grid_step_y;
 		}
 
-		if (config_->get_global().rgb_enables & RgbEnable::Dedistort)
+		if (global.rgb_enables & RgbEnable::Dedistort)
 		{
-			const BeDedistortionConfig &dd = config_->get_dedistort();
 			t.dedistort_grid_offset_x = (t.dedistorted_offset_x + dd.offset_x) * dd.grid_step_x;
 			t.dedistort_grid_offset_y = (t.input_offset_y + dd.offset_y) * dd.grid_step_y;
 		}
