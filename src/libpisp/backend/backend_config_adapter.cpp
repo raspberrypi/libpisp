@@ -872,12 +872,14 @@ BeDemosaicConfig BackendConfigAdapter::get_demosaic() const
 	});
 }
 
-// v1 has a single gamma block, so the index is ignored.
+// v1 has a single gamma block, so only index 0 exists there.
 void BackendConfigAdapter::set_gamma(unsigned int i, const BeGammaConfig &gamma)
 {
 	visit([&gamma, i](auto *cfg) {
 		if constexpr (is_v1<decltype(cfg)>)
 		{
+			if (i != 0)
+				return;
 			for (unsigned int j = 0; j < PISP_BE_GAMMA_LUT_SIZE; j++)
 				cfg->gamma.lut[j] = gamma.lut[j];
 		}
@@ -896,6 +898,8 @@ BeGammaConfig BackendConfigAdapter::get_gamma(unsigned int i) const
 		BeGammaConfig gamma;
 		if constexpr (is_v1<decltype(cfg)>)
 		{
+			if (i != 0)
+				return gamma;
 			for (unsigned int j = 0; j < PISP_BE_GAMMA_LUT_SIZE; j++)
 				gamma.lut[j] = cfg->gamma.lut[j];
 		}
