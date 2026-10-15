@@ -23,10 +23,11 @@ BackEnd::BackEnd(SoftwareConfig const &non_reg_config, PiSPVariant const &varian
 	if (sw_.max_tile_width > max_tile_width)
 		PISP_LOG(fatal, "Configured max tile width " << sw_.max_tile_width << " exceeds " << max_tile_width);
 
-	if (config_storage.data() && config_storage.size() >= sizeof(PipelineConfig))
-		pipe_ = reinterpret_cast<PipelineConfig *>(config_storage.data());
+	if (config_storage.data() && config_storage.size() >= sizeof(PipelineStorage))
+		storage_ = reinterpret_cast<PipelineStorage *>(config_storage.data());
 	else
-		pipe_ = &internal_pipeline_config_;
+		storage_ = &internal_storage_;
+	pipe_ = &storage_->config;
 
 	if (variant < BERYL)
 		config_ = std::make_unique<BackendConfigAdapter>(&pipe_->hw_config, pipe_->tiles.data(), &pipe_->sw_params);
@@ -38,7 +39,7 @@ BackEnd::BackEnd(SoftwareConfig const &non_reg_config, PiSPVariant const &varian
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_setrobust(&attr, PTHREAD_MUTEX_ROBUST);
 	pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
-	pthread_mutex_init(&pipe_->mutex, &attr);
+	pthread_mutex_init(&storage_->mutex, &attr);
 	pthread_mutexattr_destroy(&attr);
 
 	const char *env = std::getenv("LIBPISP_BE_CONFIG_FILE");
@@ -47,7 +48,7 @@ BackEnd::BackEnd(SoftwareConfig const &non_reg_config, PiSPVariant const &varian
 
 BackEnd::~BackEnd()
 {
-	pthread_mutex_destroy(&pipe_->mutex);
+	pthread_mutex_destroy(&storage_->mutex);
 }
 
 void BackEnd::set_blc(BlaConfig const &blc)
@@ -608,5 +609,5 @@ unsigned int BackEnd::get_max_downscale() const
 
 void BackEnd::inject_config(const void *config_storage)
 {
-	*pipe_ = *reinterpret_cast<const PipelineConfig *>(config_storage);
+	*pipe_ = reinterpret_cast<const PipelineStorage *>(config_storage)->config;
 }

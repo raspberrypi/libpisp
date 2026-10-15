@@ -196,30 +196,32 @@ public:
 
 	static size_t get_storage_size([[maybe_unused]] const PiSPVariant &variant)
 	{
-		return sizeof(PipelineConfig);
+		return sizeof(PipelineStorage);
 	}
 
 	const void *get_config_storage()
 	{
-		return pipe_;
+		return storage_;
 	}
 
 	void lock()
 	{
-		pthread_mutex_lock(&pipe_->mutex);
+		pthread_mutex_lock(&storage_->mutex);
 	}
 
 	void unlock()
 	{
-		pthread_mutex_unlock(&pipe_->mutex);
+		pthread_mutex_unlock(&storage_->mutex);
 	}
 
 	bool try_lock()
 	{
-		return pthread_mutex_trylock(&pipe_->mutex) == 0;
+		return pthread_mutex_trylock(&storage_->mutex) == 0;
 	}
 
 private:
+	// All the pipeline state. It may live in storage shared between processes, and inject_config() copies it
+	// between them, so it must be safe to copy as raw bytes.
 	struct PipelineConfig
 	{
 		pisp_be_config hw_config {};
@@ -240,29 +242,25 @@ private:
 		std::array<pisp_tile2, PISP_BACK_END_NUM_TILES> tiles2 {};
 		unsigned int num_tiles_x = 0;
 		unsigned int num_tiles_y = 0;
-		pthread_mutex_t mutex;
-
-		PipelineConfig& operator=(const PipelineConfig &other)
-		{
-			hw_config = other.hw_config;
-			hw_config_v2 = other.hw_config_v2;
-			sw_params = other.sw_params;
-			dirty_flags_bayer = other.dirty_flags_bayer;
-			dirty_flags_rgb = other.dirty_flags_rgb;
-			dirty_flags_extra = other.dirty_flags_extra;
-			retile = other.retile;
-			finalise_tiling = other.finalise_tiling;
-			smart_resize = other.smart_resize;
-			smart_resize_dirty = other.smart_resize_dirty;
-			tiles = other.tiles;
-			tiles2 = other.tiles2;
-			num_tiles_x = other.num_tiles_x;
-			num_tiles_y = other.num_tiles_y;
-			return *this;
-		}
 	};
 
-	static_assert(std::is_standard_layout<PipelineConfig>::value, "PipelineConfig must be a standard layout type");
+	static_assert(std::is_standard_layout_v<PipelineConfig> && std::is_trivially_copyable_v<PipelineConfig>,
+				  "PipelineConfig must be safe to copy as raw bytes");
+
+	// The layout of the config storage: the pipeline state and the process-shared mutex guarding it. The mutex
+	// must never be copied, so it is kept outside of PipelineConfig and copying the storage as a whole is
+	// disallowed.
+	struct PipelineStorage
+	{
+		PipelineStorage() = default;
+		PipelineStorage(const PipelineStorage &) = delete;
+		PipelineStorage &operator=(const PipelineStorage &) = delete;
+
+		PipelineConfig config;
+		pthread_mutex_t mutex;
+	};
+
+	static_assert(std::is_standard_layout_v<PipelineStorage>, "PipelineStorage must be a standard layout type");
 
 	void finalise_bayer_rgb_inputs() const;
 	void finalise_inputs() const;
@@ -291,11 +289,12 @@ private:
 	const std::string &select_resample_filter(double downscale) const;
 
 	SoftwareConfig sw_;
-	PipelineConfig *pipe_;
+	PipelineStorage *storage_;
+	PipelineConfig *pipe_; // &storage_->config
 	const PiSPVariant variant_;
 
 	// Internal storage use
-	PipelineConfig internal_pipeline_config_;
+	PipelineStorage internal_storage_;
 
 	std::unique_ptr<BackendConfigAdapter> config_;
 

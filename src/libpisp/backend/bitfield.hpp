@@ -24,8 +24,8 @@ public:
 	// Constructors
 	constexpr Bitfield() noexcept : value(0) {}
 	constexpr Bitfield(T e) noexcept : value(static_cast<Type>(e)) {}
-	constexpr Bitfield(Bitfield const &b) noexcept : value(b.value) {}
-	constexpr Bitfield(Bitfield &&b) noexcept : value(b.value) {}
+	constexpr Bitfield(Bitfield const &) noexcept = default;
+	constexpr Bitfield(Bitfield &&) noexcept = default;
 
 	// Conversions
 	constexpr operator T() const noexcept { return static_cast<T>(value); }
