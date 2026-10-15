@@ -406,13 +406,22 @@ void BackendConfigAdapter::set_lsc(const BeLscConfig &lsc)
 		std::memcpy(cfg->lsc.lut_packed, lsc.lut_packed.data(), sizeof(cfg->lsc.lut_packed));
 	});
 
-	// Store the non-register config as well!
-	non_reg_->lsc = lsc;
+	sw_->lsc = { lsc.offset_x, lsc.offset_y };
 }
 
 BeLscConfig BackendConfigAdapter::get_lsc() const
 {
-	return non_reg_->lsc;
+	BeLscConfig lsc;
+
+	visit([&lsc](auto *cfg) {
+		lsc.grid_step_x = cfg->lsc.grid_step_x;
+		lsc.grid_step_y = cfg->lsc.grid_step_y;
+		std::memcpy(lsc.lut_packed.data(), cfg->lsc.lut_packed, sizeof(cfg->lsc.lut_packed));
+	});
+	lsc.offset_x = sw_->lsc.x;
+	lsc.offset_y = sw_->lsc.y;
+
+	return lsc;
 }
 
 void BackendConfigAdapter::set_wbg(const WbgConfig &wbg)
@@ -446,13 +455,22 @@ void BackendConfigAdapter::set_cac(const BeCacConfig &cac)
 		std::memcpy(cfg->cac.lut, cac.lut.data(), sizeof(cfg->cac.lut));
 	});
 
-	// Store the non-register config as well!
-	non_reg_->cac = cac;
+	sw_->cac = { cac.offset_x, cac.offset_y };
 }
 
 BeCacConfig BackendConfigAdapter::get_cac() const
 {
-	return non_reg_->cac;
+	BeCacConfig cac;
+
+	visit([&cac](auto *cfg) {
+		cac.grid_step_x = cfg->cac.grid_step_x;
+		cac.grid_step_y = cfg->cac.grid_step_y;
+		std::memcpy(cac.lut.data(), cfg->cac.lut, sizeof(cfg->cac.lut));
+	});
+	cac.offset_x = sw_->cac.x;
+	cac.offset_y = sw_->cac.y;
+
+	return cac;
 }
 
 void BackendConfigAdapter::set_debin(const BeDebinConfig &debin)
@@ -641,13 +659,23 @@ void BackendConfigAdapter::set_downscale(unsigned int i, const BeDownscaleConfig
 		cfg->downscale[i].scale_recip_v = downscale.scale_recip_v;
 	});
 
-	// Store the non-register config as well!
-	non_reg_->downscale[i] = downscale;
+	sw_->downscale[i] = { downscale.scaled_width, downscale.scaled_height };
 }
 
 BeDownscaleConfig BackendConfigAdapter::get_downscale(unsigned int i) const
 {
-	return non_reg_->downscale[i];
+	BeDownscaleConfig downscale;
+
+	visit([&downscale, i](auto *cfg) {
+		downscale.scale_factor_h = cfg->downscale[i].scale_factor_h;
+		downscale.scale_factor_v = cfg->downscale[i].scale_factor_v;
+		downscale.scale_recip_h = cfg->downscale[i].scale_recip_h;
+		downscale.scale_recip_v = cfg->downscale[i].scale_recip_v;
+	});
+	downscale.scaled_width = sw_->downscale[i].width;
+	downscale.scaled_height = sw_->downscale[i].height;
+
+	return downscale;
 }
 
 void BackendConfigAdapter::set_output_format(unsigned int i, const BeOutputFormatConfig &output_format)
@@ -919,41 +947,55 @@ void BackendConfigAdapter::set_resample(unsigned int i, const BeResampleConfig &
 		cfg->resample[i].scale_factor_v = resample.scale_factor_v;
 
 		if constexpr (is_v1<decltype(cfg)>)
-		{
-			if (resample.coef)
-				std::memcpy(cfg->resample[i].coef, resample.coef->data(), sizeof(cfg->resample[i].coef));
-		}
+			std::memcpy(cfg->resample[i].coef, resample.coef_h.data(), sizeof(cfg->resample[i].coef));
 		else
 		{
-			// Separate H/V coefficients fall back to the common ones if not given.
-			auto const &coef_h = resample.coef_h ? resample.coef_h : resample.coef;
-			auto const &coef_v = resample.coef_v ? resample.coef_v : resample.coef;
-
-			if (coef_h)
-				std::memcpy(cfg->resample[i].coef_h, coef_h->data(), sizeof(cfg->resample[i].coef_h));
-			if (coef_v)
-				std::memcpy(cfg->resample[i].coef_v, coef_v->data(), sizeof(cfg->resample[i].coef_v));
+			std::memcpy(cfg->resample[i].coef_h, resample.coef_h.data(), sizeof(cfg->resample[i].coef_h));
+			std::memcpy(cfg->resample[i].coef_v, resample.coef_v.data(), sizeof(cfg->resample[i].coef_v));
 		}
 	});
 
-	// Store the non-register config as well!
-	non_reg_->resample[i] = resample;
+	sw_->resample[i] = { resample.scaled_width, resample.scaled_height };
+	sw_->resample_initial_phase_h[i] = resample.initial_phase_h;
+	sw_->resample_initial_phase_v[i] = resample.initial_phase_v;
 }
 
 BeResampleConfig BackendConfigAdapter::get_resample(unsigned int i) const
 {
-	return non_reg_->resample[i];
+	BeResampleConfig resample;
+
+	visit([&resample, i](auto *cfg) {
+		resample.scale_factor_h = cfg->resample[i].scale_factor_h;
+		resample.scale_factor_v = cfg->resample[i].scale_factor_v;
+
+		if constexpr (is_v1<decltype(cfg)>)
+		{
+			std::memcpy(resample.coef_h.data(), cfg->resample[i].coef, sizeof(cfg->resample[i].coef));
+			resample.coef_v = resample.coef_h;
+		}
+		else
+		{
+			std::memcpy(resample.coef_h.data(), cfg->resample[i].coef_h, sizeof(cfg->resample[i].coef_h));
+			std::memcpy(resample.coef_v.data(), cfg->resample[i].coef_v, sizeof(cfg->resample[i].coef_v));
+		}
+	});
+	resample.scaled_width = sw_->resample[i].width;
+	resample.scaled_height = sw_->resample[i].height;
+	resample.initial_phase_h = sw_->resample_initial_phase_h[i];
+	resample.initial_phase_v = sw_->resample_initial_phase_v[i];
+
+	return resample;
 }
 
 void BackendConfigAdapter::set_crop(unsigned int i, BeCropConfig const &crop)
 {
 	// Not a hardware register set.
-	non_reg_->crop[i] = crop;
+	sw_->crop[i] = crop;
 }
 
 BeCropConfig BackendConfigAdapter::get_crop(unsigned int i) const
 {
-	return non_reg_->crop[i];
+	return sw_->crop[i];
 }
 
 void BackendConfigAdapter::set_dedistort(const BeDedistortionConfig &dedistort)
@@ -965,14 +1007,25 @@ void BackendConfigAdapter::set_dedistort(const BeDedistortionConfig &dedistort)
 			cfg->dedistort.grid_step_y = dedistort.grid_step_y;
 			cfg->dedistort.pad = 0;
 			std::memcpy(cfg->dedistort.lut, dedistort.lut, sizeof(dedistort.lut));
-			non_reg_->dedistort = dedistort;
+			sw_->dedistort = { dedistort.offset_x, dedistort.offset_y };
 		}
 	});
 }
 
 BeDedistortionConfig BackendConfigAdapter::get_dedistort() const
 {
-	return non_reg_->dedistort;
+	return visit([this](auto *cfg) -> BeDedistortionConfig {
+		BeDedistortionConfig dedistort;
+		if constexpr (requires { cfg->dedistort; })
+		{
+			dedistort.grid_step_x = cfg->dedistort.grid_step_x;
+			dedistort.grid_step_y = cfg->dedistort.grid_step_y;
+			std::memcpy(dedistort.lut, cfg->dedistort.lut, sizeof(dedistort.lut));
+			dedistort.offset_x = sw_->dedistort.x;
+			dedistort.offset_y = sw_->dedistort.y;
+		}
+		return dedistort;
+	});
 }
 
 void BackendConfigAdapter::set_output_compress(unsigned int i, const BeCompressConfig &compress)

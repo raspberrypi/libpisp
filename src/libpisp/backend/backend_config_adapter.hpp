@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
-#include <optional>
 #include <type_traits>
 #include <variant>
 
@@ -138,10 +137,9 @@ struct BeResampleConfig
 {
 	uint16_t scale_factor_h = 0;
 	uint16_t scale_factor_v = 0;
-	// TODO make this a union with H/V coeffs?
-	std::optional<std::array<int16_t, PISP_BE_RESAMPLE_FILTER_SIZE>> coef {};
-	std::optional<std::array<int16_t, PISP_BE_RESAMPLE_FILTER_SIZE>> coef_h {};
-	std::optional<std::array<int16_t, PISP_BE_RESAMPLE_FILTER_SIZE>> coef_v{};
+	// v1 HW has a single set of coefficients for both directions, and uses coef_h.
+	std::array<int16_t, PISP_BE_RESAMPLE_FILTER_SIZE> coef_h {};
+	std::array<int16_t, PISP_BE_RESAMPLE_FILTER_SIZE> coef_v {};
 	uint16_t scaled_width = 0; // Non-register field
 	uint16_t scaled_height = 0; // Non-register field
 	std::array<int16_t, 3> initial_phase_h {}; // Non-register field
@@ -224,15 +222,34 @@ using BeTonemapConfig = struct pisp_be_tonemap_config;
 using BeCompressConfig = struct pisp_compress_config;
 using BeTonemap2Config = struct pisp_be_tonemap2_config;
 
-struct BeNonRegConfig
+// The non-register fields of the above configs, i.e. the parameters that have no HW registers but are needed
+// for tiling. Everything else is read back from the HW config, so nothing is stored twice.
+struct BeSwParams
 {
-	BeLscConfig lsc {};
-	BeCacConfig cac {};
-	BeDedistortionConfig dedistort {};
-	std::array<BeDownscaleConfig, PISP_BACK_END_NUM_OUTPUTS> downscale {};
-	std::array<BeResampleConfig, PISP_BACK_END_NUM_OUTPUTS> resample {};
+	struct Offset
+	{
+		uint16_t x = 0;
+		uint16_t y = 0;
+	};
+
+	struct Size
+	{
+		uint16_t width = 0;
+		uint16_t height = 0;
+	};
+
+	Offset lsc;
+	Offset cac;
+	Offset dedistort;
+	std::array<Size, PISP_BACK_END_NUM_OUTPUTS> downscale {};
+	std::array<Size, PISP_BACK_END_NUM_OUTPUTS> resample {};
+	std::array<std::array<int16_t, 3>, PISP_BACK_END_NUM_OUTPUTS> resample_initial_phase_h {};
+	std::array<std::array<int16_t, 3>, PISP_BACK_END_NUM_OUTPUTS> resample_initial_phase_v {};
 	std::array<BeCropConfig, PISP_BACK_END_NUM_OUTPUTS> crop {};
 };
+
+// This lives in the (possibly shared) BackEnd config storage, so must be safe to copy as raw bytes.
+static_assert(std::is_standard_layout_v<BeSwParams> && std::is_trivially_copyable_v<BeSwParams>);
 
 struct BeTile
 {
@@ -293,13 +310,13 @@ class BackendConfigAdapter
 {
 public:
 	// The constructor overloads only allow matching config and tile versions to be paired.
-	BackendConfigAdapter(pisp_be_config *config, pisp_tile *tiles, BeNonRegConfig *non_reg)
-		: hw_(HwV1 { config, tiles }), non_reg_(non_reg)
+	BackendConfigAdapter(pisp_be_config *config, pisp_tile *tiles, BeSwParams *sw)
+		: hw_(HwV1 { config, tiles }), sw_(sw)
 	{
 	}
 
-	BackendConfigAdapter(pisp_be_config2 *config, pisp_tile2 *tiles, BeNonRegConfig *non_reg)
-		: hw_(HwV2 { config, tiles }), non_reg_(non_reg)
+	BackendConfigAdapter(pisp_be_config2 *config, pisp_tile2 *tiles, BeSwParams *sw)
+		: hw_(HwV2 { config, tiles }), sw_(sw)
 	{
 	}
 
@@ -465,7 +482,7 @@ private:
 	}
 
 	std::variant<HwV1, HwV2> hw_;
-	BeNonRegConfig *non_reg_;
+	BeSwParams *sw_;
 };
 
 } // namespace libpisp

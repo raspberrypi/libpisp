@@ -224,7 +224,7 @@ private:
 	{
 		pisp_be_config hw_config {};
 		pisp_be_config2 hw_config_v2 {};
-		BeNonRegConfig non_reg_config {};
+		BeSwParams sw_params {};
 
 		BayerEnables dirty_flags_bayer;
 		RgbEnables dirty_flags_rgb;
@@ -246,7 +246,7 @@ private:
 		{
 			hw_config = other.hw_config;
 			hw_config_v2 = other.hw_config_v2;
-			non_reg_config = other.non_reg_config;
+			sw_params = other.sw_params;
 			dirty_flags_bayer = other.dirty_flags_bayer;
 			dirty_flags_rgb = other.dirty_flags_rgb;
 			dirty_flags_extra = other.dirty_flags_extra;
@@ -288,6 +288,7 @@ private:
 	uint16_t post_transpose_height();
 
 	void initialise_default_config(const std::string &filename);
+	const std::string &select_resample_filter(double downscale) const;
 
 	SoftwareConfig sw_;
 	PipelineConfig *pipe_;

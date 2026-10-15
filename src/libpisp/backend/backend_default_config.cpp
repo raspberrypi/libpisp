@@ -290,24 +290,51 @@ void BackEnd::initialise_ycbcr_inverse(libpisp::BeCcmConfig &ycbcr_inverse, cons
 	get_matrix(ycbcr_inverse, inverse_ycbcr_map_, cs);
 }
 
-void BackEnd::initialise_resample(BeResampleConfig &resample, const std::string &filter)
+void BackEnd::initialise_resample_h(BeResampleConfig &resample, const std::string &filter)
 {
-	resample.coef.emplace(); // zero-initialise the optional.
+	resample.coef_h = {};
 
 	auto it = resample_filter_map_.find(filter);
 	if (it != resample_filter_map_.end())
-		std::copy(it->second.begin(), it->second.end(), resample.coef->begin());
+		std::copy(it->second.begin(), it->second.end(), resample.coef_h.begin());
 }
 
-void BackEnd::initialise_resample(BeResampleConfig &resample, double downscale)
+void BackEnd::initialise_resample_v(BeResampleConfig &resample, const std::string &filter)
+{
+	resample.coef_v = {};
+
+	auto it = resample_filter_map_.find(filter);
+	if (it != resample_filter_map_.end())
+		std::copy(it->second.begin(), it->second.end(), resample.coef_v.begin());
+}
+
+void BackEnd::initialise_resample(BeResampleConfig &resample, const std::string &filter)
+{
+	initialise_resample_h(resample, filter);
+	initialise_resample_v(resample, filter);
+}
+
+const std::string &BackEnd::select_resample_filter(double downscale) const
 {
 	auto it = std::find_if(resample_select_list_.begin(), resample_select_list_.end(),
 						   [downscale](const auto &item) { return item.first >= downscale; });
 
-	if (it != resample_select_list_.end())
-		initialise_resample(resample, it->second);
-	else
-		initialise_resample(resample, resample_select_list_.back().second);
+	return it != resample_select_list_.end() ? it->second : resample_select_list_.back().second;
+}
+
+void BackEnd::initialise_resample_h(BeResampleConfig &resample, double downscale)
+{
+	initialise_resample_h(resample, select_resample_filter(downscale));
+}
+
+void BackEnd::initialise_resample_v(BeResampleConfig &resample, double downscale)
+{
+	initialise_resample_v(resample, select_resample_filter(downscale));
+}
+
+void BackEnd::initialise_resample(BeResampleConfig &resample, double downscale)
+{
+	initialise_resample(resample, select_resample_filter(downscale));
 }
 
 void BackEnd::initialise_sharpen(libpisp::BeSharpenConfig &sharpen, libpisp::BeShFcCombineConfig &shfc)

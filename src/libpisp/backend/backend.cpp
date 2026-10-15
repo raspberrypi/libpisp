@@ -29,10 +29,10 @@ BackEnd::BackEnd(SoftwareConfig const &non_reg_config, PiSPVariant const &varian
 		pipe_ = &internal_pipeline_config_;
 
 	if (variant < BERYL)
-		config_ = std::make_unique<BackendConfigAdapter>(&pipe_->hw_config, pipe_->tiles.data(), &pipe_->non_reg_config);
+		config_ = std::make_unique<BackendConfigAdapter>(&pipe_->hw_config, pipe_->tiles.data(), &pipe_->sw_params);
 	else
 		config_ =
-			std::make_unique<BackendConfigAdapter>(&pipe_->hw_config_v2, pipe_->tiles2.data(), &pipe_->non_reg_config);
+			std::make_unique<BackendConfigAdapter>(&pipe_->hw_config_v2, pipe_->tiles2.data(), &pipe_->sw_params);
 
 	pthread_mutexattr_t attr;
 	pthread_mutexattr_init(&attr);

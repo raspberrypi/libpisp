@@ -781,8 +781,8 @@ void BackEnd::update_smart_resize()
 					PISP_LOG(debug, "Setting the PPF as a trapezoidal filter");
 
 					scale_factor_x = std::min<double>(scale_factor_x, NumTaps - 1);
-					// Zero initialise the coefficient optional and return the array reference.
-					auto &coef = resample.coef.emplace();
+					auto &coef = resample.coef_h;
+					coef = {};
 
 					for (unsigned int p = 0; p < NumPhases; p++)
 					{
@@ -799,6 +799,9 @@ void BackEnd::update_smart_resize()
 							scale -= s;
 						}
 					}
+
+					// The scale factors are within 10% of each other, so use the same filter vertically.
+					resample.coef_v = coef;
 				}
 				else
 				{
