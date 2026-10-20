@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <stdexcept>
 #include <string.h>
+#include <string>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <unistd.h>
