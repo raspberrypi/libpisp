@@ -63,10 +63,6 @@ struct _GstPispConvertPrivate
 	/* Crop settings per output */
 	pisp_be_crop_config crop[PISP_NUM_OUTPUTS];
 
-	/* Cached crop/resize settings (to avoid redundant API calls) */
-	pisp_be_crop_config applied_crop[PISP_NUM_OUTPUTS];
-	libpisp::BackEnd::SmartResize applied_smart_resize[PISP_NUM_OUTPUTS];
-
 	/* Input format info */
 	guint in_width;
 	guint in_height;

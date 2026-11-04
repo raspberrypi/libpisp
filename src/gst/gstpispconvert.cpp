@@ -1027,21 +1027,16 @@ static gboolean gst_pisp_convert_configure(GstPispConvert *self)
 			GST_INFO_OBJECT(self, "Crop%u: offset=(%u,%u) size=%ux%u", i, crop.offset_x, crop.offset_y, crop.width,
 							crop.height);
 
-			/* Only call SetCrop if parameters changed */
-			if (memcmp(&crop, &self->priv->applied_crop[i], sizeof(crop)) != 0)
-			{
-				self->priv->backend->SetCrop(i, crop);
-				self->priv->applied_crop[i] = crop;
-			}
+			self->priv->backend->SetCrop(i, crop);
 
-			/* Only call SetSmartResize if parameters changed */
+			/* Always set the smart resize: the global config above resets rgb_enables to the
+			 * input and outputs only, and libpisp re-enables the downscale/resample blocks only
+			 * when the smart resize is dirty. Skipping it when the output size is unchanged left
+			 * the resampler off after a reconfigure, so a new input format (or frame rate) at
+			 * the same output size was shown unscaled, cropped and tiled wrongly. */
 			libpisp::BackEnd::SmartResize smart_resize = { (uint16_t)output_cfg[i].image.width,
 														   (uint16_t)output_cfg[i].image.height };
-			if (memcmp(&smart_resize, &self->priv->applied_smart_resize[i], sizeof(smart_resize)) != 0)
-			{
-				self->priv->backend->SetSmartResize(i, smart_resize);
-				self->priv->applied_smart_resize[i] = smart_resize;
-			}
+			self->priv->backend->SetSmartResize(i, smart_resize);
 		}
 
 		/* Prepare the hardware configuration */
