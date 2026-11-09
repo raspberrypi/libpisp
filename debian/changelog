@@ -4,6 +4,7 @@ libpisp (1.8.0-1) trixie; urgency=medium
   * helpers: buffer: Add the missing <string> include
   * Rename upstream branch and tags in gbp.conf
   * build: Upldate release to v1.8.0
+  * d/patches: utils: version: Handle git not being installed
 
   [ StevenTheGeek ]
   * gst: Always set the smart resize and crop when configuring

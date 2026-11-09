@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Naushir Patuck <naush@raspberrypi.com>
+Date: Mon, 9 Nov 2026 10:23:18 +0000
+Subject: [PATCH] utils: version: Handle git not being installed
+
+If git is not installed, subprocess.run() raises FileNotFoundError,
+which was not caught. Catch OSError as well so a missing git is treated
+like a non-git source tree.
+
+Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
+
+Origin: upstream, https://github.com/raspberrypi/libpisp/commit/c77865739bbde5be918d5a7692c8a8050e0abc25
+Applied-Upstream: c77865739bbde5be918d5a7692c8a8050e0abc25
+---
+ utils/version.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/utils/version.py b/utils/version.py
+index 5fdec059025e..590f8ef389d5 100755
+--- a/utils/version.py
++++ b/utils/version.py
+@@ -53,7 +53,7 @@ def generate_version():
+
+         commit = f"v{sys.argv[1]} {commit}"
+
+-    except RuntimeError:
++    except (RuntimeError, OSError):
+         commit = f"v{sys.argv[1]}"
+
+     finally:
