@@ -53,7 +53,7 @@ def generate_version():
 
         commit = f"v{sys.argv[1]} {commit}"
 
-    except RuntimeError:
+    except (RuntimeError, OSError):
         commit = f"v{sys.argv[1]}"
 
     finally:
